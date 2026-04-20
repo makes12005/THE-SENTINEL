@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "build": "pnpm exec tsc -p shared-types/tsconfig.json && tsc || exit 0",
+    "build": "pnpm exec tsc -p shared-types/tsconfig.json && node -e \"require('fs').cpSync('shared-types/dist','node_modules/@busalert/shared-types/dist',{recursive:true,force:true})\" && tsc || exit 0",
     "dev": "ts-node src/server.ts",
     "start": "node ./dist/server.js",
     "worker:alert": "node ./dist/workers/alert.worker.js",
