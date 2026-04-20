@@ -5,11 +5,11 @@
  *
  * Polls conductor_locations every 30 seconds.
  * For each ACTIVE trip:
- *   - If last ping > 2 minutes ago → emit conductor_offline (once per state change)
- *   - If conductor recovered (new ping) → emit conductor_online
+ *   - If last ping > 2 minutes ago -> emit conductor_offline (once per state change)
+ *   - If conductor recovered (new ping) -> emit conductor_online
  *
  * In-memory state Map prevents duplicate events:
- *   offlineTrips: Set<tripId>  — currently offline trips
+ *   offlineTrips: Set<tripId> — currently offline trips
  *
  * On crash: no state lost — next poll re-derives state from DB.
  */
@@ -24,30 +24,25 @@ import { trips, conductorLocations, users, auditLogs } from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { getIO }              from '../lib/socket';
 
-const POLL_INTERVAL_MS    = 30_000;   // 30 seconds
-const OFFLINE_THRESHOLD_S = 120;      // 2 minutes in seconds
+const POLL_INTERVAL_MS    = 30_000;
+const OFFLINE_THRESHOLD_S = 120;
 
 let isShuttingDown = false;
 process.on('SIGTERM', () => { isShuttingDown = true; });
 process.on('SIGINT',  () => { isShuttingDown = true; });
 
-/** Tracks which trips are currently in the "conductor offline" state */
 const offlineTrips = new Set<string>();
 
 async function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
 }
 
-/**
- * Returns all currently ACTIVE trips with their latest conductor ping info.
- */
 async function getActiveTripsWithHeartbeat(): Promise<Array<{
   tripId:      string;
   conductorId: string;
   driverId:    string | null;
   lastSeenAt:  Date | null;
 }>> {
-  // Get all active trips
   const activeTrips = await db
     .select({
       id:           trips.id,
@@ -59,7 +54,6 @@ async function getActiveTripsWithHeartbeat(): Promise<Array<{
 
   if (activeTrips.length === 0) return [];
 
-  // For each active trip, get the most recent conductor_locations row
   const results: Array<{
     tripId:     string;
     conductorId: string;
@@ -88,9 +82,9 @@ async function getActiveTripsWithHeartbeat(): Promise<Array<{
 
 async function poll() {
   let io: ReturnType<typeof getIO> | null = null;
-  try { io = getIO(); } catch { /* Socket.IO not yet initialised — skip */ }
+  try { io = getIO(); } catch {}
   if (!io) {
-    console.warn('[HeartbeatWorker] Socket.IO not initialised yet — skipping poll');
+    console.warn('[HeartbeatWorker] Socket.IO not initialised yet, skipping poll');
     return;
   }
 
@@ -107,20 +101,17 @@ async function poll() {
   for (const hb of heartbeats) {
     const { tripId, conductorId, driverId, lastSeenAt } = hb;
 
-    // Compute gap in seconds
     const ageSeconds = lastSeenAt
       ? (now - lastSeenAt.getTime()) / 1000
-      : Infinity;   // never pinged → treat as offline immediately
+      : Infinity;
 
     const isCurrentlyOffline = ageSeconds > OFFLINE_THRESHOLD_S;
     const wasOffline          = offlineTrips.has(tripId);
 
     if (isCurrentlyOffline && !wasOffline) {
-      // ── Transition: online → offline ────────────────────────────────────────
-      console.warn(`[HeartbeatWorker] conductor OFFLINE — trip ${tripId} | lastSeen: ${lastSeenAt?.toISOString() ?? 'never'}`);
+      console.warn(`[HeartbeatWorker] conductor OFFLINE, trip ${tripId} | lastSeen: ${lastSeenAt?.toISOString() ?? 'never'}`);
       offlineTrips.add(tripId);
 
-      // Emit to all sockets in trip room
       io.to(`trip:${tripId}`).emit('conductor_offline', {
         tripId,
         conductorId,
@@ -129,7 +120,6 @@ async function poll() {
         detectedAt: new Date().toISOString(),
       });
 
-      // Write audit log (fire-and-forget — don't block poll loop)
       db.insert(auditLogs).values({
         user_id:     conductorId,
         action:      'CONDUCTOR_OFFLINE',
@@ -144,8 +134,7 @@ async function poll() {
       }).catch((e: any) => console.error('[HeartbeatWorker] Audit log error:', e?.message));
 
     } else if (!isCurrentlyOffline && wasOffline) {
-      // ── Transition: offline → online ────────────────────────────────────────
-      console.log(`[HeartbeatWorker] conductor RECOVERED — trip ${tripId}`);
+      console.log(`[HeartbeatWorker] conductor RECOVERED, trip ${tripId}`);
       offlineTrips.delete(tripId);
 
       io.to(`trip:${tripId}`).emit('conductor_online', {
@@ -156,7 +145,6 @@ async function poll() {
     }
   }
 
-  // Clean up state for trips that are no longer active
   for (const tripId of offlineTrips) {
     if (!heartbeats.find((h) => h.tripId === tripId)) {
       offlineTrips.delete(tripId);
@@ -165,11 +153,10 @@ async function poll() {
 }
 
 async function main() {
-  console.log('[HeartbeatWorker] Started — polling every 30s for conductor heartbeats');
+  console.log('Heartbeat worker started');
 
   while (!isShuttingDown) {
     await poll();
-    // Sleep for the poll interval, but check shutdown flag between intervals
     await sleep(POLL_INTERVAL_MS);
   }
 

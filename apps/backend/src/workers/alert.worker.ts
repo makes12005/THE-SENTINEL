@@ -13,7 +13,6 @@
 import 'dotenv/config';
 import path from 'path';
 
-// Ensure .env is loaded from monorepo root before any service imports
 import * as dotenv from 'dotenv';
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
@@ -21,16 +20,13 @@ import { redis }            from '../lib/redis';
 import { runAlertCascade, AlertJob } from '../modules/alerts/alert.orchestrator';
 
 const QUEUE_KEY   = 'alert_queue';
-const BLPOP_TIMEOUT = 5;   // seconds — re-checks for clean shutdown every 5s
+const BLPOP_TIMEOUT = 5;
 
 let isShuttingDown = false;
 
 process.on('SIGTERM', () => { isShuttingDown = true; });
 process.on('SIGINT',  () => { isShuttingDown = true; });
 
-/**
- * Exponential backoff — doubles on each consecutive failure, cap 60s, reset on success.
- */
 function calcBackoff(consecutiveErrors: number): number {
   return Math.min(1000 * Math.pow(2, consecutiveErrors), 60_000);
 }
@@ -40,16 +36,16 @@ async function sleep(ms: number) {
 }
 
 async function main() {
-  console.log('[AlertWorker] Started — listening on alert_queue');
+  console.log('Alert worker started');
+  console.log('Waiting for jobs...');
 
   let consecutiveErrors = 0;
 
   while (!isShuttingDown) {
     try {
-      // BLPOP returns null on timeout or [key, value] on success
       const result = await redis.blpop(QUEUE_KEY, BLPOP_TIMEOUT);
 
-      if (!result) continue;   // timeout — loop again
+      if (!result) continue;
 
       const [, rawJob] = result;
       let job: AlertJob;
@@ -57,22 +53,22 @@ async function main() {
       try {
         job = JSON.parse(rawJob) as AlertJob;
       } catch {
-        console.error('[AlertWorker] Malformed job — skipping:', rawJob);
+        console.error('[AlertWorker] Malformed job, skipping:', rawJob);
         consecutiveErrors = 0;
         continue;
       }
 
-      console.log(`[AlertWorker] Processing job for passenger ${job.passengerId} → stop "${job.stopName}"`);
+      console.log(`[AlertWorker] Processing job for passenger ${job.passengerId} -> stop "${job.stopName}"`);
 
       await runAlertCascade(job);
 
-      consecutiveErrors = 0;   // reset on success
+      consecutiveErrors = 0;
 
     } catch (err: any) {
       consecutiveErrors++;
       const backoff = calcBackoff(consecutiveErrors);
       console.error(
-        `[AlertWorker] Error (attempt ${consecutiveErrors}) — backing off ${backoff}ms:`,
+        `[AlertWorker] Error (attempt ${consecutiveErrors}), backing off ${backoff}ms:`,
         err?.message
       );
       await sleep(backoff);
