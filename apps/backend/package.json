@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc || exit 0",
+    "build": "pnpm exec tsc -p shared-types/tsconfig.json && tsc || exit 0",
     "dev": "ts-node src/server.ts",
     "start": "node ./dist/server.js",
     "worker:alert": "node ./dist/workers/alert.worker.js",
@@ -13,7 +13,7 @@
     "db:push": "drizzle-kit push:pg"
   },
   "dependencies": {
-    "@busalert/shared-types": "workspace:*",
+    "@busalert/shared-types": "file:./shared-types",
     "@fastify/multipart": "^10.0.0",
     "@types/multer": "^2.1.0",
     "bcrypt": "^5.1.1",
@@ -30,7 +30,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@busalert/config": "workspace:*",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.0.0",
