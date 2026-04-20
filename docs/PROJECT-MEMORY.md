@@ -361,7 +361,11 @@ Deploy the Bus Alert backend (API + Socket.IO + Background Workers) and frontend
 
 ### Deployed Services Information
 - **Backend (API + Workers)**: Hosted on Railway (`apps/backend/railway.json`, `Procfile`)
+  - **API**: `https://api-production-aac0.up.railway.app`
+  - **Alert Worker**: `https://alert-worker-production.up.railway.app`
+  - **Heartbeat Worker**: `https://heartbeat-worker-production.up.railway.app`
 - **Frontend (Web Dashboards)**: Hosted on Vercel (`apps/web/vercel.json`)
+  - **Vercel URL**: `https://bus-alert-psogpv9rc-maheks-projects-521c0a1e.vercel.app` (Note: Ensure Vercel dashboard `Root Directory` is manually set to `apps/web` if using Git deployments)
 - **Database (PostgreSQL)**: Neon DB with PostGIS Extension Enabled
 - **Cache / PubSub (Redis)**: Upstash Redis
 - **Voice Alerts (Exotel)**: Provider switched from "mock" to "exotel", API authenticated.
