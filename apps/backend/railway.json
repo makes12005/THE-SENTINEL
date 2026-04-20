@@ -1,7 +1,6 @@
 {
   "build": { "builder": "nixpacks" },
   "deploy": {
-    "startCommand": "node ./dist/server.js",
-    "restartPolicyType": "on-failure"
+    "startCommand": "node ./dist/server.js"
   }
 }
