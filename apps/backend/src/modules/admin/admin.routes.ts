@@ -33,7 +33,7 @@ import {
 import {
   eq, and, sql, count, desc, sum, gte, inArray,
 } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { UserRole } from '@busalert/shared-types';
 import {
   topUpBalance,

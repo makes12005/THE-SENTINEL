@@ -16,7 +16,7 @@ import {
 import {
   eq, and, gte, sql, count, desc, or, inArray,
 } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { UserRole } from '@busalert/shared-types';
 
 function handleError(reply: FastifyReply, err: any) {
