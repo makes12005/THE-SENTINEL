@@ -5,9 +5,9 @@
   "scripts": {
     "build": "tsc || exit 0",
     "dev": "ts-node src/server.ts",
-    "start": "node dist/server.js",
-    "worker:alert": "node dist/workers/alert.worker.js",
-    "worker:heartbeat": "node dist/workers/heartbeat.worker.js",
+    "start": "node ./dist/server.js",
+    "worker:alert": "node ./dist/workers/alert.worker.js",
+    "worker:heartbeat": "node ./dist/workers/heartbeat.worker.js",
     "lint": "eslint \"src/**/*.ts\"",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg"
