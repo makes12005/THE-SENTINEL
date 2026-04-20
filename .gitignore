@@ -1,3 +1,9 @@
+# Helper scripts (local only)
+update-vercel.js
+update-vercel-env2.js
+project_help.txt
+railway-mcp-server/
+
 # 1. Environment files (CRITICAL - never commit)
 .env
 .env.local
