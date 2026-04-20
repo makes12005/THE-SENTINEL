@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@busalert/shared-types": "file:./shared-types",
-    "@fastify/multipart": "^10.0.0",
+    "@fastify/multipart": "^8.3.1",
     "@types/multer": "^2.1.0",
     "bcryptjs": "^2.4.3",
     "csv-parse": "^6.2.1",
