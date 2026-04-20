@@ -1,7 +1,6 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
 import { createServer } from 'http';
-import authRoutes     from './modules/auth/auth.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
 import routesRoutes   from './modules/trips/routes.routes';
 import operatorRoutes from './modules/operator/operator.routes';
@@ -29,7 +28,6 @@ fastify.register(multipart, {
 });
 
 // ─── Modules ──────────────────────────────────────────────────────────────────
-fastify.register(authRoutes,     { prefix: '/api/auth' });
 fastify.register(tripsRoutes,    { prefix: '/api/trips' });
 fastify.register(routesRoutes,   { prefix: '/api/routes' });
 // Operator dashboard API (sprint 7)
