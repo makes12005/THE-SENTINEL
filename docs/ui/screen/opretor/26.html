@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Billing &amp; Usage - The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#b4b0ff",
+                        "on-primary": "#003353",
+                        "inverse-primary": "#396285",
+                        "tertiary-container": "#602a00",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "error": "#ffb4ab",
+                        "background": "#101418",
+                        "surface-container-low": "#181c20",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "surface-container-lowest": "#0b0f13",
+                        "surface-container-highest": "#31353a",
+                        "on-tertiary": "#522300",
+                        "on-tertiary-fixed": "#321200",
+                        "on-secondary-fixed": "#100069",
+                        "surface-container-high": "#262a2f",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "on-surface": "#e0e2e8",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "primary-fixed": "#cee5ff",
+                        "surface-bright": "#363a3e",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "on-primary-container": "#7fa7cd",
+                        "secondary-container": "#3826cd",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "surface-dim": "#101418",
+                        "on-secondary": "#2000a4",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "surface-variant": "#31353a",
+                        "tertiary-fixed": "#ffdbc8",
+                        "tertiary": "#ffb68b",
+                        "surface-tint": "#a3cbf2",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-tertiary-container": "#ff801d",
+                        "surface": "#101418",
+                        "surface-container": "#1c2024",
+                        "secondary-fixed": "#e3dfff",
+                        "outline-variant": "#42474e",
+                        "inverse-surface": "#e0e2e8",
+                        "secondary": "#c4c0ff",
+                        "primary": "#a3cbf2",
+                        "outline": "#8c9198",
+                        "inverse-on-surface": "#2d3135",
+                        "error-container": "#93000a",
+                        "primary-container": "#0b3c5d",
+                        "on-primary-fixed": "#001d32",
+                        "on-background": "#e0e2e8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #101418;
+            color: #e0e2e8;
+            font-family: 'Inter', sans-serif;
+        }
+        .tonal-layering {
+            transition: background-color 0.2s ease;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#181c20] flex items-center justify-between px-6 h-20 w-full flat no shadows">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a3cbf2] cursor-pointer">menu</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-xl text-[#e0e2e8]">Billing &amp; Usage</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#9ea3ae] hover:bg-[#262a2f] p-2 rounded-full transition-colors cursor-pointer">account_balance_wallet</span>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-7xl mx-auto space-y-8">
+<!-- Alerts Section -->
+<section class="space-y-3">
+<div class="bg-tertiary-container/30 rounded-xl p-4 flex items-center gap-4 border-l-4 border-tertiary">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div class="flex-1">
+<p class="font-headline font-bold text-tertiary tracking-tight">Low balance</p>
+<p class="text-sm text-on-surface-variant font-body">Your current wallet balance is below ₹500. Recharge soon to avoid service interruption.</p>
+</div>
+</div>
+<div class="bg-tertiary-container/20 rounded-xl p-4 flex items-center gap-4 border-l-4 border-tertiary/50">
+<span class="material-symbols-outlined text-tertiary">notifications_active</span>
+<div class="flex-1">
+<p class="font-headline font-bold text-tertiary tracking-tight">Recharge required</p>
+<p class="text-sm text-on-surface-variant font-body">Auto-debit for Route 42X failed. Manual payment required.</p>
+</div>
+</div>
+</section>
+<!-- Summary Cards (Bento Grid) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-surface-container-high p-6 rounded-[1.5rem] flex flex-col justify-between min-h-[160px]">
+<span class="text-label-md font-label uppercase tracking-[0.05em] text-on-surface-variant">Current Balance</span>
+<div class="mt-4">
+<span class="text-4xl font-headline font-extrabold text-primary tracking-tighter">₹4,280</span>
+<p class="text-xs text-on-surface-variant mt-1">Available for immediate use</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-[1.5rem] flex flex-col justify-between min-h-[160px]">
+<span class="text-label-md font-label uppercase tracking-[0.05em] text-on-surface-variant">Trips Used Today</span>
+<div class="mt-4">
+<span class="text-4xl font-headline font-extrabold text-on-surface tracking-tighter">12</span>
+<p class="text-xs text-on-surface-variant mt-1">Across 3 active routes</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-[1.5rem] flex flex-col justify-between min-h-[160px]">
+<span class="text-label-md font-label uppercase tracking-[0.05em] text-on-surface-variant">Monthly Total</span>
+<div class="mt-4">
+<span class="text-4xl font-headline font-extrabold text-on-surface tracking-tighter">342</span>
+<p class="text-xs text-on-surface-variant mt-1">October 2023 performance</p>
+</div>
+</div>
+<div class="bg-surface-container-high p-6 rounded-[1.5rem] border border-error/10 flex flex-col justify-between min-h-[160px]">
+<span class="text-label-md font-label uppercase tracking-[0.05em] text-on-surface-variant">Pending Payment</span>
+<div class="mt-4">
+<span class="text-4xl font-headline font-extrabold text-error tracking-tighter">₹840</span>
+<p class="text-xs text-on-surface-variant mt-1">Unsettled from previous shift</p>
+</div>
+</div>
+</section>
+<!-- Main Content Area: Usage & Payment -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Usage History List -->
+<section class="lg:col-span-2 space-y-6">
+<div class="flex items-center justify-between">
+<h2 class="font-headline font-bold text-2xl tracking-tight">Usage History</h2>
+<button class="text-sm font-label text-primary hover:underline">Download Report</button>
+</div>
+<div class="bg-surface-container-lowest rounded-[1.5rem] overflow-hidden">
+<div class="space-y-px">
+<!-- History Item 1 -->
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">directions_bus</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">KA-01-FA-2290</p>
+<p class="text-sm text-on-surface-variant">Route 500D • 09:45 AM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">₹45.00</p>
+<span class="inline-flex items-center rounded-full bg-secondary-container/30 px-2 py-0.5 text-[0.625rem] font-bold text-on-secondary-container uppercase tracking-wider">Deducted</span>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">directions_bus</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">KA-51-AA-4012</p>
+<p class="text-sm text-on-surface-variant">Route 335E • 08:12 AM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">₹120.00</p>
+<span class="inline-flex items-center rounded-full bg-tertiary-container/30 px-2 py-0.5 text-[0.625rem] font-bold text-on-tertiary-container uppercase tracking-wider">Pending</span>
+</div>
+</div>
+<!-- History Item 3 -->
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">directions_bus</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">KA-01-FA-2290</p>
+<p class="text-sm text-on-surface-variant">Route 500D • 07:30 AM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">₹45.00</p>
+<span class="inline-flex items-center rounded-full bg-secondary-container/30 px-2 py-0.5 text-[0.625rem] font-bold text-on-secondary-container uppercase tracking-wider">Deducted</span>
+</div>
+</div>
+<!-- History Item 4 -->
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-colors p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">directions_bus</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">KA-04-MB-1120</p>
+<p class="text-sm text-on-surface-variant">Route G-3 • Oct 26, 06:15 PM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline font-bold text-on-surface">₹85.00</p>
+<span class="inline-flex items-center rounded-full bg-secondary-container/30 px-2 py-0.5 text-[0.625rem] font-bold text-on-secondary-container uppercase tracking-wider">Deducted</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Add Balance Section -->
+<section class="space-y-6">
+<h2 class="font-headline font-bold text-2xl tracking-tight">Add Balance</h2>
+<div class="bg-surface-container-high p-8 rounded-[1.5rem] space-y-8">
+<div class="space-y-4">
+<label class="text-label-md font-label uppercase tracking-[0.05em] text-on-surface-variant">Quick Select</label>
+<div class="grid grid-cols-2 gap-3">
+<button class="py-3 px-4 rounded-xl border border-outline-variant hover:bg-primary-container hover:border-primary transition-all font-bold">₹1,000</button>
+<button class="py-3 px-4 rounded-xl border border-outline-variant hover:bg-primary-container hover:border-primary transition-all font-bold">₹2,000</button>
+<button class="py-3 px-4 rounded-xl border border-outline-variant hover:bg-primary-container hover:border-primary transition-all font-bold">₹5,000</button>
+<button class="py-3 px-4 rounded-xl border border-outline-variant hover:bg-primary-container hover:border-primary transition-all font-bold">Custom</button>
+</div>
+</div>
+<div class="space-y-4">
+<label class="text-label-md font-label uppercase tracking-[0.05em] text-on-surface-variant">Payment Method</label>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-primary/20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">account_balance</span>
+<span class="font-medium">UPI / Net Banking</span>
+</div>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-transparent opacity-60">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">credit_card</span>
+<span class="font-medium">Debit / Credit Card</span>
+</div>
+<div class="w-5 h-5 rounded-full border-2 border-outline-variant"></div>
+</div>
+</div>
+</div>
+<button class="w-full h-14 bg-primary-container text-primary font-headline font-extrabold text-lg rounded-xl hover:bg-primary hover:text-on-primary transition-all active:scale-95">
+                        Add Balance
+                    </button>
+<div class="flex justify-center items-center gap-6 opacity-40 grayscale">
+<div class="text-[0.6rem] font-black tracking-widest uppercase">UPI</div>
+<div class="text-[0.6rem] font-black tracking-widest uppercase">Visa</div>
+<div class="text-[0.6rem] font-black tracking-widest uppercase">Mastercard</div>
+</div>
+</div>
+<!-- Decorative Asset -->
+<div class="rounded-[1.5rem] overflow-hidden h-40 relative group">
+<img alt="Bus transit interior" class="w-full h-full object-cover grayscale brightness-50 group-hover:scale-105 transition-transform duration-700" data-alt="Modern high-tech bus interior at night with neon blue accent lighting and digital displays in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyizeeF88BGS9TILqV3OeBdzfGS5yBBEhQLn1YVBCJIgJdypCVSpTI7wYtsQO0pj4qnZNse0OyGG1srpmcGHOjUQt6iTQzPKH-TSyjjMcRZ_mCIZKuv95wdI6l7sdmENHYMSMr6moCAavIpnT7ILukExzL5aldgeK8idSGWy25G6Oa-x483fOixr0k6nuwZzBgiX3dQPteK7O3iX8LYZS1DyWiknTc7T3zFaHY_tH3v847GvmwNAnbYcpG-njmTB7XukMyXu0BUBVM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-80"></div>
+<div class="absolute bottom-4 left-4">
+<p class="text-xs font-bold text-primary uppercase tracking-[0.2em]">Operational Excellence</p>
+<p class="text-sm font-body">Sentinel Billing v4.2</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-[#101418]/80 backdrop-blur-xl border-t border-[#262a2f]/30 h-24 px-4 pb-safe flex justify-around items-center rounded-t-[1.5rem] shadow-[0_-4px_40px_rgba(0,0,0,0.15)]">
+<div class="flex flex-col items-center justify-center text-[#9ea3ae] px-5 py-2 hover:text-[#e0e2e8] transition-transform duration-200 scale-98 cursor-pointer">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium uppercase tracking-[0.05em]">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#9ea3ae] px-5 py-2 hover:text-[#e0e2e8] transition-transform duration-200 scale-98 cursor-pointer">
+<span class="material-symbols-outlined mb-1">directions_bus</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium uppercase tracking-[0.05em]">Routes</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1.5rem] px-5 py-2 transition-transform duration-200 scale-98 cursor-pointer">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium uppercase tracking-[0.05em]">Billing</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#9ea3ae] px-5 py-2 hover:text-[#e0e2e8] transition-transform duration-200 scale-98 cursor-pointer">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium uppercase tracking-[0.05em]">Settings</span>
+</div>
+</nav>
+</body></html>

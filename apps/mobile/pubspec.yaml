@@ -1,0 +1,57 @@
+name: mobile
+description: Bus Alert Flutter App — Conductor
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP client with interceptors
+  dio: ^5.7.0
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.3.5
+
+  # GPS positioning
+  geolocator: ^13.0.2
+
+  # Background GPS foreground service
+  flutter_foreground_task: ^8.14.0
+
+  # Secure JWT storage
+  flutter_secure_storage: ^9.2.2
+
+  # Socket.IO realtime
+  socket_io_client: ^2.0.3+1
+
+  # Navigation
+  go_router: ^14.6.3
+
+  # Offline GPS queue
+  shared_preferences: ^2.3.3
+
+  # Phone dialer for alert popup
+  url_launcher: ^6.3.1
+
+  # Manrope + Inter fonts
+  google_fonts: ^6.2.1
+
+  # Refresh token lock
+  synchronized: ^3.1.0+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.4.3
+
+flutter:
+  uses-material-design: true

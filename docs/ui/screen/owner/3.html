@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add New Operator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#690005",
+                        "surface-container-high": "#262a2f",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-surface": "#e0e2e8",
+                        "on-tertiary-fixed": "#321200",
+                        "surface-tint": "#a3cbf2",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-container": "#b4b0ff",
+                        "on-background": "#e0e2e8",
+                        "tertiary-fixed": "#ffdbc8",
+                        "surface-container-low": "#181c20",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "surface-container": "#1c2024",
+                        "on-primary-fixed": "#001d32",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#31353a",
+                        "surface": "#101418",
+                        "on-secondary": "#2000a4",
+                        "on-tertiary": "#522300",
+                        "inverse-surface": "#e0e2e8",
+                        "on-secondary-fixed": "#100069",
+                        "inverse-on-surface": "#2d3135",
+                        "tertiary-container": "#602a00",
+                        "surface-bright": "#363a3e",
+                        "surface-dim": "#101418",
+                        "tertiary": "#ffb68b",
+                        "primary": "#a3cbf2",
+                        "primary-container": "#0b3c5d",
+                        "inverse-primary": "#396285",
+                        "background": "#101418",
+                        "surface-container-lowest": "#0b0f13",
+                        "primary-fixed": "#cee5ff",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "secondary-container": "#3826cd",
+                        "secondary": "#c4c0ff",
+                        "error": "#ffb4ab",
+                        "outline": "#8c9198",
+                        "on-tertiary-container": "#ff801d",
+                        "on-primary-container": "#7fa7cd",
+                        "secondary-fixed": "#e3dfff",
+                        "surface-variant": "#31353a",
+                        "on-primary": "#003353",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "outline-variant": "#42474e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-[#181c20] z-50">
+<div class="flex items-center h-16 px-6 w-full">
+<button class="mr-4 text-[#a3cbf2] hover:bg-[#262a2f] p-2 rounded-full transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-[#a3cbf2] font-['Manrope'] uppercase tracking-wider font-bold">Add New Operator</h1>
+</div>
+</header>
+<main class="max-w-2xl mx-auto px-6 py-8">
+<!-- Instructional Header -->
+<div class="mb-10">
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface mb-2">Operator Identity</h2>
+<p class="text-on-surface-variant font-medium">Register a new driver or conductor to the fleet.</p>
+</div>
+<form class="space-y-8">
+<!-- Section: Primary Details -->
+<section class="bg-surface-container-low rounded-[1.5rem] p-6 shadow-sm">
+<div class="grid grid-cols-1 gap-6">
+<!-- Full Name -->
+<div class="space-y-2">
+<label class="block font-label text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+                            Full Name <span class="text-tertiary">*</span>
+</label>
+<input class="w-full h-14 bg-surface-container-highest border-none rounded-xl px-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all" placeholder="e.g. Johnathan Smith" type="text"/>
+</div>
+<!-- Phone Number -->
+<div class="space-y-2">
+<label class="block font-label text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+                            Phone Number <span class="text-tertiary">*</span>
+</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined" data-icon="phone">phone</span>
+<input class="w-full h-14 bg-surface-container-highest border-none rounded-xl pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all" placeholder="07XXXXXXXX" type="tel"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Secondary Details (Tonal Shift) -->
+<section class="bg-surface-container-high rounded-[1.5rem] p-6 shadow-sm">
+<div class="grid grid-cols-1 gap-6">
+<!-- Email -->
+<div class="space-y-2">
+<label class="block font-label text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+                            Email (Optional)
+                        </label>
+<input class="w-full h-14 bg-surface-container-highest border-none rounded-xl px-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all" placeholder="operator@agency.com" type="email"/>
+</div>
+<!-- Notes -->
+<div class="space-y-2">
+<label class="block font-label text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+                            Notes (Optional)
+                        </label>
+<textarea class="w-full bg-surface-container-highest border-none rounded-xl p-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all resize-none" placeholder="Special instructions or certification details..." rows="3"></textarea>
+</div>
+</div>
+</section>
+<!-- Section: Login Access (Segmented Control) -->
+<section class="bg-surface-container-low rounded-[1.5rem] p-6 shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary" data-icon="key">key</span>
+<h3 class="font-headline font-bold text-lg text-on-surface">Login Access</h3>
+</div>
+<div class="bg-surface-container-lowest p-1.5 rounded-full flex w-full">
+<button class="flex-1 py-3 px-4 rounded-full text-sm font-semibold transition-all bg-surface-container-highest text-primary shadow-sm" type="button">
+                        Generate Invite Code
+                    </button>
+<button class="flex-1 py-3 px-4 rounded-full text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-all" type="button">
+                        Send via SMS
+                    </button>
+</div>
+<p class="mt-4 text-xs text-on-surface-variant px-2 italic">
+                    The operator will receive a one-time activation link to set their secure PIN.
+                </p>
+</section>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-4 mt-12 pb-12">
+<button class="w-full h-16 bg-primary-container hover:bg-primary text-on-primary-container font-headline font-extrabold text-lg rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2" type="submit">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+                    CREATE OPERATOR
+                </button>
+<button class="w-full h-14 text-on-surface-variant hover:text-on-surface font-headline font-bold transition-all active:scale-95" type="button">
+                    CANCEL
+                </button>
+</div>
+</form>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[1.5rem] bg-[#181c20]/80 backdrop-blur-xl shadow-[0px_-4px_40px_rgba(0,0,0,0.15)] flex md:hidden">
+<div class="flex justify-around items-center px-4 py-3 w-full">
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#e0e2e8] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-[0.05em] uppercase mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#e0e2e8] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-[0.05em] uppercase mt-1">Routes</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1.5rem] px-5 py-2 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="badge" style="font-variation-settings: 'FILL' 1;">badge</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-[0.05em] uppercase mt-1">Operators</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#e0e2e8] transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-[0.05em] uppercase mt-1">Revenue</span>
+</a>
+</div>
+</nav>
+<!-- Floating Image Accent (Decorative) -->
+<div class="fixed top-24 right-[-5%] opacity-10 pointer-events-none hidden lg:block">
+<img alt="" class="w-[400px] h-auto object-contain" data-alt="abstract cyberpunk transit dashboard elements with glowing blue lines and tech patterns dark background high contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAghKfRMjyrCRzb1tZqMsV2HRVk-Mi_f8-kuKP9qEq71kqhz8EsjmJ_GuhkL_gU2kQLz4gIi0HDz8AeRBier7dlwWF5qQBaezjECJcZ5wlt62D94m_DJBuIUujRsYNvGIzRDRCfPuUKA97jH_kpW7i8_0THP7UmS5UF79xrg-oAwI_CmlZm358b-6zzSA5LhfTtenU71Xe2HYAk860ECPstnN-M6vBIrCURLT9UCHnVTM3OGBnjPCo2JyR81-oc1_n1ycswuzczUeqz"/>
+</div>
+</body></html>

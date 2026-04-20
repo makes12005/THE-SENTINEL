@@ -1,0 +1,64 @@
+# 1. Environment files (CRITICAL - never commit)
+.env
+.env.local
+.env.production
+.env.development
+.env*.local
+**/.env*
+
+# 2. Flutter (apps/mobile/)
+apps/mobile/build/
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/*.g.dart
+apps/mobile/*.freezed.dart
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/key.properties
+# (signing keys - CRITICAL)
+*.jks
+*.keystore
+
+# 3. Next.js (apps/web/)
+apps/web/.next/
+apps/web/out/
+apps/web/.vercel/
+
+# 4. Node.js (apps/backend/ + packages/)
+node_modules/
+dist/
+build/
+*.js.map
+pnpm-debug.log
+
+# 5. Database + Secrets (CRITICAL)
+*.pem
+*.key
+*.cert
+*.p12
+apps/backend/run-migration.cjs
+
+# 6. OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 7. IDE files
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# 8. Logs
+/logs/
+*.log
+npm-debug.log*
+
+# 9. Testing
+coverage/
+.nyc_output/
+
+# 10. Turbo cache
+.turbo/

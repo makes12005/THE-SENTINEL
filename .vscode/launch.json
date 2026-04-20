@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Whole Project (Dev)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm run dev",
+      "cwd": "${workspaceFolder}",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#3826cd",
+                        "error-container": "#93000a",
+                        "secondary": "#c4c0ff",
+                        "on-tertiary-container": "#ff801d",
+                        "on-tertiary": "#522300",
+                        "tertiary-container": "#602a00",
+                        "secondary-fixed": "#e3dfff",
+                        "on-secondary": "#2000a4",
+                        "surface-container-highest": "#31353a",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "outline": "#8c9198",
+                        "on-secondary-fixed": "#100069",
+                        "error": "#ffb4ab",
+                        "surface-container-high": "#262a2f",
+                        "on-secondary-container": "#b4b0ff",
+                        "inverse-on-surface": "#2d3135",
+                        "primary-container": "#0b3c5d",
+                        "surface-variant": "#31353a",
+                        "on-primary-container": "#7fa7cd",
+                        "inverse-primary": "#396285",
+                        "surface": "#101418",
+                        "surface-tint": "#a3cbf2",
+                        "primary": "#a3cbf2",
+                        "surface-dim": "#101418",
+                        "primary-fixed": "#cee5ff",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#ffb68b",
+                        "background": "#101418",
+                        "on-background": "#e0e2e8",
+                        "on-error": "#690005",
+                        "on-surface": "#e0e2e8",
+                        "outline-variant": "#42474e",
+                        "surface-bright": "#363a3e",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "inverse-surface": "#e0e2e8",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "surface-container-lowest": "#0b0f13",
+                        "surface-container": "#1c2024",
+                        "on-tertiary-fixed": "#321200",
+                        "tertiary-fixed": "#ffdbc8",
+                        "surface-container-low": "#181c20",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-surface-variant": "#c2c7ce",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "on-primary": "#003353"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #101418;
+            font-family: 'Inter', sans-serif;
+            color: #e0e2e8;
+        }
+        .noise-texture {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen relative">
+<div class="fixed inset-0 noise-texture"></div>
+<!-- TopAppBar Navigation -->
+<header class="flex justify-between items-center px-6 py-4 w-full z-50 sticky top-0 bg-[#101418] bg-opacity-90 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<button class="text-[#a3cbf2] hover:bg-[#262a2f] hover:backdrop-blur-xl transition-all p-2 rounded-full scale-95 active:opacity-80 transition-transform duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-on-surface text-xl">Resource Details</h1>
+</div>
+<button class="text-[#a3cbf2] font-['Manrope'] font-bold tracking-tight px-4 py-2 hover:bg-[#262a2f] transition-all rounded-lg scale-95 active:opacity-80">
+            Edit
+        </button>
+</header>
+<main class="max-w-2xl mx-auto px-6 py-8 relative z-10 space-y-8">
+<!-- Driver Profile Hero Section (Asymmetric Editorial Style) -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+<div class="md:col-span-3 aspect-square rounded-[2rem] overflow-hidden bg-surface-container-high border-2 border-outline-variant/20 max-w-[160px] md:max-w-none">
+<img class="w-full h-full object-cover" data-alt="Professional close-up portrait of a man with focused expression in a dimly lit industrial setting with cinematic blue highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgRF6qhPtOLkeAc3zXtGOZ4ndYEtekx4sRdn_YCcYbkSkw4wytM5Ie1kZ_Y2LY6qA0DkDd2sQV1rMwqOrw2qt6H55jNCaOvz3428ZCtLZHOuz6BDwvnzFxhqbTJfY2b6y02YGSh800uu5udijbT3smkUvoCBMV5H9Gg5tvUUc452TLB50WyJNYfz4xNUzr5sIg1EQSIhuJ95UY7sOXGU9BL4q-eyeMNdaAQwD2w_KInSx2COK0CGNYl2pGLVvMwRBYcNCAonkAzZRX"/>
+</div>
+<div class="md:col-span-9 mb-2">
+<span class="font-label text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">Active Senior Driver</span>
+<h2 class="font-headline text-4xl font-extrabold text-on-surface mt-1 leading-tight">Marcus Chen</h2>
+<div class="flex items-center gap-3 mt-4">
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                        Class A CDL
+                    </div>
+<div class="bg-surface-container-highest px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+                        On Duty
+                    </div>
+</div>
+</div>
+</section>
+<!-- Details Grid (Tonal Layering, No Borders) -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Information Card -->
+<div class="bg-surface-container-low rounded-[1.5rem] p-8 space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Field: Full Name -->
+<div class="space-y-1">
+<label class="font-label text-[11px] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Full Name</label>
+<p class="font-body text-lg text-on-surface font-semibold">Marcus Chen</p>
+</div>
+<!-- Field: Phone -->
+<div class="space-y-1">
+<label class="font-label text-[11px] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Phone Number</label>
+<p class="font-body text-lg text-on-surface font-semibold">+1 (555) 012-4859</p>
+</div>
+<!-- Field: License -->
+<div class="space-y-1">
+<label class="font-label text-[11px] font-bold uppercase tracking-[0.05em] text-on-surface-variant">License Number</label>
+<p class="font-body text-lg text-on-surface font-semibold">DL-9988776655</p>
+</div>
+<!-- Field: Address -->
+<div class="space-y-1">
+<label class="font-label text-[11px] font-bold uppercase tracking-[0.05em] text-on-surface-variant">Address</label>
+<p class="font-body text-lg text-on-surface font-semibold leading-snug">123 Terminal Way,<br/>Sector 4</p>
+</div>
+</div>
+<!-- Secondary Tonal Shift for Metadata -->
+<div class="bg-surface-container-high rounded-xl p-6 grid grid-cols-2 gap-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<div>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant">Joined</p>
+<p class="text-sm font-semibold">May 2021</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">verified</span>
+<div>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant">Background</p>
+<p class="text-sm font-semibold text-secondary">Verified</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Experience Card (Asymmetric Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 flex flex-col justify-between">
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Total Trips</span>
+<div class="flex items-baseline gap-2 mt-4">
+<span class="text-5xl font-extrabold font-headline text-on-surface">1,422</span>
+<span class="text-secondary font-bold text-sm">+12%</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 flex flex-col justify-between">
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Rating</span>
+<div class="flex items-center gap-2 mt-4">
+<span class="text-5xl font-extrabold font-headline text-on-surface">4.9</span>
+<div class="flex text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Danger Zone -->
+<footer class="pt-12 pb-24">
+<button class="w-full h-14 bg-error-container/20 border border-error-container/30 text-error font-headline font-bold rounded-xl hover:bg-error-container/40 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+                Delete Driver
+            </button>
+<p class="text-center text-on-surface-variant text-[11px] font-medium mt-4 uppercase tracking-[0.1em]">
+                Permanently remove from terminal roster
+            </p>
+</footer>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#181c20] rounded-t-[1.5rem] shadow-[0px_-4px_20px_rgba(0,0,0,0.15)]">
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#a3cbf2] transition-colors scale-105 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#a3cbf2] transition-colors scale-105 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide uppercase mt-1">Routes</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1.5rem] px-5 py-2 scale-105 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">engineering</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide uppercase mt-1">Resources</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#a3cbf2] transition-colors scale-105 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide uppercase mt-1">History</span>
+</a>
+</nav>
+</body></html>

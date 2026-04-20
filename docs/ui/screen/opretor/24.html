@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Logs &amp; Alerts - Transit Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#101418",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "tertiary": "#ffb68b",
+                        "surface-container-lowest": "#0b0f13",
+                        "primary": "#a3cbf2",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "outline-variant": "#42474e",
+                        "on-secondary-fixed": "#100069",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "error-container": "#93000a",
+                        "on-primary-container": "#7fa7cd",
+                        "on-background": "#e0e2e8",
+                        "inverse-primary": "#396285",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "tertiary-container": "#602a00",
+                        "primary-container": "#0b3c5d",
+                        "on-surface": "#e0e2e8",
+                        "surface-container-highest": "#31353a",
+                        "inverse-on-surface": "#2d3135",
+                        "surface": "#101418",
+                        "outline": "#8c9198",
+                        "secondary": "#c4c0ff",
+                        "on-secondary-container": "#b4b0ff",
+                        "on-tertiary-fixed": "#321200",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "tertiary-fixed": "#ffdbc8",
+                        "on-surface-variant": "#c2c7ce",
+                        "surface-container-low": "#181c20",
+                        "secondary-container": "#3826cd",
+                        "on-secondary": "#2000a4",
+                        "surface-dim": "#101418",
+                        "secondary-fixed": "#e3dfff",
+                        "on-tertiary-container": "#ff801d",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "surface-variant": "#31353a",
+                        "surface-tint": "#a3cbf2",
+                        "inverse-surface": "#e0e2e8",
+                        "on-error": "#690005",
+                        "on-tertiary": "#522300",
+                        "surface-container-high": "#262a2f",
+                        "on-error-container": "#ffdad6",
+                        "surface-bright": "#363a3e",
+                        "surface-container": "#1c2024",
+                        "on-primary-fixed": "#001d32",
+                        "on-primary": "#003353",
+                        "primary-fixed": "#cee5ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar Execution -->
+<header class="flex justify-between items-center px-6 h-20 w-full docked full-width top-0 tonal-layering bg-gradient-to-b from-[#181c20] to-[#101418] z-40 sticky">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-blue-200" data-icon="menu">menu</span>
+<h1 class="text-blue-200 font-['Manrope'] font-bold tracking-tight text-xl">Logs &amp; Alerts</h1>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-blue-200 text-2xl" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<main class="px-4 py-6">
+<!-- Segmented Control Navigation -->
+<div class="bg-surface-container-lowest rounded-full p-1.5 flex mb-8 max-w-md mx-auto">
+<button class="flex-1 py-3 text-sm font-semibold rounded-full bg-surface-container-highest text-primary transition-all duration-200">
+                ALERTS
+            </button>
+<button class="flex-1 py-3 text-sm font-semibold rounded-full text-on-surface-variant hover:bg-surface-container-high transition-all duration-200">
+                LOGS
+            </button>
+</div>
+<!-- Alerts Section (Active Tab) -->
+<section class="space-y-4">
+<div class="flex items-center justify-between px-2 mb-2">
+<h2 class="text-label-md font-bold tracking-widest text-on-surface-variant uppercase text-xs">Priority Alerts</h2>
+<span class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter">LIVE STATUS</span>
+</div>
+<!-- Alert 1: Passenger list missing -->
+<div class="bg-surface-container-high rounded-xl p-5 relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-on-tertiary-container"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-tertiary-container text-[10px] font-bold tracking-widest uppercase">Critical Action</span>
+<h3 class="text-lg font-bold leading-tight">Passenger list missing</h3>
+</div>
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex flex-col gap-2 mb-6 text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="directions_bus">directions_bus</span>
+<span class="text-xs font-medium tracking-wide">GJ01AB1234</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="route">route</span>
+<span class="text-xs font-medium tracking-wide">Ahmedabad → Una</span>
+</div>
+</div>
+<button class="w-full h-14 bg-on-tertiary-container text-on-tertiary-fixed font-bold rounded-xl active:scale-95 transition-transform duration-100 uppercase tracking-widest text-sm">
+                    FIX NOW
+                </button>
+</div>
+<!-- Alert 2: Conductor offline -->
+<div class="bg-surface-container-high rounded-xl p-5 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-on-tertiary-container"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-tertiary-container text-[10px] font-bold tracking-widest uppercase">Connectivity</span>
+<h3 class="text-lg font-bold leading-tight">Conductor offline</h3>
+</div>
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="wifi_off">wifi_off</span>
+</div>
+<div class="flex flex-col gap-2 mb-6 text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="directions_bus">directions_bus</span>
+<span class="text-xs font-medium tracking-wide">MH12XY5678</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="route">route</span>
+<span class="text-xs font-medium tracking-wide">Surat → Mumbai</span>
+</div>
+</div>
+<button class="w-full h-14 bg-primary-container text-primary font-bold rounded-xl active:scale-95 transition-transform duration-100 uppercase tracking-widest text-sm">
+                    CONTACT
+                </button>
+</div>
+<!-- Alert 3: Call failed -->
+<div class="bg-surface-container-high rounded-xl p-5 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-on-tertiary-container"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="text-on-tertiary-container text-[10px] font-bold tracking-widest uppercase">Passenger Issue</span>
+<h3 class="text-lg font-bold leading-tight">Call failed (Seat 12)</h3>
+</div>
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="phone_disabled">phone_disabled</span>
+</div>
+<div class="flex flex-col gap-2 mb-6 text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="directions_bus">directions_bus</span>
+<span class="text-xs font-medium tracking-wide">GJ01AB1234</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="person">person</span>
+<span class="text-xs font-medium tracking-wide">Seat 12: Recurring Attempt</span>
+</div>
+</div>
+<button class="w-full h-14 bg-surface-container-highest text-on-surface font-bold rounded-xl active:scale-95 transition-transform duration-100 uppercase tracking-widest text-sm">
+                    VIEW PASSENGER
+                </button>
+</div>
+</section>
+<!-- Hidden Logs Section (Mocking Tab Switching logic) -->
+<section class="mt-12 opacity-40">
+<div class="flex items-center justify-between px-2 mb-4">
+<h2 class="text-label-md font-bold tracking-widest text-on-surface-variant uppercase text-xs">Recent Activity</h2>
+</div>
+<div class="space-y-6 px-2">
+<div class="flex gap-4 items-start">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div class="w-px h-10 bg-outline-variant mt-2"></div>
+</div>
+<div class="flex flex-col -mt-1">
+<span class="text-[10px] font-bold text-secondary-fixed-dim uppercase tracking-wider">11:10 PM</span>
+<p class="text-sm text-on-surface font-medium">Call triggered (Seat 12)</p>
+</div>
+</div>
+<div class="flex gap-4 items-start">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<div class="w-px h-10 bg-outline-variant mt-2"></div>
+</div>
+<div class="flex flex-col -mt-1">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">10:45 PM</span>
+<p class="text-sm text-on-surface font-medium">Passenger list uploaded</p>
+</div>
+</div>
+<div class="flex gap-4 items-start">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+</div>
+<div class="flex flex-col -mt-1">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">10:32 PM</span>
+<p class="text-sm text-on-surface font-medium">Trip started</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Execution -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 pb-2 px-4 bg-[#101418]/90 backdrop-blur-xl z-50 rounded-t-[1.5rem] shadow-[0px_-4px_40px_rgba(0,0,0,0.15)]">
+<div class="flex flex-col items-center justify-center text-slate-500 px-6 py-2 transition-all hover:text-blue-100">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Route</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 px-6 py-2 transition-all hover:text-blue-100">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Tickets</span>
+</div>
+<!-- Active Tab: Alerts -->
+<div class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-xl px-6 py-2 active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Alerts</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 px-6 py-2 transition-all hover:text-blue-100">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Settings</span>
+</div>
+</nav>
+</body></html>

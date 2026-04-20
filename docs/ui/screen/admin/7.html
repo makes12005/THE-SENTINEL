@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Platform Monitoring | System Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-container": "#3826cd",
+                      "primary-container": "#0b3c5d",
+                      "on-background": "#e0e2e8",
+                      "background": "#101418",
+                      "surface-variant": "#31353a",
+                      "on-surface-variant": "#c2c7ce",
+                      "outline": "#8c9198",
+                      "on-secondary-fixed-variant": "#3622ca",
+                      "surface-container-lowest": "#0b0f13",
+                      "on-primary-fixed-variant": "#1f4a6c",
+                      "on-secondary-container": "#b4b0ff",
+                      "tertiary": "#ffb68b",
+                      "on-primary-fixed": "#001d32",
+                      "inverse-surface": "#e0e2e8",
+                      "surface-container": "#1c2024",
+                      "primary-fixed": "#cee5ff",
+                      "on-tertiary-fixed": "#321200",
+                      "on-tertiary-container": "#ff801d",
+                      "on-tertiary": "#522300",
+                      "inverse-primary": "#396285",
+                      "surface-container-low": "#181c20",
+                      "surface-container-high": "#262a2f",
+                      "on-primary": "#003353",
+                      "error": "#ffb4ab",
+                      "secondary": "#c4c0ff",
+                      "on-secondary-fixed": "#100069",
+                      "tertiary-fixed": "#ffdbc8",
+                      "on-secondary": "#2000a4",
+                      "on-error": "#690005",
+                      "tertiary-fixed-dim": "#ffb68b",
+                      "on-tertiary-fixed-variant": "#753400",
+                      "primary-fixed-dim": "#a3cbf2",
+                      "primary": "#a3cbf2",
+                      "inverse-on-surface": "#2d3135",
+                      "surface": "#101418",
+                      "surface-container-highest": "#31353a",
+                      "surface-dim": "#101418",
+                      "outline-variant": "#42474e",
+                      "error-container": "#93000a",
+                      "on-error-container": "#ffdad6",
+                      "surface-bright": "#363a3e",
+                      "secondary-fixed": "#e3dfff",
+                      "on-primary-container": "#7fa7cd",
+                      "secondary-fixed-dim": "#c4c0ff",
+                      "on-surface": "#e0e2e8",
+                      "tertiary-container": "#602a00",
+                      "surface-tint": "#a3cbf2"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #101418;
+            color: #e0e2e8;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #101418;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #262a2f;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-[#101418] docked top-0 w-full z-50">
+<div class="bg-[#181c20] flex items-center justify-between px-6 h-20 w-full flat no shadows tonal stacking">
+<div class="flex items-center gap-4">
+<div class="p-2 rounded-xl bg-primary-container/20">
+<span class="material-symbols-outlined text-[#a3cbf2]" data-icon="terminal">terminal</span>
+</div>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-xl text-[#a3cbf2] uppercase tracking-widest">System Control</h1>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-[#a3cbf2] font-bold border-b-2 border-[#a3cbf2] py-2 transition-colors" href="#">Dashboard</a>
+<a class="text-[#e0e2e8]/60 hover:bg-[#262a2f] transition-colors px-4 py-2 rounded-lg" href="#">Alerts</a>
+<a class="text-[#e0e2e8]/60 hover:bg-[#262a2f] transition-colors px-4 py-2 rounded-lg" href="#">Logs</a>
+<a class="text-[#e0e2e8]/60 hover:bg-[#262a2f] transition-colors px-4 py-2 rounded-lg" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-3">
+<span class="text-right hidden sm:block">
+<p class="text-[10px] font-bold uppercase tracking-widest text-[#a3cbf2]">Admin Profile</p>
+<p class="text-[12px] text-on-surface-variant">Superuser</p>
+</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional male corporate executive headshot in dark suit with confident expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGyATZV7OSghiUo9sFuaqGZApDr_u0GnCr_VcK2Vf2fykke8NUS6KDMxhdxnbGY6Gn2DBKywAswzzMopRKCsp8PpGYLa4vYBFaO_vPGVSLOEY4-sLSfYjoddWvkBPsplYH0iY0KERAWR7acpI08erRNsdrRKB8Xy70FYlsvcYS1tQeXkku-e34QiK8fT5dKQkr_svzrU1ygQyZ-KhDRI8UtVUN8N-gzdjIdJiB8LC0ZSlY0OO95lweTsi7nFmt0ARUO7EObP8TXuC1"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow container mx-auto px-6 py-8 pb-32">
+<div class="flex flex-col gap-8">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="text-4xl font-headline font-extrabold tracking-tight text-on-surface">Platform Monitoring</h2>
+<p class="text-on-surface-variant mt-1 font-medium">Real-time health telemetry across all connected agencies.</p>
+</div>
+<!-- Segmented Control (Tabs) -->
+<div class="bg-surface-container-lowest p-1 rounded-xl flex items-center w-fit">
+<button class="bg-surface-container-highest text-primary font-bold px-8 py-2.5 rounded-lg transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="notification_important">notification_important</span>
+                        Alerts
+                    </button>
+<button class="text-on-surface-variant hover:text-on-surface px-8 py-2.5 rounded-lg transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="receipt_long">receipt_long</span>
+                        Logs
+                    </button>
+</div>
+</div>
+<!-- Dashboard Content Layout (Asymmetric Bento) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Alerts Feed (Left - Main) -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-bold text-lg flex items-center gap-2">
+                            Critical Issues
+                            <span class="bg-tertiary-container text-tertiary text-[10px] px-2 py-0.5 rounded-full font-bold">4 LIVE</span>
+</h3>
+<button class="text-xs font-bold uppercase tracking-widest text-[#a3cbf2] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="filter_list">filter_list</span>
+                            Filter Agency
+                        </button>
+</div>
+<!-- Alert Cards -->
+<div class="flex flex-col gap-4">
+<!-- Card 1: Critical -->
+<div class="bg-surface-container-high p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-error"></div>
+<div class="flex flex-col md:flex-row justify-between gap-6">
+<div class="flex gap-5">
+<div class="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" data-icon="error">error</span>
+</div>
+<div>
+<h4 class="text-xl font-headline font-bold text-on-surface">Passenger list missing</h4>
+<p class="text-on-surface-variant text-sm mt-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="corporate_fare">corporate_fare</span>
+                                            A-One Travels
+                                        </p>
+<div class="mt-4 flex items-center gap-3">
+<span class="bg-surface-container-highest px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="route">route</span>
+                                                Ahmedabad → Una
+                                            </span>
+<span class="text-error text-xs font-bold uppercase tracking-widest">Immediate Action Required</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row md:flex-col lg:flex-row gap-3 self-center">
+<button class="px-6 py-3 bg-surface-container-highest hover:bg-surface-variant text-on-surface text-sm font-bold rounded-xl transition-all border border-outline-variant/20 uppercase tracking-wider">Contact Agency</button>
+<button class="px-6 py-3 bg-primary-container hover:bg-primary-container/80 text-primary-fixed-dim text-sm font-bold rounded-xl transition-all uppercase tracking-wider">View Trip</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Warning -->
+<div class="bg-surface-container-high p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary"></div>
+<div class="flex flex-col md:flex-row justify-between gap-6">
+<div class="flex gap-5">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary" data-icon="wifi_off">wifi_off</span>
+</div>
+<div>
+<h4 class="text-xl font-headline font-bold text-on-surface">Tracking Offline</h4>
+<p class="text-on-surface-variant text-sm mt-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="corporate_fare">corporate_fare</span>
+                                            Skyline Bus Service
+                                        </p>
+<div class="mt-4 flex items-center gap-3">
+<span class="bg-surface-container-highest px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="route">route</span>
+                                                Surat → Mumbai Central
+                                            </span>
+<span class="text-tertiary text-xs font-bold uppercase tracking-widest">Signal Lost: 12m</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row md:flex-col lg:flex-row gap-3 self-center">
+<button class="px-6 py-3 bg-surface-container-highest hover:bg-surface-variant text-on-surface text-sm font-bold rounded-xl transition-all border border-outline-variant/20 uppercase tracking-wider">Contact Agency</button>
+<button class="px-6 py-3 bg-primary-container hover:bg-primary-container/80 text-primary-fixed-dim text-sm font-bold rounded-xl transition-all uppercase tracking-wider">View Trip</button>
+</div>
+</div>
+</div>
+<!-- Card 3: Warning -->
+<div class="bg-surface-container-high p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary"></div>
+<div class="flex flex-col md:flex-row justify-between gap-6">
+<div class="flex gap-5">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary" data-icon="schedule">schedule</span>
+</div>
+<div>
+<h4 class="text-xl font-headline font-bold text-on-surface">High Delay</h4>
+<p class="text-on-surface-variant text-sm mt-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="corporate_fare">corporate_fare</span>
+                                            Skyline Bus Service
+                                        </p>
+<div class="mt-4 flex items-center gap-3">
+<span class="bg-surface-container-highest px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="route">route</span>
+                                                Rajkot → Jamnagar
+                                            </span>
+<span class="text-tertiary text-xs font-bold uppercase tracking-widest">ETA +45m</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row md:flex-col lg:flex-row gap-3 self-center">
+<button class="px-6 py-3 bg-surface-container-highest hover:bg-surface-variant text-on-surface text-sm font-bold rounded-xl transition-all border border-outline-variant/20 uppercase tracking-wider">Contact Agency</button>
+<button class="px-6 py-3 bg-primary-container hover:bg-primary-container/80 text-primary-fixed-dim text-sm font-bold rounded-xl transition-all uppercase tracking-wider">View Trip</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Logs (Right - Side Sidebar) -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-bold text-lg flex items-center gap-2">
+                            System Activity
+                        </h3>
+<button class="text-xs font-bold uppercase tracking-widest text-[#a3cbf2]">View All</button>
+</div>
+<div class="bg-surface-container p-6 rounded-xl border border-outline-variant/10">
+<div class="relative flex flex-col gap-8 custom-scrollbar max-h-[600px] overflow-y-auto pr-2">
+<!-- Timeline Line -->
+<div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-surface-variant"></div>
+<!-- Log Entry: Info -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-5 h-5 rounded-full bg-surface-container-highest border-2 border-primary flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+<div class="flex justify-between items-start mb-1">
+<span class="text-[11px] font-bold text-primary tracking-widest uppercase">10:45 PM</span>
+<span class="bg-primary-container/30 text-primary text-[9px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">INFO</span>
+</div>
+<h5 class="text-sm font-bold text-on-surface">New Agency Created</h5>
+<p class="text-xs text-on-surface-variant mt-1">Agency: Blue Horizon Express</p>
+</div>
+<!-- Log Entry: Success -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-5 h-5 rounded-full bg-surface-container-highest border-2 border-secondary flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+</div>
+<div class="flex justify-between items-start mb-1">
+<span class="text-[11px] font-bold text-secondary tracking-widest uppercase">09:12 PM</span>
+<span class="bg-secondary-container/30 text-secondary text-[9px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">SUCCESS</span>
+</div>
+<h5 class="text-sm font-bold text-on-surface">Daily Manifest Sync Success</h5>
+<p class="text-xs text-on-surface-variant mt-1">A-One Travels (Region North)</p>
+</div>
+<!-- Log Entry: Error -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-5 h-5 rounded-full bg-surface-container-highest border-2 border-error flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-error"></div>
+</div>
+<div class="flex justify-between items-start mb-1">
+<span class="text-[11px] font-bold text-error tracking-widest uppercase">08:50 PM</span>
+<span class="bg-error-container/30 text-error text-[9px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">ERROR</span>
+</div>
+<h5 class="text-sm font-bold text-on-surface">API Connection Timeout</h5>
+<p class="text-xs text-on-surface-variant mt-1">Skyline Bus Service - Server #404</p>
+</div>
+<!-- Log Entry: Info -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-5 h-5 rounded-full bg-surface-container-highest border-2 border-primary flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+</div>
+<div class="flex justify-between items-start mb-1">
+<span class="text-[11px] font-bold text-primary tracking-widest uppercase">07:20 PM</span>
+<span class="bg-primary-container/30 text-primary text-[9px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">INFO</span>
+</div>
+<h5 class="text-sm font-bold text-on-surface">System Backup Initiated</h5>
+<p class="text-xs text-on-surface-variant mt-1">Global Storage Cloud S3</p>
+</div>
+<!-- Log Entry: Success -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-5 h-5 rounded-full bg-surface-container-highest border-2 border-secondary flex items-center justify-center z-10">
+<div class="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+</div>
+<div class="flex justify-between items-start mb-1">
+<span class="text-[11px] font-bold text-secondary tracking-widest uppercase">06:05 PM</span>
+<span class="bg-secondary-container/30 text-secondary text-[9px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">SUCCESS</span>
+</div>
+<h5 class="text-sm font-bold text-on-surface">Security Patch Deployed</h5>
+<p class="text-xs text-on-surface-variant mt-1">Version 4.2.1-Stable</p>
+</div>
+</div>
+</div>
+<!-- Platform Health Stat Card -->
+<div class="bg-gradient-to-br from-primary-container to-background p-6 rounded-xl">
+<div class="flex items-center justify-between mb-4">
+<h4 class="font-headline font-bold text-sm text-primary uppercase tracking-widest">Platform Health</h4>
+<span class="material-symbols-outlined text-primary text-xl" data-icon="analytics">analytics</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="text-4xl font-headline font-extrabold text-on-surface">98.4%</span>
+<span class="text-secondary text-xs font-bold pb-1 flex items-center">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_drop_up">arrow_drop_up</span>
+                                0.2%
+                            </span>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2 font-bold uppercase tracking-widest">All services within operational limits</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#101418]/80 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.4)] rounded-t-[1.5rem]">
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-6 py-2 transition-all hover:text-[#a3cbf2]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[11px] font-bold uppercase tracking-widest mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-xl px-6 py-2 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="notification_important">notification_important</span>
+<span class="font-['Inter'] text-[11px] font-bold uppercase tracking-widest mt-1">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-6 py-2 transition-all hover:text-[#a3cbf2]" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-['Inter'] text-[11px] font-bold uppercase tracking-widest mt-1">Logs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-6 py-2 transition-all hover:text-[#a3cbf2]" href="#">
+<span class="material-symbols-outlined" data-icon="settings_suggest">settings_suggest</span>
+<span class="font-['Inter'] text-[11px] font-bold uppercase tracking-widest mt-1">Settings</span>
+</a>
+</nav>
+<!-- Global FAB -->
+<button class="fixed right-6 bottom-24 md:bottom-8 w-16 h-16 bg-primary-container text-primary rounded-full shadow-2xl flex items-center justify-center group active:scale-95 transition-all duration-150 border border-primary/20 z-40">
+<span class="material-symbols-outlined text-3xl" data-icon="sync" style="font-variation-settings: 'FILL' 1;">sync</span>
+</button>
+</body></html>

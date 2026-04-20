@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings - The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#2000a4",
+                    "surface-container-high": "#262a2f",
+                    "on-tertiary": "#522300",
+                    "surface-tint": "#a3cbf2",
+                    "primary-container": "#0b3c5d",
+                    "inverse-surface": "#e0e2e8",
+                    "on-error": "#690005",
+                    "on-secondary-fixed": "#100069",
+                    "surface": "#101418",
+                    "surface-container-low": "#181c20",
+                    "tertiary": "#ffb68b",
+                    "error": "#ffb4ab",
+                    "on-tertiary-fixed": "#321200",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed": "#ffdbc8",
+                    "background": "#101418",
+                    "surface-container": "#1c2024",
+                    "secondary": "#c4c0ff",
+                    "surface-variant": "#31353a",
+                    "on-secondary-container": "#b4b0ff",
+                    "surface-dim": "#101418",
+                    "on-surface": "#e0e2e8",
+                    "on-secondary-fixed-variant": "#3622ca",
+                    "on-background": "#e0e2e8",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "tertiary-container": "#602a00",
+                    "surface-bright": "#363a3e",
+                    "on-tertiary-container": "#ff801d",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "secondary-fixed": "#e3dfff",
+                    "primary-fixed": "#cee5ff",
+                    "on-surface-variant": "#c2c7ce",
+                    "surface-container-highest": "#31353a",
+                    "on-primary-container": "#7fa7cd",
+                    "on-tertiary-fixed-variant": "#753400",
+                    "on-primary-fixed-variant": "#1f4a6c",
+                    "primary": "#a3cbf2",
+                    "outline-variant": "#42474e",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "inverse-primary": "#396285",
+                    "surface-container-lowest": "#0b0f13",
+                    "inverse-on-surface": "#2d3135",
+                    "outline": "#8c9198",
+                    "error-container": "#93000a",
+                    "on-primary-fixed": "#001d32",
+                    "on-primary": "#003353",
+                    "secondary-container": "#3826cd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #101418;
+            color: #e0e2e8;
+            font-family: 'Inter', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .custom-toggle:checked + .toggle-dot {
+            transform: translateX(100%);
+            background-color: #a3cbf2;
+        }
+        .custom-toggle:checked ~ .toggle-bg {
+            background-color: #0b3c5d;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-[#101418] bg-gradient-to-b from-[#181c20] to-transparent">
+<div class="flex items-center gap-4">
+<button class="text-[#a3cbf2] active:scale-95 transition-transform p-2 hover:bg-[#262a2f] rounded-full transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-[#e0e2e8] text-xl font-headline font-bold tracking-tight">Settings</h1>
+</div>
+<button class="text-[#a3cbf2] active:scale-95 transition-transform px-4 py-1.5 hover:bg-[#262a2f] rounded-lg transition-colors duration-200 font-bold text-sm">
+            SAVE
+        </button>
+</header>
+<main class="pt-20 px-4 space-y-6 max-w-md mx-auto">
+<!-- Section: Profile -->
+<section class="space-y-4">
+<div class="flex items-center justify-between px-2">
+<h2 class="font-headline font-extrabold text-sm tracking-widest text-on-surface-variant uppercase">Profile</h2>
+<button class="text-xs font-bold text-primary tracking-widest hover:bg-surface-container-high px-3 py-1 rounded-full transition-all">EDIT</button>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 space-y-6">
+<div class="space-y-1">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-variant">Full Name</label>
+<input class="w-full bg-transparent border-none p-0 text-on-surface font-headline font-bold text-lg focus:ring-0" readonly="" type="text" value="Alexander Vance"/>
+</div>
+<div class="space-y-1">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-variant">Phone Number</label>
+<input class="w-full bg-transparent border-none p-0 text-on-surface font-headline font-bold text-lg focus:ring-0" readonly="" type="tel" value="+1 (555) 012-3456"/>
+</div>
+<div class="space-y-1">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-variant">Email Address</label>
+<input class="w-full bg-transparent border-none p-0 text-on-surface font-headline font-bold text-lg focus:ring-0" readonly="" type="email" value="vance.ops@sentinel-agency.com"/>
+</div>
+</div>
+</section>
+<!-- Section: Agency Details -->
+<section class="space-y-4">
+<div class="px-2">
+<h2 class="font-headline font-extrabold text-sm tracking-widest text-on-surface-variant uppercase">Agency Details</h2>
+</div>
+<div class="bg-surface-container-high rounded-[1.5rem] p-6 space-y-5">
+<div class="space-y-1.5">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-secondary-container">Agency Name</label>
+<input class="w-full bg-surface-container-highest/50 border-none rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary" type="text" value="Sentinel Transit Systems"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1.5">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-secondary-container">City</label>
+<input class="w-full bg-surface-container-highest/50 border-none rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary" type="text" value="Metro City"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-secondary-container">Region</label>
+<input class="w-full bg-surface-container-highest/50 border-none rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary" type="text" value="Central Hub"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-[0.6875rem] font-bold uppercase tracking-widest text-on-secondary-container">Address</label>
+<input class="w-full bg-surface-container-highest/50 border-none rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary" type="text" value="882 Industrial Pkwy, Suite 400"/>
+</div>
+</div>
+</section>
+<!-- Section: Operator Defaults -->
+<section class="space-y-4">
+<div class="px-2">
+<h2 class="font-headline font-extrabold text-sm tracking-widest text-on-surface-variant uppercase">Operator Defaults</h2>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] overflow-hidden">
+<div class="divide-y divide-outline-variant/10">
+<div class="flex items-center justify-between p-5 hover:bg-surface-container-high transition-colors">
+<span class="font-medium text-on-surface">Can create trip</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-5 hover:bg-surface-container-high transition-colors">
+<span class="font-medium text-on-surface">Can edit trip</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-5 hover:bg-surface-container-high transition-colors">
+<span class="font-medium text-on-surface">Can manage passengers</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-5 hover:bg-surface-container-high transition-colors">
+<span class="font-medium text-on-surface">Can view billing</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Notifications -->
+<section class="space-y-4">
+<div class="px-2">
+<h2 class="font-headline font-extrabold text-sm tracking-widest text-on-surface-variant uppercase">Notifications</h2>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] overflow-hidden">
+<div class="divide-y divide-outline-variant/10">
+<div class="flex items-center justify-between p-5">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Trip issue alerts</span>
+<span class="text-xs text-on-surface-variant">Real-time delays &amp; reroutes</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-5">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Conductor offline alerts</span>
+<span class="text-xs text-on-surface-variant">Immediate notice of lost signal</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-5">
+<div class="flex flex-col">
+<span class="font-medium text-on-surface">Call failure alerts</span>
+<span class="text-xs text-on-surface-variant">Internal communication logs</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only custom-toggle" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-1 top-1 bg-on-surface-variant w-4 h-4 rounded-full transition-transform toggle-dot"></div>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Logout Trigger (Extra utility for Agency Owner) -->
+<button class="w-full py-5 text-error font-bold font-headline tracking-widest uppercase hover:bg-error-container/20 rounded-[1.5rem] transition-all border border-error/20 flex items-center justify-center gap-3">
+<span class="material-symbols-outlined text-sm" data-icon="logout">logout</span>
+            Terminate Session
+        </button>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#181c20]/90 backdrop-blur-xl z-50 rounded-t-[1.5rem] shadow-[0px_-4px_40px_rgba(0,0,0,0.15)]">
+<button class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#a3cbf2] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-widest mt-1">Dashboard</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#a3cbf2] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-widest mt-1">Fleet</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#e0e2e8]/60 px-5 py-2 hover:text-[#a3cbf2] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-widest mt-1">Revenue</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-full px-5 py-2 active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-widest mt-1">Settings</span>
+</button>
+</nav>
+</body></html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agency Details | Sentinel Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#42474e",
+                        "primary": "#a3cbf2",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "surface-variant": "#31353a",
+                        "surface-bright": "#363a3e",
+                        "on-tertiary-fixed": "#321200",
+                        "on-surface": "#e0e2e8",
+                        "on-background": "#e0e2e8",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "inverse-surface": "#e0e2e8",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "surface-container": "#1c2024",
+                        "surface-dim": "#101418",
+                        "secondary-container": "#3826cd",
+                        "inverse-on-surface": "#2d3135",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "tertiary-container": "#602a00",
+                        "surface-tint": "#a3cbf2",
+                        "on-secondary": "#2000a4",
+                        "on-primary-container": "#7fa7cd",
+                        "on-primary": "#003353",
+                        "secondary-fixed": "#e3dfff",
+                        "tertiary": "#ffb68b",
+                        "tertiary-fixed": "#ffdbc8",
+                        "primary-fixed": "#cee5ff",
+                        "inverse-primary": "#396285",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "primary-container": "#0b3c5d",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-secondary-fixed": "#100069",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "secondary": "#c4c0ff",
+                        "on-primary-fixed": "#001d32",
+                        "surface-container-high": "#262a2f",
+                        "surface-container-low": "#181c20",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "outline": "#8c9198",
+                        "background": "#101418",
+                        "on-secondary-container": "#b4b0ff",
+                        "surface-container-lowest": "#0b0f13",
+                        "on-tertiary-container": "#ff801d",
+                        "surface-container-highest": "#31353a",
+                        "surface": "#101418",
+                        "on-tertiary": "#522300"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .noise-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body min-h-screen selection:bg-primary/30">
+<div class="noise-overlay fixed inset-0 z-0"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#181c20] flex items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-[#262a2f] transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#a3cbf2]">arrow_back</span>
+</button>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-[#e0e2e8] text-lg">Agency Details</h1>
+</div>
+</header>
+<main class="relative z-10 pt-24 pb-32 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Primary Agency Card -->
+<section class="bg-surface-container-high rounded-[1.5rem] p-8 relative overflow-hidden shadow-2xl">
+<!-- Decorative Accent Gradient -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full -mr-16 -mt-16"></div>
+<div class="relative z-10 flex flex-col gap-6">
+<div class="space-y-1">
+<span class="text-[0.6875rem] font-medium tracking-[0.1em] text-on-surface-variant uppercase font-label">Agency Profile</span>
+<h2 class="text-3xl font-extrabold font-headline text-on-surface tracking-tight leading-tight">Sentinel Transit Systems</h2>
+</div>
+<div class="flex items-center gap-4 bg-background/40 backdrop-blur-md p-4 rounded-xl">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-primary font-bold text-xl">
+                        AV
+                    </div>
+<div>
+<p class="text-[0.6875rem] text-on-surface-variant uppercase font-label tracking-wider">Owner Name</p>
+<p class="text-on-surface font-semibold text-lg">Alexander Vance</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 border border-outline-variant/10">
+<div class="flex flex-col gap-2">
+<span class="material-symbols-outlined text-primary text-3xl mb-2">badge</span>
+<span class="text-4xl font-extrabold font-headline text-on-surface">24</span>
+<span class="text-[0.6875rem] font-bold tracking-widest text-on-surface-variant uppercase">Total Operators</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 border border-outline-variant/10">
+<div class="flex flex-col gap-2">
+<span class="material-symbols-outlined text-tertiary text-3xl mb-2">route</span>
+<span class="text-4xl font-extrabold font-headline text-on-surface">08</span>
+<span class="text-[0.6875rem] font-bold tracking-widest text-on-surface-variant uppercase">Active Trips</span>
+</div>
+</div>
+</div>
+<!-- Action Grid / High-Tactility Buttons -->
+<div class="space-y-4">
+<h3 class="text-[0.6875rem] font-bold tracking-[0.15em] text-on-surface-variant uppercase px-2 font-label">Management Actions</h3>
+<div class="grid gap-3">
+<!-- Operators Action -->
+<button class="group w-full bg-primary-container hover:bg-primary-container/80 transition-all duration-200 active:scale-[0.98] rounded-[1.5rem] p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<span class="font-headline font-bold text-lg text-primary tracking-tight">VIEW OPERATORS</span>
+</div>
+<span class="material-symbols-outlined text-primary opacity-50 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<!-- Trips Action -->
+<button class="group w-full bg-surface-container-high hover:bg-surface-container-highest transition-all duration-200 active:scale-[0.98] rounded-[1.5rem] p-5 flex items-center justify-between border border-outline-variant/5">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">explore</span>
+</div>
+<span class="font-headline font-bold text-lg text-on-surface tracking-tight">VIEW TRIPS</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-50 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<!-- Billing Action -->
+<button class="group w-full bg-surface-container-high hover:bg-surface-container-highest transition-all duration-200 active:scale-[0.98] rounded-[1.5rem] p-5 flex items-center justify-between border border-outline-variant/5">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">account_balance_wallet</span>
+</div>
+<span class="font-headline font-bold text-lg text-on-surface tracking-tight">VIEW BILLING</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-50 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Agency Map Context / Visual Anchor -->
+<div class="bg-surface-container-lowest rounded-[1.5rem] h-48 w-full relative overflow-hidden group">
+<img class="w-full h-full object-cover opacity-50 grayscale contrast-125" data-alt="abstract dark architectural map showing transit routes and infrastructure lines in neon blue and deep black tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDf7EZxQTpXfm5OL_u6nfX3Vb-GYdyU2HSwkQ4her6gWrgV-sSfbzqQrtewJoTAi2njdhC2BPva1-xs8lHoMRlR6m8y_Qp3zFOGVkksRzOuEZhDPF7bQZMg4zKy07Z28d-c0SfYWm-jrZssWZLoe1cBZZgYRWj3ul6p7eKySKK__PiLPfDixZLorHMMShWvtPs2KYArdYcA_V_5ZSFa63rHcksbYQh81oG22YTfvFjBo9LRacJqWQ0rBDHEs_TAsIC2iaVCX2uuCR2B"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim via-transparent to-transparent"></div>
+<div class="absolute bottom-6 left-6">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="font-bold tracking-tight">Main Hub: North Terminal</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-[#181c20]/80 backdrop-blur-xl z-50 rounded-t-[1.5rem] shadow-[0px_-4px_40px_rgba(0,0,0,0.15)]">
+<a class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1rem] px-5 py-2 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">badge</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Operators</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#909196] px-5 py-2 hover:text-[#e0e2e8] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">route</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Trips</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#909196] px-5 py-2 hover:text-[#e0e2e8] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-['Inter'] text-[0.6875rem] font-medium tracking-wider uppercase mt-1">Billing</span>
+</a>
+</nav>
+</body></html>

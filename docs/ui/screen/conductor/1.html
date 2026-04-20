@@ -1,0 +1,222 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Trip Overview - The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#93000a",
+                        "background": "#101418",
+                        "on-secondary": "#2000a4",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "on-tertiary-container": "#ff801d",
+                        "on-error": "#690005",
+                        "on-tertiary": "#522300",
+                        "outline": "#8c9198",
+                        "surface-dim": "#101418",
+                        "secondary": "#c4c0ff",
+                        "primary-container": "#0b3c5d",
+                        "surface-tint": "#a3cbf2",
+                        "on-primary": "#003353",
+                        "on-secondary-container": "#b4b0ff",
+                        "tertiary-container": "#602a00",
+                        "primary-fixed": "#cee5ff",
+                        "primary": "#a3cbf2",
+                        "surface-container-high": "#262a2f",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#181c20",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "secondary-fixed": "#e3dfff",
+                        "surface-container-lowest": "#0b0f13",
+                        "tertiary": "#ffb68b",
+                        "tertiary-fixed": "#ffdbc8",
+                        "surface": "#101418",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "inverse-on-surface": "#2d3135",
+                        "outline-variant": "#42474e",
+                        "surface-bright": "#363a3e",
+                        "inverse-primary": "#396285",
+                        "on-primary-container": "#7fa7cd",
+                        "surface-variant": "#31353a",
+                        "inverse-surface": "#e0e2e8",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "surface-container-highest": "#31353a",
+                        "surface-container": "#1c2024",
+                        "secondary-container": "#3826cd",
+                        "on-surface": "#e0e2e8",
+                        "on-primary-fixed": "#001d32",
+                        "on-secondary-fixed": "#100069",
+                        "on-background": "#e0e2e8",
+                        "on-tertiary-fixed": "#321200"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #101418;
+            font-family: 'Inter', sans-serif;
+        }
+        .editorial-text {
+            letter-spacing: 0.05em;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- Top App Bar (Shared Component Strategy) -->
+<header class="flex items-center w-full px-6 h-16 bg-[#101418] dark:bg-[#101418] docked full-width top-0 z-50">
+<div class="flex items-center gap-4 w-full">
+<button class="p-2 -ml-2 text-[#a3cbf2] hover:bg-[#262a2f] transition-colors rounded-full active:scale-95 active:duration-100" style="">
+<span class="material-symbols-outlined" style="">arrow_back</span>
+</button>
+<h1 class="text-[#e0e2e8] text-lg font-manrope uppercase tracking-wider font-bold" style="">Trip Details</h1>
+</div>
+</header>
+<main class="flex-1 px-6 pb-24 overflow-y-auto">
+<!-- Trip Hero Status -->
+<div class="mt-4 mb-6 flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-xs font-label font-bold text-on-surface-variant uppercase editorial-text" style="">Current Status</span>
+<div class="flex items-center gap-2 mt-1">
+<span class="w-3 h-3 rounded-full bg-tertiary animate-pulse"></span>
+<span class="text-tertiary font-headline font-extrabold text-2xl tracking-tight" style="">READY</span>
+</div>
+</div>
+<div class="bg-surface-container-high rounded-xl p-3 flex flex-col items-end">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest" style="">Bus Number</span>
+<span class="text-primary font-headline font-bold text-lg" style="">GJ01AB1234</span>
+</div>
+</div>
+<!-- Main Trip Info Card -->
+<section class="bg-surface-container-low rounded-[1.5rem] p-6 mb-4 relative overflow-hidden">
+<!-- Tonal layering: no border, just depth -->
+<div class="relative z-10">
+<div class="flex flex-col gap-6">
+<div>
+<span class="text-xs font-bold text-on-secondary-container bg-secondary-container px-2 py-0.5 rounded uppercase editorial-text" style="">Route Plan</span>
+<div class="mt-4 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" style="">radio_button_checked</span>
+<h2 class="text-2xl font-headline font-bold text-on-surface" style="">Ahmedabad</h2>
+</div>
+<div class="ml-[7px] w-[2px] h-8 bg-outline-variant"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm" style="">location_on</span>
+<h2 class="text-2xl font-headline font-bold text-on-surface" style="">Una</h2>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-4">
+<div class="bg-surface-container-high rounded-xl p-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase block mb-1" style="">Start Time</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg" style="">schedule</span>
+<span class="text-on-surface font-semibold" style="">10:00 PM</span>
+</div>
+</div>
+<div class="bg-surface-container-high rounded-xl p-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase block mb-1" style="">Office</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg" style="">corporate_fare</span>
+<span class="text-on-surface font-semibold" style="">Ahmedabad Office</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Subsurface decorative element -->
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+</section>
+<!-- Crew Details Section -->
+<section class="bg-surface-container-low rounded-[1.5rem] p-6 mb-4">
+<h3 class="text-xs font-bold text-on-surface-variant uppercase editorial-text mb-4" style="">Crew Personnel</h3>
+<div class="grid grid-cols-1 gap-3">
+<div class="flex items-center justify-between bg-surface-container-high p-4 rounded-xl">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-variant">
+<img alt="Driver portrait" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional driver wearing a uniform in low light cinematic environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMfom1qrxC2auBqr8Ooo-RjW7b9zjvb7EIuWtvYIFyf4pohASDPvRzpzsesh0eEzbmY2ZYqiMWcIy9nYnBS0X710oL6v0sQtjKSTDgrHI5GcszmKZoj0cNyGo6SH343kHcuiW5DRi2KUBQqsRKSnUgfsJKO4EYD8V7Tycpe_W70AhU6axfKqHJV1XiUos--2RpTbnWjzZG1oGSURvN3zTswYGqfn8Mt-zYhaNGBAK47C-n-5fiFeaNyABsd5gymcuDibgQKK2Dq6fy" style="">
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase" style="">Driver</p>
+<p class="text-on-surface font-headline font-bold" style="">Rajesh Kumar</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" style="">verified</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-high p-4 rounded-xl">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container text-2xl" style="font-variation-settings: &quot;FILL&quot; 1;">person</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase" style="">Conductor</p>
+<p class="text-on-surface font-headline font-bold" style="">You</p>
+</div>
+</div>
+<span class="bg-primary/20 text-primary-fixed text-[10px] px-2 py-1 rounded-full font-bold" style="">ACTIVE</span>
+</div>
+</div>
+</section>
+<!-- System Checks Bento Grid -->
+<section class="grid grid-cols-2 gap-4 mb-4">
+<div class="bg-surface-container-low rounded-[1.5rem] p-5 flex flex-col justify-between">
+<span class="material-symbols-outlined text-secondary text-2xl mb-4" style="">gps_fixed</span>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase" style="">GPS Status</p>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="text-on-surface font-bold text-lg font-headline" style="">ON</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] p-5 flex flex-col justify-between">
+<span class="material-symbols-outlined text-secondary text-2xl mb-4" style="">wifi</span>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase" style="">Network</p>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="text-on-surface font-bold text-lg font-headline" style="">ON</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Button Shell -->
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+<button class="pointer-events-auto w-full h-[64px] bg-primary-container text-on-primary-container rounded-[1.5rem] flex items-center justify-center gap-3 font-headline font-extrabold text-xl tracking-wide shadow-2xl active:scale-95 transition-all hover:bg-primary-container/90" style="">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">play_arrow</span>
+            START TRIP
+        </button>
+</div>
+</body></html>

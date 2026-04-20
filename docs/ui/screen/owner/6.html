@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Sentinel - Trip Monitor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#690005",
+                    "on-surface-variant": "#c2c7ce",
+                    "surface-tint": "#a3cbf2",
+                    "surface-variant": "#31353a",
+                    "tertiary-fixed": "#ffdbc8",
+                    "on-primary": "#003353",
+                    "outline": "#8c9198",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#0b3c5d",
+                    "on-tertiary-fixed": "#321200",
+                    "on-secondary": "#2000a4",
+                    "surface-container-lowest": "#0b0f13",
+                    "inverse-primary": "#396285",
+                    "secondary": "#c4c0ff",
+                    "surface-container": "#1c2024",
+                    "inverse-on-surface": "#2d3135",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "on-background": "#e0e2e8",
+                    "surface-container-highest": "#31353a",
+                    "inverse-surface": "#e0e2e8",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "on-tertiary-container": "#ff801d",
+                    "on-secondary-fixed-variant": "#3622ca",
+                    "on-secondary-fixed": "#100069",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "background": "#101418",
+                    "on-primary-fixed": "#001d32",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-container": "#7fa7cd",
+                    "error": "#ffb4ab",
+                    "on-primary-fixed-variant": "#1f4a6c",
+                    "surface-container-high": "#262a2f",
+                    "on-tertiary": "#522300",
+                    "outline-variant": "#42474e",
+                    "secondary-container": "#3826cd",
+                    "on-tertiary-fixed-variant": "#753400",
+                    "on-secondary-container": "#b4b0ff",
+                    "surface": "#101418",
+                    "surface-dim": "#101418",
+                    "surface-container-low": "#181c20",
+                    "error-container": "#93000a",
+                    "surface-bright": "#363a3e",
+                    "primary-fixed": "#cee5ff",
+                    "tertiary": "#ffb68b",
+                    "primary": "#a3cbf2",
+                    "on-surface": "#e0e2e8",
+                    "tertiary-container": "#602a00"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      body {
+        background-color: #101418;
+        color: #e0e2e8;
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .glass-card {
+        background: rgba(38, 42, 47, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .noise-texture {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3");
+        opacity: 0.02;
+        pointer-events: none;
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen pb-32">
+<div class="fixed inset-0 noise-texture z-0"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 w-full backdrop-blur-xl bg-opacity-80 bg-[#101418] dark:bg-[#101418]">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a3cbf2] cursor-pointer active:scale-95 duration-200">arrow_back</span>
+<h1 class="text-lg font-bold text-[#e0e2e8] font-['Manrope'] tracking-tight">Route: Ahmedabad → Una</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a3cbf2] cursor-pointer active:scale-95 duration-200">settings</span>
+</div>
+</header>
+<main class="relative z-10 pt-24 px-6 max-w-5xl mx-auto space-y-6">
+<!-- Top Section: Core Metrics Bento -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Trip Identity -->
+<div class="md:col-span-2 bg-surface-container-low p-6 rounded-[1.5rem] flex flex-col justify-between min-h-[160px]">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-1">CURRENT STATUS</p>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-tertiary shadow-[0_0_12px_rgba(255,182,139,0.5)]"></span>
+<h2 class="text-2xl font-extrabold font-headline text-tertiary">Delayed</h2>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-1">BUS NUMBER</p>
+<p class="text-xl font-bold font-headline text-on-surface">GJ01AB1234</p>
+</div>
+</div>
+<div class="flex gap-8 mt-6">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-1">DRIVER</p>
+<p class="text-md font-semibold text-on-surface">Marcus Aurelius</p>
+</div>
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-1">CONDUCTOR</p>
+<p class="text-md font-semibold text-on-surface">Sarah Jenkins</p>
+</div>
+</div>
+</div>
+<!-- Quick Action Glass Card -->
+<div class="glass-card p-6 rounded-[1.5rem] flex flex-col gap-3 justify-center">
+<button class="w-full h-14 bg-primary-container text-on-primary-container font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-opacity-80 active:scale-95 transition-all">
+<span class="material-symbols-outlined">group</span>
+                    VIEW PASSENGERS
+                </button>
+<button class="w-full h-14 bg-surface-container-highest text-on-surface font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#3d4248] active:scale-95 transition-all">
+<span class="material-symbols-outlined">history_edu</span>
+                    VIEW LOGS
+                </button>
+</div>
+</section>
+<!-- Alerts Section -->
+<section class="space-y-3">
+<h3 class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant px-2">Critical Alerts</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+<div class="bg-error-container/20 border-l-4 border-error p-4 rounded-xl flex items-center gap-4">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Passenger list missing</p>
+<p class="text-xs text-on-surface-variant">Manifest not uploaded by conductor</p>
+</div>
+</div>
+<div class="bg-tertiary-container/30 border-l-4 border-tertiary p-4 rounded-xl flex items-center gap-4">
+<span class="material-symbols-outlined text-tertiary">phone_disabled</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Call failed</p>
+<p class="text-xs text-on-surface-variant">Driver unreachable for 15 mins</p>
+</div>
+</div>
+<div class="bg-tertiary-container/30 border-l-4 border-tertiary p-4 rounded-xl flex items-center gap-4">
+<span class="material-symbols-outlined text-tertiary">signal_wifi_off</span>
+<div>
+<p class="text-sm font-bold text-on-surface">Conductor offline</p>
+<p class="text-xs text-on-surface-variant">Device last seen at 09:42 AM</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Trip Progress Section -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-surface-container-high rounded-[1.5rem] overflow-hidden">
+<div class="p-6 border-b border-outline-variant/10">
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-4">LIVE LOCATION</p>
+<div class="relative h-64 w-full rounded-xl overflow-hidden grayscale contrast-125 opacity-80">
+<img class="w-full h-full object-cover" data-alt="Dark stylized map interface with neon blue route line and a glowing orange bus icon marker" data-location="Ahmedabad" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0rU1NJ11pcKxiXJ799baX0S1b0fq6Inl2v1JDOmXklgYfWRvX9U-aSj73UhwibLk6TtQXk3f9PFPieiXEcOo0_1lc1A30LZlqz9exc3qz3nzRoT6gKFefFj_K-V9kRLvkl1ObdB2jFO5n-mAoOQLXybsVEsVATejCT5Lbpf_TZx5FkhU7TvG_plmpQib8Xxju4YYACaV-qJvtDUadK_JY0Qqf4yrzOS3yAI7EBfmlRjZv0xTJWThc5Elu81-2CcaYvfbOQ69hY3KP"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<p class="text-xs font-bold text-primary">GPS SIGNAL: STRONG</p>
+</div>
+</div>
+</div>
+<div class="p-6 flex items-center justify-between">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">CURRENT LOCATION</p>
+<p class="text-lg font-bold text-on-surface">Bavla Highway Junction</p>
+</div>
+<div class="text-right">
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant">SPEED</p>
+<p class="text-lg font-bold text-on-surface">62 km/h</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<!-- Next Stop Card -->
+<div class="bg-surface-container-highest p-6 rounded-[1.5rem] flex-1 flex flex-col justify-center relative overflow-hidden">
+<div class="absolute -right-4 -top-4 opacity-5">
+<span class="material-symbols-outlined text-[120px]">near_me</span>
+</div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-primary-container mb-2">NEXT STOP</p>
+<h4 class="text-3xl font-extrabold font-headline text-primary mb-1">Bagodara</h4>
+<p class="text-on-surface-variant">Estimated arrival in <span class="text-on-surface font-bold">24 mins</span></p>
+<div class="mt-8 flex items-center gap-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-highest bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Portrait of a professional man in a transport uniform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsfNihTkmj2HPBz0pD1LJxRlaK_lEC8H6lRuoJlgN5CbhFKg9EkQ8p6jOBIfbj3nKivBin41JEyxUnTMr-nWHPNlcZEP7J6x4gmx-9y0yPIvBGcZUdBy2kPjw0bKuFlAUe4xK4ueeSVG1jihTMUAsN_YH3JQKblJueJKKqVYSrJzAqxG5O_XT1U0u9CS2TnQIwF2M8wC02ltxo9sMrZzn6vtaFF9_6dFQk1trlFwlpJYth9LC2JgG6cq8oiV0hBF3OWWm7_Wlz4uaY"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-highest bg-surface-container flex items-center justify-center">
+<span class="text-[10px] font-bold">+42</span>
+</div>
+</div>
+<p class="text-xs text-on-surface-variant font-medium">42 passengers boarding</p>
+</div>
+</div>
+<!-- Timing & Punctuality -->
+<div class="bg-surface-container-low p-6 rounded-[1.5rem] grid grid-cols-2 gap-4">
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-1">DEPARTED</p>
+<p class="text-lg font-semibold text-on-surface">08:00 AM</p>
+<p class="text-xs text-secondary-container font-bold italic">ON TIME</p>
+</div>
+<div>
+<p class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-on-surface-variant mb-1">EST. ARRIVAL</p>
+<p class="text-lg font-semibold text-on-surface">02:30 PM</p>
+<p class="text-xs text-tertiary font-bold italic">+18 MINS DELAY</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#101418] dark:bg-[#101418] z-50 rounded-t-[1.5rem] shadow-[0px_-4px_40px_rgba(0,0,0,0.15)]">
+<div class="flex flex-col items-center justify-center text-[#909196] px-6 py-2 hover:text-[#e0e2e8] active:scale-90 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Status</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#909196] px-6 py-2 hover:text-[#e0e2e8] active:scale-90 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined mb-1">group</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Passengers</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1.5rem] px-6 py-2 active:scale-90 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Logs</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#909196] px-6 py-2 hover:text-[#e0e2e8] active:scale-90 transition-transform duration-150 cursor-pointer">
+<div class="relative">
+<span class="material-symbols-outlined mb-1">notification_important</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+</div>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Alerts</span>
+</div>
+</nav>
+</body></html>

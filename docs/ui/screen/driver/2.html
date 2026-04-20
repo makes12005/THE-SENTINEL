@@ -1,0 +1,179 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Driver Trip Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#321200",
+                    "on-primary": "#003353",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "surface-tint": "#a3cbf2",
+                    "surface-container-low": "#181c20",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-fixed": "#001d32",
+                    "surface-container-lowest": "#0b0f13",
+                    "on-background": "#e0e2e8",
+                    "on-secondary-fixed-variant": "#3622ca",
+                    "error": "#ffb4ab",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed-variant": "#753400",
+                    "surface-variant": "#31353a",
+                    "on-primary-container": "#7fa7cd",
+                    "surface-container-high": "#262a2f",
+                    "primary-fixed": "#cee5ff",
+                    "background": "#101418",
+                    "inverse-on-surface": "#2d3135",
+                    "tertiary-container": "#602a00",
+                    "surface-container-highest": "#31353a",
+                    "on-surface": "#e0e2e8",
+                    "on-tertiary": "#522300",
+                    "inverse-primary": "#396285",
+                    "inverse-surface": "#e0e2e8",
+                    "primary": "#a3cbf2",
+                    "surface": "#101418",
+                    "error-container": "#93000a",
+                    "on-secondary-container": "#b4b0ff",
+                    "on-error-container": "#ffdad6",
+                    "secondary-container": "#3826cd",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "on-secondary-fixed": "#100069",
+                    "surface-dim": "#101418",
+                    "secondary": "#c4c0ff",
+                    "on-surface-variant": "#c2c7ce",
+                    "primary-container": "#0b3c5d",
+                    "on-tertiary-container": "#ff801d",
+                    "tertiary": "#ffb68b",
+                    "outline-variant": "#42474e",
+                    "surface-container": "#1c2024",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "on-secondary": "#2000a4",
+                    "tertiary-fixed": "#ffdbc8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body select-none">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-20 w-full max-w-none bg-gradient-to-b from-[#181c20] to-[#101418]">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#a3cbf2] text-2xl" style="">directions_bus</span>
+<div class="flex flex-col">
+<h1 class="font-headline font-bold tracking-tight text-[#e0e2e8] text-lg" style=""><div><span style="font-size: 1.125rem; letter-spacing: -0.025em;">Ahmedabad → Una</span></div></h1>
+<p class="font-label text-[0.6875rem] uppercase tracking-widest text-[#909196]" style="">GJ01AB1234</p>
+</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border-2 border-primary/20 flex items-center justify-center overflow-hidden">
+<img alt="Driver Profile Photo" class="w-full h-full object-cover" data-alt="Portrait of a professional middle-aged bus driver in uniform, focused and friendly, outdoor daytime lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJpqO7g2ytwgs7XZI1nqhICmThI97artaUFiXKPqfRQTJXmWQTvf6kd5vaTLbhhvFq7R5HvIbzJ0T4pYshg3xOQluRK5h4E1iJddrSy4bkelhcpHraO0aMmtYLkeHQPaxHVwOO_gj1AF7dKyQdJagqRs2QLGmPcUSeqwDNOFpIyqrWzGKMa06PsG227yVAPt7mY94Xe5rObrgbaR_mrwSeuumQdfZ-kioEEZHgQ7eSgskh241bUutqLAojxTJWbYO4tlMxjLDOa7bB" style="">
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 min-h-screen">
+<!-- Hero Section: Route Information -->
+<section class="mb-8">
+<div class="bg-surface-container-low p-6 rounded-[1.5rem] relative overflow-hidden">
+<!-- Visual Background Glow -->
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/5 blur-[60px] rounded-full"></div>
+<div class="flex flex-col gap-1 mb-6">
+<p class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant" style="">Active Route</p>
+<h2 class="font-headline text-3xl font-extrabold tracking-tight text-on-surface flex items-center gap-3" style="">
+                        Ahmedabad <span class="material-symbols-outlined text-primary text-xl" style="">east</span> Una
+                    </h2>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-high p-4 rounded-xl">
+<p class="font-label text-[0.625rem] font-bold text-on-surface-variant uppercase tracking-widest mb-1" style="">Departure</p>
+<p class="font-headline text-lg font-bold" style="">06:45 AM</p>
+</div>
+<div class="bg-surface-container-high p-4 rounded-xl">
+<p class="font-label text-[0.625rem] font-bold text-on-surface-variant uppercase tracking-widest mb-1" style="">ETA Destination</p>
+<p class="font-headline text-lg font-bold" style="">01:30 PM</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Status & Emergency Interaction Bento Grid -->
+<section class="grid grid-cols-1 gap-6">
+<!-- Warning State: Conductor Disconnected -->
+<div class="bg-tertiary-container/30 border border-on-tertiary-container/20 p-6 rounded-[1.5rem] flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-on-tertiary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container text-3xl" style="">wifi_off</span>
+</div>
+<div>
+<p class="font-label text-xs font-bold uppercase tracking-widest text-on-tertiary-container" style="">Current Status</p>
+<p class="font-headline text-xl font-extrabold text-on-tertiary-container" style="">Conductor Disconnected</p><p class="text-xs font-medium text-on-tertiary-container/80" style="">Conductor: Rajesh Kumar</p>
+</div>
+</div>
+<div class="animate-pulse w-3 h-3 rounded-full bg-on-tertiary-container shadow-[0_0_12px_rgba(255,128,29,0.6)]"></div>
+</div>
+<button class="w-full h-16 bg-on-tertiary-container text-on-tertiary-fixed font-headline font-extrabold text-lg rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform" style="">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">assignment_ind</span>
+                    TAKE OVER TRIP
+                </button>
+</div>
+<!-- Active Status: Information Secondary (Smaller) -->
+<div class="bg-surface-container-low p-6 rounded-[1.5rem] flex items-center justify-between opacity-60">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-2xl" style="">person_check</span>
+</div>
+<div>
+<p class="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant" style="">Secondary Status</p>
+<p class="font-headline font-bold text-on-surface" style="">Conductor Active</p><p class="text-xs font-medium text-on-surface-variant" style="">Conductor: Rajesh Kumar</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#a3cbf2]" style="">check_circle</span>
+</div>
+<!-- Quick Stats Layout -->
+<!-- Visual Map Placeholder (Simplified) -->
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-[#181c20]/90 backdrop-blur-xl border-t border-[#e0e2e8]/15 shadow-[0px_-4px_40px_0px_rgba(0,0,0,0.15)] rounded-t-[1.5rem]">
+<button class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1rem] py-2 px-6 active:scale-95 transition-transform" style="">
+<span class="material-symbols-outlined mb-1" style="">route</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem] font-bold" style="">ROUTE</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#909196] py-2 px-6 hover:text-[#e0e2e8] active:scale-95 transition-transform" style="">
+<span class="material-symbols-outlined mb-1" style="">group</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem] font-bold" style="">PASSENGERS</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#909196] py-2 px-6 hover:text-[#e0e2e8] active:scale-95 transition-transform" style="">
+<span class="material-symbols-outlined mb-1" style="">payments</span>
+<span class="font-['Inter'] uppercase tracking-[0.05em] text-[0.6875rem] font-bold" style="">REVENUE</span>
+</button>
+</nav>
+</body></html>

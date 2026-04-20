@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1776394929886,
+      "tag": "0000_thin_johnny_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1776395791223,
+      "tag": "0001_friendly_silhouette",
+      "breakpoints": true
+    }
+  ]
+}

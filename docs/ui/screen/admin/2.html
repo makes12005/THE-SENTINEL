@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agency Management - The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #101418;
+            color: #e0e2e8;
+        }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#c4c0ff",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "surface-container": "#1c2024",
+                        "outline": "#8c9198",
+                        "on-primary": "#003353",
+                        "on-surface-variant": "#c2c7ce",
+                        "secondary-fixed": "#e3dfff",
+                        "primary": "#a3cbf2",
+                        "tertiary-fixed": "#ffdbc8",
+                        "outline-variant": "#42474e",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "on-secondary-fixed": "#100069",
+                        "surface-container-lowest": "#0b0f13",
+                        "primary-fixed": "#cee5ff",
+                        "primary-container": "#0b3c5d",
+                        "on-surface": "#e0e2e8",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "on-primary-container": "#7fa7cd",
+                        "surface-dim": "#101418",
+                        "background": "#101418",
+                        "tertiary-container": "#602a00",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#2d3135",
+                        "surface": "#101418",
+                        "secondary-container": "#3826cd",
+                        "inverse-primary": "#396285",
+                        "error-container": "#93000a",
+                        "on-secondary": "#2000a4",
+                        "surface-container-low": "#181c20",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-container": "#ff801d",
+                        "on-tertiary": "#522300",
+                        "surface-container-high": "#262a2f",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "surface-tint": "#a3cbf2",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#363a3e",
+                        "on-tertiary-fixed": "#321200",
+                        "inverse-surface": "#e0e2e8",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary": "#ffb68b",
+                        "surface-container-highest": "#31353a",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "on-secondary-container": "#b4b0ff",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-background": "#e0e2e8",
+                        "surface-variant": "#31353a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar Section -->
+<header class="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-between px-6 h-16 w-full max-w-none">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-sky-300 cursor-pointer active:scale-95 duration-150">arrow_back</span>
+<h1 class="text-lg font-bold tracking-widest uppercase text-sky-200 font-manrope">Agency Management</h1>
+</div>
+<button class="bg-primary-container text-sky-300 font-bold px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors active:scale-95 duration-150 text-sm">
+            Add New
+        </button>
+</header>
+<main class="pt-24 px-6 max-w-5xl mx-auto">
+<!-- Dashboard Header Stats (Editorial Brutalism) -->
+<section class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low p-6 rounded-xl">
+<p class="text-[10px] font-bold tracking-[0.15em] text-outline uppercase mb-2">Total Agencies</p>
+<p class="text-4xl font-headline font-extrabold text-primary">24</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-tertiary">
+<p class="text-[10px] font-bold tracking-[0.15em] text-outline uppercase mb-2">Active Routes</p>
+<p class="text-4xl font-headline font-extrabold text-on-surface">1,402</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl">
+<p class="text-[10px] font-bold tracking-[0.15em] text-outline uppercase mb-2">Revenue MTD</p>
+<p class="text-4xl font-headline font-extrabold text-secondary">$84.2k</p>
+</div>
+</section>
+<!-- Agency List -->
+<div class="space-y-4">
+<h2 class="text-[11px] font-bold tracking-[0.2em] text-outline-variant uppercase mb-6">Directory List</h2>
+<!-- Card 1: Active -->
+<div class="bg-surface-container-high rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:bg-surface-container-highest group">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">business_center</span>
+</div>
+<div>
+<h3 class="text-xl font-headline font-bold text-on-surface leading-tight">Skyline Transit</h3>
+<p class="text-sm text-on-surface-variant font-medium">Marcus Thorne • <span class="text-primary/80">1,284 Trips</span></p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="bg-secondary-container/20 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Active
+                    </div>
+<div class="flex items-center gap-6">
+<!-- Toggle Switch -->
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-outline uppercase">Status</span>
+<div class="w-12 h-6 bg-primary-container rounded-full relative cursor-pointer p-1">
+<div class="w-4 h-4 bg-primary rounded-full absolute right-1"></div>
+</div>
+</div>
+<button class="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
+                            Details
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Active -->
+<div class="bg-surface-container-high rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:bg-surface-container-highest">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">commute</span>
+</div>
+<div>
+<h3 class="text-xl font-headline font-bold text-on-surface leading-tight">Neon Pulse Logix</h3>
+<p class="text-sm text-on-surface-variant font-medium">Sloane Vane • <span class="text-primary/80">842 Trips</span></p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="bg-secondary-container/20 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Active
+                    </div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-outline uppercase">Status</span>
+<div class="w-12 h-6 bg-primary-container rounded-full relative cursor-pointer p-1">
+<div class="w-4 h-4 bg-primary rounded-full absolute right-1"></div>
+</div>
+</div>
+<button class="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
+                            Details
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 3: Disabled -->
+<div class="bg-surface-container-low opacity-60 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all grayscale-[0.5]">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-3xl">airport_shuttle</span>
+</div>
+<div>
+<h3 class="text-xl font-headline font-bold text-on-surface-variant leading-tight">Atlas Heavy Haul</h3>
+<p class="text-sm text-outline-variant font-medium">Julianna Graves • 219 Trips</p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="bg-outline-variant/20 text-outline px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Disabled
+                    </div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-outline uppercase">Status</span>
+<div class="w-12 h-6 bg-surface-container-highest rounded-full relative cursor-pointer p-1">
+<div class="w-4 h-4 bg-outline-variant rounded-full absolute left-1"></div>
+</div>
+</div>
+<button class="flex items-center gap-2 text-outline-variant font-bold text-sm">
+                            Details
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4: Active -->
+<div class="bg-surface-container-high rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:bg-surface-container-highest">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">route</span>
+</div>
+<div>
+<h3 class="text-xl font-headline font-bold text-on-surface leading-tight">Apex Metro</h3>
+<p class="text-sm text-on-surface-variant font-medium">Kaelen Wright • <span class="text-primary/80">3,105 Trips</span></p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-8">
+<div class="bg-secondary-container/20 text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Active
+                    </div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-outline uppercase">Status</span>
+<div class="w-12 h-6 bg-primary-container rounded-full relative cursor-pointer p-1">
+<div class="w-4 h-4 bg-primary rounded-full absolute right-1"></div>
+</div>
+</div>
+<button class="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
+                            Details
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Section -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 h-20 bg-slate-900 rounded-t-[1.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+<a class="flex flex-col items-center justify-center bg-slate-800 text-sky-300 rounded-xl px-5 py-2 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">business_center</span>
+<span class="font-inter text-[11px] font-semibold tracking-wider uppercase mt-1">Agencies</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 rounded-xl px-5 py-2 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">route</span>
+<span class="font-inter text-[11px] font-semibold tracking-wider uppercase mt-1">Trips</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 rounded-xl px-5 py-2 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-inter text-[11px] font-semibold tracking-wider uppercase mt-1">Revenue</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 rounded-xl px-5 py-2 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-inter text-[11px] font-semibold tracking-wider uppercase mt-1">Settings</span>
+</a>
+</nav>
+</body></html>

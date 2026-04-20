@@ -1,0 +1,377 @@
+# Bus Alert System — Project Memory
+
+Last Updated: 2026-04-17 (IST)
+
+## Project Overview
+
+Production bus passenger alert system for Gujarat, India.  
+Stack: Fastify + TypeScript + PostgreSQL (PostGIS) + Redis + Flutter + Next.js  
+Monorepo: `f:\wakup system\bus-alert` (Turborepo + pnpm workspaces)
+
+---
+
+## Sprint 1 — Auth System ✅
+
+### What Was Built
+- **Database schema**: `agencies`, `users`, `refresh_tokens`, `audit_logs` (Drizzle ORM)
+- **JWT auth**: 15-min access token + 30-day refresh token (bcrypt 12 rounds)
+- **Redis JWT blacklisting**: on logout, token TTL synced to Redis
+- **Rate limiting**: 5 login attempts / 15 min per phone (Redis), locked & logged
+- **Audit logs**: every login, logout, failed attempt recorded
+- **`requireAuth(roles[])` middleware**: checks JWT validity + Redis blacklist + role matrix
+- **Routes**: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- **Shared types** (`packages/shared-types`): `UserRole`, `LoginRequest`, `JWTPayload`, `ApiResponse`
+
+### Key Decisions
+- Phone stored in **E.164 format** (`+91XXXXXXXXXX`), enforced by Zod
+- All timestamps in **IST (Asia/Kolkata)** via `toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })`
+- All API responses follow `{ success, data, error, meta }` structure
+- `admin` role has no `agency_id` (null); all other roles must belong to an agency
+
+---
+
+## Sprint 2 — GPS Tracking Engine ✅
+
+### What Was Built
+
+#### Database Tables
+| Table | Purpose |
+|-------|---------|
+| `routes` | Bus routes per agency (from_city → to_city) |
+| `stops` | Stops on a route with WGS84 coordinates + trigger radius |
+| `trips` | A specific run of a route on a date, with status state machine |
+| `trip_passengers` | Passengers booked on a trip with per-stop alert tracking |
+| `conductor_locations` | Time-series GPS pings from conductor device |
+
+#### Database Indexes
+| Index | Type | Purpose |
+|-------|------|---------|
+| `conductor_loc_trip_time_idx` | B-tree `(trip_id, recorded_at)` | Fast latest location lookup |
+| `conductor_loc_coordinates_gist_idx` | GIST spatial | ST_DWithin proximity queries |
+| `stops_coordinates_gist_idx` | GIST spatial | ST_DWithin stop matching |
+| `trip_passengers_trip_status_idx` | B-tree `(trip_id, alert_status)` | Fast pending passenger filter |
+
+#### Services
+- **`LocationService`**: Converts lat/lng to PostGIS EWKT (`SRID=4326;POINT(lng lat)`), validates conductor trip ownership before save
+- **`GeoService`**: `checkStopProximity()` uses `ST_DWithin` with `geography` cast for metre-accurate radius, atomically updates `alert_status → 'sent'`, pushes to Redis `alert_queue` via `RPUSH`
+- **`TripsService`**: Full trip lifecycle (create → start → complete) with state machine guards, passenger management, current location via `ST_X/ST_Y` decoding
+
+#### API Endpoints
+| Method | Path | Role | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/trips` | operator, admin | Create trip |
+| `GET` | `/api/trips/:id` | any auth | Trip + passengers |
+| `PUT` | `/api/trips/:id/start` | conductor | Start trip |
+| `PUT` | `/api/trips/:id/complete` | conductor | Complete trip |
+| `POST` | `/api/trips/:id/location` | conductor | GPS ping (10s) |
+| `GET` | `/api/trips/:id/location` | any auth | Current bus location |
+| `POST` | `/api/trips/:id/passengers` | operator, admin | Add passenger |
+
+### Key Decisions
+- **PostGIS geography cast** used in `ST_DWithin` — ensures distances are in metres on Earth's surface, not planar approximation. Critical for accuracy at 10 km radius across Gujarat.
+- **Fire-and-forget proximity check** — GPS ping responds HTTP 202 immediately; geo check runs async so the 10-second conductor ping is never blocked.
+- **Idempotent alert trigger** — `UPDATE ... WHERE alert_status = 'pending'` guards against concurrent pings triggering duplicate alerts.
+- **Alert queue via Redis RPUSH** — `alert_queue` key holds `AlertQueueItem` JSON. Exotel call worker (Sprint 3) will use `BLPOP alert_queue` to process calls.
+- **drizzle-orm v0.30 limitation** — `.using('gist')` not available in this version. GIST indexes appended as raw SQL at the bottom of `0000_thin_johnny_storm.sql`.
+
+### Issues Found & Resolved
+| Issue | Resolution |
+|-------|-----------|
+| `pnpm install` failed — `@busalert/config` missing | Created `packages/config/package.json` stub |
+| `drizzle-kit generate` failed — `dotenv` missing | `pnpm add dotenv` in backend workspace |
+| `index().using('gist')` not a function in drizzle v0.30 | Moved GIST indexes to raw SQL append in migration file |
+| Files written to wrong path (`wakup system code`) | Corrected all writes to `f:\wakup system\bus-alert` |
+
+---
+
+## Sprint 3 — Alert Worker System ✅
+
+### What Was Built
+
+#### New Schema
+| Addition | Detail |
+|---|---|
+| `alert_channel` enum | `call \| sms \| whatsapp \| manual` |
+| `alert_log_status` enum | `success \| failed` |
+| `trip_passengers.alert_channel` | Nullable — set on successful delivery |
+| `alert_logs` table | One row per delivery attempt; FK → `trip_passengers` |
+| Migration | `0001_friendly_silhouette.sql` (Drizzle generated) |
+
+#### Files Created
+| File | Purpose |
+|------|---------|
+| `src/modules/alerts/call.service.ts` | Exotel outbound call — 2 attempts, 30s gap, Basic Auth |
+| `src/modules/alerts/sms.service.ts` | MSG91 Flow API SMS — DLT template `{{stop_name}}` var |
+| `src/modules/alerts/whatsapp.service.ts` | Gupshup plain-text WhatsApp |
+| `src/modules/alerts/alert.orchestrator.ts` | Full cascade + alert_logs writer + trip_passengers update |
+| `src/workers/alert.worker.ts` | Standalone BLPOP consumer — separate process from Fastify |
+| `src/lib/socket.ts` | Socket.IO singleton (`initSocketIO` / `getIO`) |
+
+#### Delivery Cascade (per exotel-calls skill)
+```
+Redis BLPOP alert_queue
+  └─► Exotel Call attempt 1 ─► wait 30s ─► Exotel Call attempt 2
+          │ both fail
+          └─► MSG91 SMS
+                │ fail
+                └─► Gupshup WhatsApp
+                      │ fail
+                      └─► Socket.IO → alert_manual_required
+                            (emits to conductor's user:{id} room)
+```
+
+### Key Decisions
+- **BLPOP not LPOP** — worker sleeps (0 CPU) when queue is empty; re-polls every 5s for clean shutdown window.
+- **Separate process** — `pnpm worker:alert` runs independently. Fastify crash does not kill the worker; Redis jobs survive both.
+- **Exponential backoff** — consecutive Redis/DB errors: 2s → 4s → 8s → ... capped at 60s. Resets on success.
+- **Idempotent delivery** — `markDelivered()` issues UPDATE (not INSERT). Safe if worker restarts mid-job.
+- **Socket.IO singleton** — `lib/socket.ts` holds one server instance; orchestrator calls `getIO()` without HTTP server ref.
+- **Conductor room** — conductors join `user:{userId}` room on connect. Orchestrator emits to room, not specific socket.
+- **DLT compliance** — MSG91 Flow API used with `MSG91_TEMPLATE_ID`. Variable `{{stop_name}}` is injected per TRAI rules.
+
+### Issues Found & Resolved
+| Issue | Resolution |
+|---|---|
+| `db.query.trips.findMany` needs relational setup | Used `db.select().from(trips)` directly in orchestrator |
+
+---
+
+---
+
+## Sprint 4 — Passenger Upload & Management APIs ✅
+
+### What Was Built
+
+#### New Shared Types (`packages/shared-types/src/trips.ts`)
+| Type | Purpose |
+|---|---|
+| `PassengerRowSchema / PassengerRow` | Validates a single CSV/xlsx row (name, phone, stop_name) |
+| `PassengerRowError` | Per-row error object returned in upload rejection |
+| `UploadPassengersResponse` | Success response: `{ uploaded: N }` |
+| `TripStatusResponse` | Rich status: status + current_location + passenger summary |
+| `PassengerAlertSummary` | `{ total, pending, sent, failed }` counts |
+| `ListTripsQuerySchema` | `?status=scheduled|active|completed` query filter |
+| `CreateStopSchema` | Updated to use flat `latitude`, `longitude` fields |
+
+#### tsconfig for shared-types
+Added `packages/shared-types/tsconfig.json` — was missing, prevented `dist/` compilation.
+Build script uses `node_modules/.bin/tsc` to bypass wrong global `tsc` on PATH.
+
+#### New Files
+| File | Purpose |
+|---|---|
+| `src/modules/trips/passengers.service.ts` | CSV + xlsx parse, full atomic validation, bulk insert in single tx |
+| `src/modules/trips/routes.service.ts` | createRoute, listRoutes, addStop (with PostGIS EWKT), listStops |
+| `src/modules/trips/routes.routes.ts` | 4 HTTP endpoints with requireAuth RBAC |
+
+#### Updated Files
+| File | Changes |
+|---|---|
+| `src/modules/trips/trips.service.ts` | Added `listTrips`, `listPassengers`, `getTripStatus` + conductor/driver agency validation in `createTrip` |
+| `src/modules/trips/trips.routes.ts` | Added `GET /`, `GET /:id/status`, `GET /:id/passengers`, `POST /:id/passengers/upload` |
+| `src/server.ts` | Registered `@fastify/multipart` plugin + `/api/routes` module |
+| `packages/shared-types/package.json` | Fixed build script + added tsconfig |
+
+#### New Dependencies
+| Package | Purpose |
+|---|---|
+| `xlsx` | Parse .xlsx/.xls workbook files |
+| `csv-parse` | Parse CSV files with `columns: true` option |
+| `@fastify/multipart` | Multipart/form-data file upload support for Fastify |
+
+### API Surface (Sprint 4 additions)
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| `POST` | `/api/routes` | operator, admin | Create route |
+| `GET` | `/api/routes` | operator, owner, admin | List routes for agency |
+| `POST` | `/api/routes/:routeId/stops` | operator, admin | Add stop (lat/lng → PostGIS) |
+| `GET` | `/api/routes/:routeId/stops` | operator, owner, admin | List stops ordered by sequence |
+| `GET` | `/api/trips` | operator, owner, admin | List trips, optional `?status` filter |
+| `GET` | `/api/trips/:id/status` | operator, owner, conductor, admin | Status + location + alert summary |
+| `GET` | `/api/trips/:id/passengers` | operator, conductor, admin | Passenger list with alert_channel + status |
+| `POST` | `/api/trips/:id/passengers/upload` | operator, admin | CSV / xlsx bulk upload |
+
+### Key Decisions
+- **All-or-nothing validation**: upload rejects entire file if even 1 row fails; returns `row_errors[]` with row number, raw data, and per-field messages.
+- **Stop name lookup**: CSV `stop_name` is matched case-insensitively against stops on the trip's route; valid stop names included in error message.
+- **Duplicate phone guard**: checked both within the upload file AND against existing trip passengers in DB.
+- **Max 100 passengers**: soft limit per trip enforced before any DB interaction.
+- **Single DB transaction** for bulk insert: `db.transaction()` wraps all `INSERT INTO trip_passengers`.
+- **Conductor/driver agency validation** added to `createTrip` — rejects assignment of users from other agencies.
+- **Sequence uniqueness** on stops: duplicate `sequence_number` within same route → `409 Conflict`.
+- **File size limit**: `@fastify/multipart` configured to 10 MB; only `.csv`, `.xlsx`, `.xls` accepted.
+
+### Issues Found & Resolved
+| Issue | Resolution |
+|---|---|
+| Global `tsc` on PATH returns help/wrong version | Build script updated to `node_modules/.bin/tsc` |
+| `packages/shared-types` had no `tsconfig.json` | Created minimal CommonJS tsconfig; compiled clean |
+| `CreateStopSchema` previously used nested `coordinates.lat/lng` | Flattened to `latitude` + `longitude` to match request body convention |
+
+---
+
+## Sprint Status
+
+| Sprint | Feature | Status |
+|--------|---------|--------|
+| 1 | Auth system (JWT, RBAC, Redis, audit logs) | ✅ Done |
+| 2 | GPS tracking engine (PostGIS geo-fence, trip lifecycle, alert queue) | ✅ Done |
+| 3 | Alert Worker (Exotel → MSG91 → Gupshup → Socket.IO cascade) | ✅ Done |
+| 4 | Passenger upload + route/trip management APIs | ✅ Done |
+| 5 | Flutter conductor mobile app (GPS ping, trip controls, manual alert) | ✅ Done |
+| 6 | Flutter driver mobile app (takeover flow, backup role) | ✅ Done |
+| 7 | Operator Web Dashboard (Next.js) + Heartbeat Monitor | ✅ Done |
+| 8 | Owner Web Dashboard (Next.js) + Owner backend APIs | ✅ Done |
+| 9 | Payment gateway + billing integration | 🔜 Next |
+
+---
+
+## Sprint 5 — Flutter Conductor Mobile App ✅
+
+### What Was Built
+
+#### File Structure
+```
+apps/mobile/lib/
+├── main.dart                              # ProviderScope + dark theme + portrait lock
+├── core/
+│   ├── env.dart                           # API base URL via --dart-define
+│   ├── theme/app_colors.dart              # All design tokens (hex extracted from HTML prototypes)
+│   ├── theme/app_theme.dart               # Dark Material3 theme (Manrope + Inter)
+│   ├── router/app_router.dart             # go_router + auth redirect guard
+│   ├── network/api_client.dart            # Singleton Dio with interceptors
+│   ├── network/token_interceptor.dart     # 401 auto-refresh with Lockpatch:synchronized
+│   ├── network/endpoints.dart             # All API endpoint constants
+│   └── storage/secure_storage.dart        # flutter_secure_storage wrapper (JWT + user info)
+├── features/
+│   ├── auth/                              # Login screen + repository + Riverpod notifier
+│   ├── trips/                             # Dashboard + Trip Detail + models + providers
+│   ├── passengers/                        # Passenger list screen + realtime updates
+│   ├── gps/                               # Background GPS service + offline queue
+│   └── alerts/                            # Socket.IO + undismissable alert dialog
+└── widgets/                               # Shared: TripCard, StatusChip, PassengerTile
+```
+
+#### New pubspec.yaml Dependencies
+| Package | Version | Purpose |
+|---|---|---|
+| `dio` | ^5.7.0 | HTTP client |
+| `flutter_riverpod` | ^2.6.1 | State management |
+| `geolocator` | ^13.0.2 | GPS positioning |
+| `flutter_foreground_task` | ^8.14.0 | Background GPS service (Android isolate) |
+| `flutter_secure_storage` | ^9.2.2 | JWT secure storage |
+| `socket_io_client` | ^2.0.3+1 | Socket.IO realtime events |
+| `go_router` | ^14.6.3 | Navigation + auth guard |
+| `shared_preferences` | ^2.3.3 | Offline GPS queue |
+| `url_launcher` | ^6.3.1 | Phone dialer for alert popup |
+| `google_fonts` | ^6.2.1 | Manrope + Inter |
+| `synchronized` | ^3.1.0+1 | Token refresh lock |
+
+#### Android Setup
+- `minSdkVersion 26` (Android 8.0+)
+- `FOREGROUND_SERVICE_LOCATION` permission
+- `ACCESS_BACKGROUND_LOCATION` permission (requires "Allow all the time" prompt)
+- `FlutterForegroundTask` service declaration
+- `multiDexEnabled true`
+
+### Key Decisions
+- **API URL**: `--dart-define=API_BASE_URL=http://10.0.2.2:3000` at build time (emulator default)
+- **Background GPS**: `flutter_foreground_task` v8 runs in separate Dart isolate — GPS continues when screen locked
+- **Offline queue**: `SharedPreferences` JSON array stores up to 20 locations on network failure; flushed on next successful ping
+- **Token refresh**: `synchronized` lock prevents parallel refresh races; SESSION_EXPIRED error triggers `context.go('/login')`
+- **Alert dialog**: `PopScope(canPop: false)` prevents back-button dismissal; must choose Retry or Inform Manually
+- **Conductor role guard**: Login checks `role == 'conductor'`; any other role shows error SnackBar without storing tokens
+
+### To Run The Flutter App
+```bash
+# With emulator running (localhost alias 10.0.2.2)
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+
+# With physical device on same network
+flutter run --dart-define=API_BASE_URL=http://192.168.x.x:3000
+```
+
+---
+
+## Sprint 8 — Owner Web Dashboard ✅
+
+### What Was Built
+
+#### Backend (apps/backend/src/modules/owner/owner.routes.ts)
+| Endpoint | Roles | Description |
+|----------|-------|-------------|
+| `GET /api/owner/summary` | owner, admin | Agency KPIs: operators, active trips, passengers today, alerts, failed alerts |
+| `GET /api/owner/operators` | owner, admin | All operators in agency with trip count + last active |
+| `POST /api/owner/operators` | owner, admin | Create new operator account in agency |
+| `POST /api/owner/operators/:id/toggle` | owner, admin | Activate / deactivate operator |
+| `GET /api/owner/trips` | owner, admin | All trips across agency (paginated, filterable) |
+| `GET /api/owner/logs` | owner, admin | All alert delivery logs across agency (paginated) |
+| `GET /api/agency/profile` | owner, admin | Agency name, phone, email, state |
+| `PUT /api/agency/profile` | owner, admin | Update agency profile |
+
+**Security**: Every query is scoped by `agency_id` from JWT. An owner CANNOT see another agency's data. `getAgencyOperatorIds()` helper fetches all `operator_id`s belonging to the agency, used for trip and log scoping.
+
+#### Frontend (apps/web/src/app/owner/)
+
+| File | Screen |
+|------|--------|
+| `layout.tsx` | Auth guard — allows owner + admin; redirects operators → /operator/dashboard |
+| `page.tsx` | Root redirect → /owner/dashboard |
+| `dashboard/page.tsx` | KPI cards (5 metrics), operator performance list, quick links |
+| `operators/page.tsx` | Search, stats, MemberCard toggle, Add Operator modal |
+| `trips/page.tsx` | TripTable showOperator=true, status/date filters, pagination |
+| `logs/page.tsx` | LogsTable showOperator=true, channel/status/date filters, pagination |
+| `settings/page.tsx` | Agency profile form + password change + notification placeholders |
+| `billing/page.tsx` | Usage overview, tier pricing table (UI-only, Sprint 9 payment) |
+
+#### Shared Components (apps/web/src/components/shared/index.tsx)
+Extracted from operator-specific usage so BOTH operator and owner dashboards can import:
+- `TripTable` — prop `showOperator: boolean` adds operator name column
+- `LogsTable` — prop `showOperator: boolean` adds operator name column
+- `AlertStatusBadge` — channel + status badge with icon
+- `StatusBadge` — trip status pill
+- `MemberCard` — operator/conductor card with active toggle
+
+#### Owner Sidebar (apps/web/src/components/owner-sidebar.tsx)
+- Violet accent `#c4c0ff` to differentiate from operator blue `#a3cbf2`
+- "Owner Access" role badge in header
+- Nav: Dashboard, Operators, All Trips, Alert Logs, Settings, Billing
+
+### Architecture Decisions
+- **Reuse-first**: `TripTable`/`LogsTable` extended with `showOperator` prop instead of building new components
+- **Violet ≠ Blue**: Distinct accent colour prevents role confusion between owner and operator views
+- **Billing UI-only**: Real Razorpay/Stripe integration moved to Sprint 9; placeholder shows tier pricing
+- **Auth guard at layout**: `owner/layout.tsx` checks `user.role` in `useEffect`; redirects operators rather than showing 403
+
+### Key Files Changed
+- `apps/backend/src/server.ts` — registered `ownerRoutes` under `/api`
+- `apps/backend/src/modules/owner/owner.routes.ts` — all 8 owner endpoints
+- `apps/web/src/components/shared/index.tsx` — shared component library
+- `apps/web/src/components/owner-sidebar.tsx` — owner navigation
+- `apps/web/src/app/owner/` — 6 screens + layout
+
+---
+
+---
+
+## Sprint 10 (Production Deployment - Gujarat Pilot)
+
+### Objective
+Deploy the Bus Alert backend (API + Socket.IO + Background Workers) and frontend (Operator/Owner Dashboards) to production infrastructure using Neon Postgres, Upstash Redis, Railway, and Vercel. Connect the real Exotel API for alerts.
+
+### Deployed Services Information
+- **Backend (API + Workers)**: Hosted on Railway (`apps/backend/railway.json`, `Procfile`)
+- **Frontend (Web Dashboards)**: Hosted on Vercel (`apps/web/vercel.json`)
+- **Database (PostgreSQL)**: Neon DB with PostGIS Extension Enabled
+- **Cache / PubSub (Redis)**: Upstash Redis
+- **Voice Alerts (Exotel)**: Provider switched from "mock" to "exotel", API authenticated.
+
+### Key Deployment Configurations
+- Added `.env.production` in both `apps/backend` and `apps/web`.
+- Modified `package.json` worker scripts to invoke compiled `node dist/...` targets instead of `tsx`.
+- Refactored `src/server.ts` to include an active, sub-200ms `/health` endpoint that queries the database (`SELECT 1`) and queries Redis (`PING`) to support load balancer deployment readiness gating.
+- Defined environment usage for Flutter (`apps/mobile/lib/core/env.dart`) using `--dart-define=API_BASE_URL`.
+
+### Next Actions
+- Execute the Gujarat pilot test physically in tracking vehicles.
+- Monitor active connections and Exotel payload delivery times during real-world simulation.

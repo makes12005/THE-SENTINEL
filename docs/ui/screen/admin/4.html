@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Platform Billing | The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "surface": "#101418",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "on-tertiary-fixed-variant": "#753400",
+                    "tertiary-container": "#602a00",
+                    "secondary-container": "#3826cd",
+                    "surface-container": "#1c2024",
+                    "on-tertiary": "#522300",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#31353a",
+                    "on-secondary-fixed-variant": "#3622ca",
+                    "outline-variant": "#42474e",
+                    "on-tertiary-fixed": "#321200",
+                    "on-primary-fixed": "#001d32",
+                    "inverse-on-surface": "#2d3135",
+                    "on-primary-container": "#7fa7cd",
+                    "surface-bright": "#363a3e",
+                    "primary-container": "#0b3c5d",
+                    "on-error": "#690005",
+                    "background": "#101418",
+                    "on-surface": "#e0e2e8",
+                    "tertiary": "#ffb68b",
+                    "primary": "#a3cbf2",
+                    "inverse-primary": "#396285",
+                    "tertiary-fixed": "#ffdbc8",
+                    "on-surface-variant": "#c2c7ce",
+                    "surface-tint": "#a3cbf2",
+                    "on-primary-fixed-variant": "#1f4a6c",
+                    "inverse-surface": "#e0e2e8",
+                    "surface-container-highest": "#31353a",
+                    "surface-container-high": "#262a2f",
+                    "on-tertiary-container": "#ff801d",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "error-container": "#93000a",
+                    "on-background": "#e0e2e8",
+                    "on-secondary": "#2000a4",
+                    "surface-container-lowest": "#0b0f13",
+                    "on-error-container": "#ffdad6",
+                    "secondary": "#c4c0ff",
+                    "primary-fixed": "#cee5ff",
+                    "surface-container-low": "#181c20",
+                    "on-secondary-container": "#b4b0ff",
+                    "on-primary": "#003353",
+                    "secondary-fixed": "#e3dfff",
+                    "on-secondary-fixed": "#100069",
+                    "surface-dim": "#101418",
+                    "outline": "#8c9198"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      body {
+        background-color: #101418;
+        font-family: 'Inter', sans-serif;
+        color: #e0e2e8;
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-card {
+        background: linear-gradient(135deg, rgba(38, 42, 47, 0.4) 0%, rgba(24, 28, 32, 0.2) 100%);
+        backdrop-filter: blur(12px);
+      }
+      .rugged-texture {
+        background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
+        background-size: 24px 24px;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen rugged-texture pb-24 md:pb-0 md:pl-72">
+<!-- TopAppBar (Execution from Shared Components JSON) -->
+<header class="fixed top-0 right-0 left-0 md:left-72 z-30 bg-[#101418] flex justify-between items-center w-full px-6 py-4 bg-gradient-to-b from-[#181c20] to-transparent">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#a3cbf2]">admin_panel_settings</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-[#e0e2e8] text-xl">Platform Billing</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Live Oversight</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary font-bold overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a senior platform administrator in a sharp navy suit looking confident" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU4vfa7MF94Hl0m3u9c7HzjNdi8vTud2u803kgmkDZVH_b3Uw3aYXjRbxiVeQB3i-LEtiTCjOHjJbdpkqvnnQkTwt-uzVT5pgCmmt1jMQWiw8t-gafPw-Cu1z1aKNCvrxYdEPZYIUk4Jl-ieYzgibSy2uokFgIGkZZELQuoUK83dCGYjX1uRkE6fcpmZzryfI66W6-sydxfJqWYBYewZGkbma8BxYu4q1fiAW1b3yzSZtV_Q5XW9TA1N3pBsdgAyIiCMrDnMoLQQF7"/>
+</div>
+</div>
+</header>
+<!-- NavigationDrawer (Execution from Shared Components JSON) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full z-40 flex-col p-4 bg-[#181c20] w-72 rounded-r-3xl shadow-[40px_0_40px_rgba(0,0,0,0.15)]">
+<div class="mb-10 px-4 pt-4">
+<span class="text-[#a3cbf2] font-black italic tracking-tighter text-2xl uppercase font-headline">THE SENTINEL</span>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-4 px-4 py-3 text-[#e0e2e8] opacity-70 hover:opacity-100 hover:bg-[#262a2f] transition-all font-['Inter'] text-sm font-medium uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="Directions_bus">directions_bus</span>
+                Fleet Overview
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 bg-[#262a2f] text-[#ffb68b] rounded-xl mx-2 shadow-inner translate-x-1 transition-transform font-['Inter'] text-sm font-medium uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+                Revenue Admin
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#e0e2e8] opacity-70 hover:opacity-100 hover:bg-[#262a2f] transition-all font-['Inter'] text-sm font-medium uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="corporate_fare">corporate_fare</span>
+                Agency Management
+            </a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#e0e2e8] opacity-70 hover:opacity-100 hover:bg-[#262a2f] transition-all font-['Inter'] text-sm font-medium uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+                System Logs
+            </a>
+</nav>
+<div class="mt-auto p-4 bg-surface-container-high rounded-2xl">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold text-on-surface-variant tracking-widest">SYSTEM STATUS</span>
+<span class="text-[10px] font-bold text-secondary tracking-widest">SECURE</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-4/5"></div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-6 md:px-10 max-w-7xl mx-auto space-y-10">
+<!-- Section 1: Revenue Summary Bento Grid -->
+<section>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Total Revenue Today -->
+<div class="bg-surface-container-low rounded-[1.5rem] p-8 glass-card border-l-4 border-primary">
+<div class="flex items-center justify-between mb-6">
+<span class="text-[11px] font-bold uppercase tracking-[0.15em] text-on-surface-variant">Total Revenue Today</span>
+<div class="p-2 bg-primary-container/30 rounded-lg">
+<span class="material-symbols-outlined text-primary text-sm">trending_up</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline font-extrabold text-4xl text-on-surface tracking-tight">₹1,25,000</span>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-secondary text-xs font-bold">+12% vs yesterday</span>
+</div>
+</div>
+</div>
+<!-- Total Revenue This Month -->
+<div class="bg-surface-container-low rounded-[1.5rem] p-8 glass-card border-l-4 border-secondary">
+<div class="flex items-center justify-between mb-6">
+<span class="text-[11px] font-bold uppercase tracking-[0.15em] text-on-surface-variant">Total Revenue This Month</span>
+<div class="p-2 bg-secondary-container/30 rounded-lg">
+<span class="material-symbols-outlined text-secondary text-sm">calendar_month</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline font-extrabold text-4xl text-on-surface tracking-tight">₹38,40,000</span>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-primary text-xs font-bold">Target: ₹45,00,000</span>
+</div>
+</div>
+</div>
+<!-- Active Agencies -->
+<div class="bg-surface-container-low rounded-[1.5rem] p-8 glass-card border-l-4 border-tertiary">
+<div class="flex items-center justify-between mb-6">
+<span class="text-[11px] font-bold uppercase tracking-[0.15em] text-on-surface-variant">Active Agencies</span>
+<div class="p-2 bg-tertiary-container/30 rounded-lg">
+<span class="material-symbols-outlined text-tertiary text-sm">hub</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline font-extrabold text-4xl text-on-surface tracking-tight">24</span>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-tertiary text-xs font-bold">2 Onboarding Pending</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Agency Usage List -->
+<section class="pb-12">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline font-bold text-xl tracking-tight text-[#e0e2e8]">Agency Usage</h2>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high hover:bg-surface-variant transition-colors rounded-xl text-xs font-bold uppercase tracking-widest text-on-surface">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                    Filter
+                </button>
+</div>
+<div class="bg-surface-container-low rounded-[1.5rem] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/50">
+<th class="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Agency Name</th>
+<th class="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">Usage Metrics</th>
+<th class="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant text-right">Settlement Amount</th>
+<th class="px-8 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant text-center">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-variant/20">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-8 py-6">
+<div class="flex flex-col">
+<span class="text-on-surface font-bold text-sm tracking-tight">A-One Travels</span>
+<span class="text-[10px] text-on-surface-variant font-medium">ID: AG-9031</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<span class="font-headline font-extrabold text-lg text-primary">142</span>
+<span class="text-[10px] font-bold uppercase text-on-surface-variant tracking-tighter">Total Trips</span>
+</div>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="font-headline font-bold text-on-surface">₹14,200</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex justify-center">
+<span class="px-3 py-1 rounded-full bg-secondary-container/40 text-secondary text-[10px] font-bold uppercase tracking-widest">In Progress</span>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-8 py-6">
+<div class="flex flex-col">
+<span class="text-on-surface font-bold text-sm tracking-tight">City Connect</span>
+<span class="text-[10px] text-on-surface-variant font-medium">ID: AG-8822</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<span class="font-headline font-extrabold text-lg text-primary">98</span>
+<span class="text-[10px] font-bold uppercase text-on-surface-variant tracking-tighter">Total Trips</span>
+</div>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="font-headline font-bold text-on-surface">₹9,800</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex justify-center">
+<span class="px-3 py-1 rounded-full bg-primary-container/40 text-primary text-[10px] font-bold uppercase tracking-widest">Settled</span>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-8 py-6">
+<div class="flex flex-col">
+<span class="text-on-surface font-bold text-sm tracking-tight">Metro Express</span>
+<span class="text-[10px] text-on-surface-variant font-medium">ID: AG-4122</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<span class="font-headline font-extrabold text-lg text-primary">210</span>
+<span class="text-[10px] font-bold uppercase text-on-surface-variant tracking-tighter">Total Trips</span>
+</div>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="font-headline font-bold text-on-surface">₹21,000</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex justify-center">
+<span class="px-3 py-1 rounded-full bg-tertiary-container/40 text-tertiary text-[10px] font-bold uppercase tracking-widest">Review</span>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-8 py-6">
+<div class="flex flex-col">
+<span class="text-on-surface font-bold text-sm tracking-tight">Safe Voyage</span>
+<span class="text-[10px] text-on-surface-variant font-medium">ID: AG-5511</span>
+</div>
+</td>
+<td class="px-8 py-6">
+<div class="flex items-center gap-3">
+<span class="font-headline font-extrabold text-lg text-primary">56</span>
+<span class="text-[10px] font-bold uppercase text-on-surface-variant tracking-tighter">Total Trips</span>
+</div>
+</td>
+<td class="px-8 py-6 text-right">
+<span class="font-headline font-bold text-on-surface">₹5,600</span>
+</td>
+<td class="px-8 py-6">
+<div class="flex justify-center">
+<span class="px-3 py-1 rounded-full bg-primary-container/40 text-primary text-[10px] font-bold uppercase tracking-widest">Settled</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Execution from Shared Components JSON - Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#101418]/80 backdrop-blur-xl rounded-t-[1.5rem] border-t border-[#e0e2e8]/10 shadow-[0_-10px_30px_rgba(0,0,0,0.3)]">
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-4 py-2 hover:text-[#a3cbf2] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-tighter mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#0b3c5d] text-[#a3cbf2] rounded-2xl px-6 py-2 scale-110 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-tighter mt-1">Billing</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-4 py-2 hover:text-[#a3cbf2] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-tighter mt-1">Agencies</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-4 py-2 hover:text-[#a3cbf2] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-tighter mt-1">Settings</span>
+</a>
+</nav>
+</body></html>

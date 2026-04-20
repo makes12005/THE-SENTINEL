@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Call Failure Handling - The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#181c20",
+                        "surface-container": "#1c2024",
+                        "surface-container-highest": "#31353a",
+                        "on-secondary-container": "#b4b0ff",
+                        "secondary-container": "#3826cd",
+                        "error": "#ffb4ab",
+                        "on-primary-container": "#7fa7cd",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "primary": "#a3cbf2",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary": "#ffb68b",
+                        "on-tertiary-fixed": "#321200",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "surface-container-lowest": "#0b0f13",
+                        "on-tertiary-container": "#ff801d",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "secondary-fixed": "#e3dfff",
+                        "on-secondary": "#2000a4",
+                        "primary-container": "#0b3c5d",
+                        "tertiary-container": "#602a00",
+                        "surface-bright": "#363a3e",
+                        "outline": "#8c9198",
+                        "surface-container-high": "#262a2f",
+                        "on-error": "#690005",
+                        "on-background": "#e0e2e8",
+                        "surface-dim": "#101418",
+                        "on-secondary-fixed": "#100069",
+                        "inverse-primary": "#396285",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "outline-variant": "#42474e",
+                        "on-surface": "#e0e2e8",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "inverse-surface": "#e0e2e8",
+                        "surface-variant": "#31353a",
+                        "surface": "#101418",
+                        "secondary": "#c4c0ff",
+                        "surface-tint": "#a3cbf2",
+                        "inverse-on-surface": "#2d3135",
+                        "background": "#101418",
+                        "primary-fixed": "#cee5ff",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "on-primary": "#003353",
+                        "on-tertiary": "#522300",
+                        "tertiary-fixed": "#ffdbc8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }
+body {
+    background-color: #101418;
+    color: #e0e2e8;
+    font-family: "Inter", sans-serif
+    }
+.noise-texture {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuADOo0lQhCDGULEATUtG0LXSnFugLUa_ofHiMVwybChUJj3qkH9VNVIu7d_fwIyoFLDW8FTozviX9eqqnOyXMh195dML6gxtQzkPPPzltd7PiojOu-IZZhiXR2c1esXIk2IVuPQuEXUq-XqU_aAfqvX71ejLb_CPwKZggeFXWbeA7lEXYIx_w9Uw7QHCS6Smaf7FRFDb1iLlBuO1V026yKU8FiYC_k6dL6aCpTcaZrZKBzQhGo6oNAKGgYTANk-eSs8nYJKK-xXvv7L);
+    opacity: 0.03;
+    pointer-events: none
+    }
+.glass-effect {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px)
+    }</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen relative overflow-hidden">
+<div class="fixed inset-0 noise-texture z-0"></div>
+<!-- Top Navigation Shell (Injected from Shared Components) -->
+<header class="flex justify-between items-center w-full px-6 h-14 bg-[#101418] z-10">
+<div class="flex items-center gap-4 transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[#a3cbf2]">arrow_back</span>
+<span class="font-['Manrope'] uppercase tracking-[0.05em] text-[0.6875rem] text-[#a3cbf2]">Call Status</span>
+</div>
+<div class="text-lg font-bold text-[#e0e2e8] font-headline">SENTINEL</div>
+</header>
+<main class="flex-grow flex flex-col items-center justify-center px-6 py-8 relative z-10">
+<!-- Error Indicator Section -->
+<div class="flex flex-col items-center mb-10">
+<div class="w-20 h-20 bg-tertiary-container rounded-full flex items-center justify-center mb-4 border border-on-tertiary-container/20">
+<span class="material-symbols-outlined text-on-tertiary-container text-5xl" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<h1 class="font-headline font-extrabold text-3xl tracking-tight text-on-tertiary-container uppercase">CALL FAILED</h1>
+<p class="text-on-surface-variant font-medium text-sm mt-2 opacity-80">Automatic notification system error</p>
+</div>
+<!-- High-Visibility Passenger Info Card -->
+<div class="w-full bg-surface-container-high rounded-xl p-8 relative overflow-hidden shadow-2xl">
+<!-- Subtle Radial Gradient Background -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/10 to-transparent pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-6">
+<div class="flex justify-between items-start">
+<div class="flex flex-col">
+<span class="font-label text-[0.6875rem] uppercase tracking-[0.1em] text-on-surface-variant font-bold">Passenger Location</span>
+<h2 class="font-headline font-extrabold text-5xl text-on-surface mt-1">Seat 12</h2>
+</div>
+<div class="bg-surface-container-highest px-4 py-2 rounded-full flex items-center">
+<span class="material-symbols-outlined text-primary text-sm mr-2" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label font-bold text-on-surface text-xs uppercase tracking-wider">Unverified</span>
+</div>
+</div>
+<div class="h-px w-full bg-outline-variant/10"></div>
+<div class="flex flex-col">
+<span class="font-label text-[0.6875rem] uppercase tracking-[0.1em] text-on-surface-variant font-bold">Upcoming Stop</span>
+<div class="flex items-center gap-3 mt-1">
+<span class="material-symbols-outlined text-tertiary">location_on</span>
+<h3 class="font-headline font-bold text-3xl text-on-surface">Una</h3>
+</div>
+</div>
+</div>
+<!-- Tonal Indicator for urgency -->
+<div class="absolute right-0 top-0 bottom-0 w-2 bg-on-tertiary-container"></div>
+</div>
+<!-- System Message -->
+<div class="mt-8 flex items-start gap-3 px-4 py-3 bg-surface-container-low rounded-lg border border-outline-variant/10 max-w-sm">
+<span class="material-symbols-outlined text-tertiary text-lg">info</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                The system could not establish a voice connection. Conductor must ensure passenger is notified before arriving at <span class="text-on-surface font-bold">Una</span> stop.
+            </p>
+</div>
+</main>
+<!-- Bottom Action Shell -->
+<section class="flex flex-col gap-4 px-6 pb-10 pt-4 bg-surface-dim relative z-10">
+<!-- Retry Call Button (Secondary Style) -->
+<button class="w-full min-h-[56px] flex items-center justify-center gap-3 bg-surface-container-highest text-on-surface font-headline font-bold rounded-xl transition-all active:scale-95 border border-outline-variant/20">
+<span class="material-symbols-outlined text-primary">replay</span>
+            RETRY CALL
+        </button>
+<!-- Inform Manually Button (Primary High-Priority Style) -->
+<button class="w-full min-h-[72px] flex items-center justify-center gap-4 bg-gradient-to-r from-tertiary-container to-on-tertiary-container text-white font-headline font-extrabold text-xl rounded-xl transition-all active:scale-95 shadow-lg shadow-tertiary-container/40">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">campaign</span>
+            INFORM MANUALLY
+        </button>
+</section>
+<!-- Bottom Navigation Bar (Injected from Shared Components) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#101418] rounded-t-[1.5rem] shadow-[0px_-4px_20px_rgba(0,0,0,0.15)]">
+<div class="flex flex-col items-center justify-center text-[#e0e2e8] opacity-60 px-4 py-2 transition-transform active:scale-90 hover:bg-[#262a2f]">
+<span class="material-symbols-outlined">directions_bus</span>
+<span class="font-['Inter'] font-medium text-[0.6875rem] tracking-wider mt-1">Route</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#e0e2e8] opacity-60 px-4 py-2 transition-transform active:scale-90 hover:bg-[#262a2f]">
+<span class="material-symbols-outlined">confirmation_number</span>
+<span class="font-['Inter'] font-medium text-[0.6875rem] tracking-wider mt-1">Tickets</span>
+</div>
+<!-- ACTIVE ITEM: Calls -->
+<div class="flex flex-col items-center justify-center bg-[#262a2f] text-[#ffb68b] rounded-[1.5rem] px-4 py-2 transition-transform active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">call</span>
+<span class="font-['Inter'] font-medium text-[0.6875rem] tracking-wider mt-1">Calls</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#e0e2e8] opacity-60 px-4 py-2 transition-transform active:scale-90 hover:bg-[#262a2f]">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-['Inter'] font-medium text-[0.6875rem] tracking-wider mt-1">Me</span>
+</div>
+</nav>
+<!-- Visual Embellishment: Radial glow behind content -->
+<div class="fixed -bottom-20 -left-20 w-80 h-80 bg-primary-container/20 rounded-full blur-[120px] pointer-events-none z-0"></div>
+<div class="fixed top-1/2 right-[-100px] w-64 h-64 bg-tertiary-container/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
+</body></html>

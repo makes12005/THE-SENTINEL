@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Logs &amp; Activity - The Sentinel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#ffdbc8",
+                        "inverse-surface": "#e0e2e8",
+                        "outline-variant": "#42474e",
+                        "inverse-primary": "#396285",
+                        "primary-container": "#0b3c5d",
+                        "on-primary": "#003353",
+                        "secondary-fixed": "#e3dfff",
+                        "on-tertiary-fixed": "#321200",
+                        "background": "#101418",
+                        "tertiary": "#ffb68b",
+                        "surface-bright": "#363a3e",
+                        "primary": "#a3cbf2",
+                        "surface-container": "#1c2024",
+                        "inverse-on-surface": "#2d3135",
+                        "surface-container-high": "#262a2f",
+                        "on-tertiary": "#522300",
+                        "on-secondary-container": "#b4b0ff",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#602a00",
+                        "primary-fixed": "#cee5ff",
+                        "on-primary-fixed": "#001d32",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-primary-container": "#7fa7cd",
+                        "on-secondary-fixed": "#100069",
+                        "surface-container-highest": "#31353a",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "surface-container-low": "#181c20",
+                        "on-secondary": "#2000a4",
+                        "on-tertiary-container": "#ff801d",
+                        "surface-variant": "#31353a",
+                        "surface-dim": "#101418",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "surface-container-lowest": "#0b0f13",
+                        "secondary": "#c4c0ff",
+                        "on-surface": "#e0e2e8",
+                        "secondary-container": "#3826cd",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "surface-tint": "#a3cbf2",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-background": "#e0e2e8",
+                        "surface": "#101418",
+                        "on-error": "#690005",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "outline": "#8c9198"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #101418;
+            font-family: 'Inter', sans-serif;
+            color: #e0e2e8;
+        }
+        .noise-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3column%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen pb-32">
+<div class="noise-overlay fixed inset-0 z-0"></div>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#101418] flex items-center justify-between px-6 py-4 w-full">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#a3cbf2] hover:bg-[#262a2f] transition-colors duration-200 p-2 rounded-full active:scale-90 transition-transform">menu</button>
+<h1 class="font-['Manrope'] font-bold text-2xl tracking-tight text-[#a3cbf2]">Logs &amp; Activity</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#a3cbf2] hover:bg-[#262a2f] transition-colors duration-200 p-2 rounded-full active:scale-90 transition-transform">account_circle</button>
+</div>
+</header>
+<main class="relative z-10 pt-24 px-6 max-w-3xl mx-auto">
+<!-- Segmented Control for View Filtering -->
+<div class="bg-surface-container-lowest p-1 rounded-3xl flex items-center mb-8">
+<button class="flex-1 py-3 text-sm font-bold tracking-[0.05em] uppercase text-on-surface/50 hover:text-primary transition-all">
+                Alerts
+            </button>
+<button class="flex-1 py-3 text-sm font-bold tracking-[0.05em] uppercase bg-surface-container-highest text-primary rounded-3xl shadow-lg">
+                Logs
+            </button>
+</div>
+<!-- Date Group: TODAY -->
+<section class="mb-10">
+<div class="flex items-center gap-4 mb-6">
+<span class="font-headline font-extrabold text-xs tracking-[0.2em] text-on-surface-variant/40">TODAY</span>
+<div class="h-[1px] flex-grow bg-surface-container-high"></div>
+</div>
+<div class="space-y-1">
+<!-- Log Entry 1: Success -->
+<div class="relative pl-8 pb-8 group">
+<!-- Timeline Line -->
+<div class="absolute left-[3px] top-2 bottom-0 w-[2px] bg-surface-container-high group-last:hidden"></div>
+<!-- Timeline Node -->
+<div class="absolute left-0 top-[6px] w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(196,192,255,0.4)]"></div>
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-2xl p-5 border-l-4 border-secondary/20">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-on-surface">Trip started</h3>
+<span class="font-label text-[0.6875rem] font-bold text-on-surface-variant/60 tracking-wider">10:32 PM</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">badge</span>
+<span class="text-xs font-semibold text-on-surface-variant">Operator: <span class="text-on-surface">Rajesh</span></span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">route</span>
+<span class="text-xs font-semibold text-on-surface-variant">Route: <span class="text-on-surface">Ahmedabad → Una</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Log Entry 2: Info -->
+<div class="relative pl-8 pb-8 group">
+<div class="absolute left-[3px] top-2 bottom-0 w-[2px] bg-surface-container-high group-last:hidden"></div>
+<div class="absolute left-0 top-[6px] w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(163,203,242,0.4)]"></div>
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-2xl p-5 border-l-4 border-primary/20">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-on-surface">Passenger list uploaded</h3>
+<span class="font-label text-[0.6875rem] font-bold text-on-surface-variant/60 tracking-wider">10:45 PM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">person</span>
+<span class="text-xs font-semibold text-on-surface-variant">Operator: <span class="text-on-surface">Vikram</span></span>
+</div>
+</div>
+</div>
+<!-- Log Entry 3: Warning -->
+<div class="relative pl-8 pb-8 group">
+<div class="absolute left-[3px] top-2 bottom-0 w-[2px] bg-surface-container-high group-last:hidden"></div>
+<div class="absolute left-0 top-[6px] w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_rgba(255,182,139,0.4)]"></div>
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-2xl p-5 border-l-4 border-tertiary/20">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-on-surface">Fuel Check Reminder</h3>
+<span class="font-label text-[0.6875rem] font-bold text-on-surface-variant/60 tracking-wider">09:15 PM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-tertiary">local_gas_station</span>
+<span class="text-xs font-semibold text-on-surface-variant">Operator: <span class="text-on-surface">Suresh K.</span></span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Date Group: YESTERDAY -->
+<section>
+<div class="flex items-center gap-4 mb-6">
+<span class="font-headline font-extrabold text-xs tracking-[0.2em] text-on-surface-variant/40">YESTERDAY</span>
+<div class="h-[1px] flex-grow bg-surface-container-high"></div>
+</div>
+<div class="space-y-1">
+<!-- Log Entry 4: Error -->
+<div class="relative pl-8 pb-8 group">
+<div class="absolute left-[3px] top-2 bottom-0 w-[2px] bg-surface-container-high group-last:hidden"></div>
+<div class="absolute left-0 top-[6px] w-2 h-2 rounded-full bg-error shadow-[0_0_8px_rgba(255,180,171,0.4)]"></div>
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-2xl p-5 border-l-4 border-error/20">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-on-surface">Maintenance Lock Engaged</h3>
+<span class="font-label text-[0.6875rem] font-bold text-on-surface-variant/60 tracking-wider">11:50 PM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-error">engineering</span>
+<span class="text-xs font-semibold text-on-surface-variant">Unit: <span class="text-on-surface">GJ-01-AX-9920</span></span>
+</div>
+</div>
+</div>
+<!-- Log Entry 5: Success -->
+<div class="relative pl-8 pb-8 group">
+<div class="absolute left-[3px] top-2 bottom-0 w-[2px] bg-surface-container-high group-last:hidden"></div>
+<div class="absolute left-0 top-[6px] w-2 h-2 rounded-full bg-secondary"></div>
+<div class="bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 rounded-2xl p-5 border-l-4 border-secondary/20">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline font-bold text-on-surface">Trip Completed</h3>
+<span class="font-label text-[0.6875rem] font-bold text-on-surface-variant/60 tracking-wider">10:10 PM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">task_alt</span>
+<span class="text-xs font-semibold text-on-surface-variant">Operator: <span class="text-on-surface">Anil P.</span></span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#181c20]/90 backdrop-blur-xl z-50 rounded-t-[1.5rem] shadow-[0px_-4px_40px_rgba(0,0,0,0.15)]">
+<button class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-4 py-2 hover:text-[#a3cbf2] scale-105 transition-all duration-300">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Dashboard</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-[#262a2f] text-[#a3cbf2] rounded-[1rem] px-4 py-2 scale-105 transition-all duration-300">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">history_edu</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Logs</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-4 py-2 hover:text-[#a3cbf2] scale-105 transition-all duration-300">
+<span class="material-symbols-outlined mb-1">badge</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Operators</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#e0e2e8]/50 px-4 py-2 hover:text-[#a3cbf2] scale-105 transition-all duration-300">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold uppercase tracking-[0.05em]">Settings</span>
+</button>
+</nav>
+</body></html>

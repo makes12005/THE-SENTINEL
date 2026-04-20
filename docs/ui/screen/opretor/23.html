@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-dim": "#101418",
+                "on-secondary-container": "#b4b0ff",
+                "surface-container": "#1c2024",
+                "primary-container": "#0b3c5d",
+                "on-tertiary-fixed-variant": "#753400",
+                "on-background": "#e0e2e8",
+                "surface-tint": "#a3cbf2",
+                "on-tertiary-fixed": "#321200",
+                "on-tertiary-container": "#ff801d",
+                "surface-variant": "#31353a",
+                "secondary-container": "#3826cd",
+                "surface": "#101418",
+                "on-error": "#690005",
+                "error": "#ffb4ab",
+                "secondary-fixed": "#e3dfff",
+                "inverse-on-surface": "#2d3135",
+                "background": "#101418",
+                "primary-fixed-dim": "#a3cbf2",
+                "inverse-surface": "#e0e2e8",
+                "inverse-primary": "#396285",
+                "tertiary-container": "#602a00",
+                "tertiary": "#ffb68b",
+                "on-secondary": "#2000a4",
+                "on-primary-fixed": "#001d32",
+                "tertiary-fixed": "#ffdbc8",
+                "surface-bright": "#363a3e",
+                "primary": "#a3cbf2",
+                "on-primary": "#003353",
+                "on-primary-fixed-variant": "#1f4a6c",
+                "surface-container-highest": "#31353a",
+                "secondary-fixed-dim": "#c4c0ff",
+                "on-surface-variant": "#c2c7ce",
+                "outline": "#8c9198",
+                "tertiary-fixed-dim": "#ffb68b",
+                "error-container": "#93000a",
+                "surface-container-low": "#181c20",
+                "surface-container-high": "#262a2f",
+                "on-tertiary": "#522300",
+                "on-error-container": "#ffdad6",
+                "primary-fixed": "#cee5ff",
+                "surface-container-lowest": "#0b0f13",
+                "on-surface": "#e0e2e8",
+                "on-primary-container": "#7fa7cd",
+                "on-secondary-fixed": "#100069",
+                "secondary": "#c4c0ff",
+                "on-secondary-fixed-variant": "#3622ca",
+                "outline-variant": "#42474e"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .noise-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Ffilter id='noiseFilter'%3F%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+        }
+        .tonal-layering-no-borders {
+            border: none !important;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-dim text-on-surface font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<div class="noise-overlay fixed inset-0 pointer-events-none z-[100]"></div>
+<!-- Header / TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#181c20] flex items-center justify-between px-6 h-16 w-full max-w-none tonal-layering-no-borders">
+<div class="flex items-center gap-4">
+<button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<h1 class="font-headline uppercase tracking-widest text-xs font-bold text-primary">Add New Driver</h1>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-normal opacity-70">Enter details below</p>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Operator Profile" class="w-full h-full object-cover" data-alt="minimalist user avatar placeholder with geometric pattern in muted blue and gray tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-XAw4YdqL2VvqcUjfLnMcDRyoINQgFeUJFWpytP4WkkqiBaNoGwkMcrReYG8DTr1odZX3BjyGEC_JxVbrLciJm3zoYkkf-BFKUhMN-463D0MaQWDwpGU8iEI7jzrSLIeD-H7PE34973CK7uw_KWiivS4qlKjgOx9ymzoQokXBBNpPrG64NrU-faJD059IHL3qk6PAxXMmiw6L_yqVDu2Gtx1-NxEj_f7C-ts_RV09q6yQi4U3I0g6GveqcT02KEhpCNWsb4HgwpOe"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-32 px-6 max-w-md mx-auto">
+<!-- Instructional Card -->
+<div class="bg-surface-container-low rounded-xl p-6 mb-8 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+<div class="relative z-10">
+<h2 class="font-headline font-extrabold text-lg tracking-tight text-primary mb-1">Driver Onboarding</h2>
+<p class="text-sm text-on-surface-variant leading-relaxed">Assign a new operator to the fleet system. Ensure all required identification documents are verified.</p>
+</div>
+</div>
+<!-- Form Section -->
+<form class="space-y-6">
+<!-- Full Name (Required) -->
+<div class="space-y-2">
+<label class="flex items-center gap-1 font-label text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-1">
+                    Full Name
+                    <span class="text-on-tertiary-container font-bold">*</span>
+</label>
+<div class="group relative">
+<input class="w-full h-14 bg-surface-container-high text-on-surface border-none rounded-xl px-4 focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/30 font-medium" placeholder="e.g. Samuel K. Mwangi" required="" type="text"/>
+</div>
+</div>
+<!-- Phone Number (Required) -->
+<div class="space-y-2">
+<label class="flex items-center gap-1 font-label text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-1">
+                    Phone Number
+                    <span class="text-on-tertiary-container font-bold">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-14 bg-surface-container-high text-on-surface border-none rounded-xl px-4 focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/30 font-medium" inputmode="numeric" placeholder="+254 700 000 000" required="" type="tel"/>
+<span class="material-symbols-outlined absolute right-4 top-4 text-on-surface-variant/40">call</span>
+</div>
+</div>
+<!-- License Number (Optional) -->
+<div class="space-y-2">
+<label class="font-label text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-1">
+                    License Number
+                </label>
+<div class="relative">
+<input class="w-full h-14 bg-surface-container-high text-on-surface border-none rounded-xl px-4 focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/30 font-medium" placeholder="DL-9988776655" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-4 text-on-surface-variant/40">badge</span>
+</div>
+</div>
+<!-- Address / Village (Optional) -->
+<div class="space-y-2">
+<label class="font-label text-[11px] font-bold uppercase tracking-widest text-on-surface-variant px-1">
+                    Address / Village
+                </label>
+<div class="relative">
+<textarea class="w-full bg-surface-container-high text-on-surface border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/30 font-medium resize-none" placeholder="Residential details..." rows="3"></textarea>
+<span class="material-symbols-outlined absolute right-4 top-4 text-on-surface-variant/40">location_on</span>
+</div>
+</div>
+</form>
+<!-- Decorative Info Card -->
+<div class="mt-8 p-4 bg-tertiary-container/10 rounded-xl border-l-4 border-tertiary-container flex gap-3">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="text-xs text-on-surface-variant font-medium">Driver profiles are subject to background checks before route assignment.</p>
+</div>
+</main>
+<!-- Bottom Actions / Mandatory Navigation Styling Logic -->
+<div class="fixed bottom-0 left-0 w-full z-50 p-6 pt-2 bg-[#181c20]/90 backdrop-blur-xl shadow-[0px_-4px_40px_rgba(0,0,0,0.15)] rounded-t-[1.5rem]">
+<div class="max-w-md mx-auto flex flex-col gap-3">
+<button class="w-full h-14 bg-primary-container text-on-primary-container font-headline font-bold text-sm tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-primary-container/80 shadow-lg shadow-black/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">save</span>
+                Save
+            </button>
+<button class="w-full py-3 text-on-surface-variant font-label font-bold text-[11px] tracking-widest uppercase text-center hover:text-on-surface active:scale-95 transition-all">
+                Cancel
+            </button>
+</div>
+</div>
+<!-- Hidden Bottom Nav for top-level context (Suppressed for transactional screen) -->
+<!-- Navigation is suppressed per "Shell Visibility & Relevance" rule for Transactional pages -->
+</body></html>

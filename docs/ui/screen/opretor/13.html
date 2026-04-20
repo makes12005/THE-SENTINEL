@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-highest": "#31353a",
+            "background": "#101418",
+            "on-surface-variant": "#c2c7ce",
+            "secondary": "#c4c0ff",
+            "tertiary-container": "#602a00",
+            "surface-variant": "#31353a",
+            "on-tertiary-container": "#ff801d",
+            "on-secondary-fixed": "#100069",
+            "primary-fixed": "#cee5ff",
+            "secondary-fixed-dim": "#c4c0ff",
+            "primary": "#a3cbf2",
+            "on-error": "#690005",
+            "secondary-fixed": "#e3dfff",
+            "on-tertiary": "#522300",
+            "on-tertiary-fixed-variant": "#753400",
+            "surface": "#101418",
+            "on-secondary-container": "#b4b0ff",
+            "surface-container-lowest": "#0b0f13",
+            "on-secondary": "#2000a4",
+            "on-tertiary-fixed": "#321200",
+            "tertiary-fixed": "#ffdbc8",
+            "surface-container": "#1c2024",
+            "primary-fixed-dim": "#a3cbf2",
+            "on-primary-container": "#7fa7cd",
+            "primary-container": "#0b3c5d",
+            "inverse-primary": "#396285",
+            "inverse-on-surface": "#2d3135",
+            "on-surface": "#e0e2e8",
+            "on-background": "#e0e2e8",
+            "on-primary-fixed": "#001d32",
+            "on-error-container": "#ffdad6",
+            "tertiary": "#ffb68b",
+            "outline-variant": "#42474e",
+            "surface-container-high": "#262a2f",
+            "on-primary": "#003353",
+            "surface-dim": "#101418",
+            "on-secondary-fixed-variant": "#3622ca",
+            "error-container": "#93000a",
+            "tertiary-fixed-dim": "#ffb68b",
+            "inverse-surface": "#e0e2e8",
+            "error": "#ffb4ab",
+            "surface-tint": "#a3cbf2",
+            "outline": "#8c9198",
+            "on-primary-fixed-variant": "#1f4a6c",
+            "surface-container-low": "#181c20",
+            "surface-bright": "#363a3e",
+            "secondary-container": "#3826cd"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Manrope"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .noise-overlay {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.02;
+      pointer-events: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<div class="noise-overlay fixed inset-0 z-[100]"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-gradient-to-b from-[#181c20] to-transparent">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-none">
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#262a2f] transition-colors p-2 rounded-full active:scale-95 duration-200 text-[#a3cbf2]">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-['Manrope'] uppercase tracking-[0.05em] text-sm font-bold text-[#a3cbf2]">TRIP #4029-B</h1>
+</div>
+<button class="hover:bg-[#262a2f] transition-colors p-2 rounded-full active:scale-95 duration-200 text-[#a3cbf2]">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<main class="pt-20 pb-28 px-4 md:px-8 max-w-5xl mx-auto space-y-6">
+<!-- Hero Section: Route & Primary Status -->
+<section class="relative overflow-hidden rounded-xl bg-surface-container-low p-8 border-l-4 border-primary">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="bg-primary-container text-primary-fixed text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase">Active Leg</span>
+<span class="text-on-surface-variant text-xs font-medium uppercase tracking-tighter">Bus No: GJ01AB1234</span>
+</div>
+<div class="flex items-center gap-4">
+<h2 class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight">Ahmedabad</h2>
+<span class="material-symbols-outlined text-primary text-3xl">trending_flat</span>
+<h2 class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight">Una</h2>
+</div>
+<div class="flex gap-6 mt-4">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Departure</p>
+<p class="font-headline text-xl font-bold">10:30 PM</p>
+</div>
+<div class="h-10 w-px bg-outline-variant/30"></div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase">Status</p>
+<p class="font-headline text-xl font-bold text-primary flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                ACTIVE
+              </p>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="h-14 px-8 rounded-xl bg-primary-container text-on-primary-container font-bold tracking-tight flex items-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">my_location</span>
+            TRACK LIVE
+          </button>
+<button class="h-14 px-8 rounded-xl bg-surface-container-highest text-on-surface font-bold tracking-tight flex items-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">call</span>
+            CONTACT
+          </button>
+</div>
+</div>
+</section>
+<!-- Alert Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Alert Section -->
+<section class="md:col-span-2 rounded-xl bg-surface-container-high p-6 border-l-4 border-tertiary shadow-lg">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+<h3 class="font-headline text-lg font-extrabold uppercase tracking-wider">Alerts</h3>
+</div>
+<button class="text-xs font-bold text-on-tertiary-container hover:underline tracking-widest uppercase">View Details</button>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-tertiary-container/30 rounded-xl">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-tertiary">person_off</span>
+<p class="text-sm font-medium text-on-surface">Passenger list missing</p>
+</div>
+<span class="text-[10px] bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full font-black uppercase">Critical</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest/50 rounded-xl">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">phone_missed</span>
+<p class="text-sm font-medium text-on-surface">Call failed (Seat 12)</p>
+</div>
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">2 min ago</span>
+</div>
+</div>
+</section>
+<!-- Passenger Status Card -->
+<section class="rounded-xl bg-surface-container-low p-6 flex flex-col justify-between">
+<div>
+<h3 class="font-headline text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-4">Passenger List</h3>
+<div class="flex flex-col items-center py-6 text-center">
+<div class="w-16 h-16 rounded-full bg-error-container/20 flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-error text-3xl">error_outline</span>
+</div>
+<p class="font-headline text-xl font-extrabold text-error">Missing</p>
+<p class="text-xs text-on-surface-variant mt-1">Operator has not uploaded yet</p>
+</div>
+</div>
+<button class="w-full h-12 rounded-xl bg-tertiary-container text-on-tertiary-container font-bold uppercase tracking-widest text-xs hover:bg-tertiary hover:text-on-tertiary transition-colors active:scale-95">
+          Upload Now
+        </button>
+</section>
+</div>
+<!-- Activity Log Section -->
+<section class="rounded-xl bg-surface-container-low p-6">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-secondary">history</span>
+<h3 class="font-headline text-lg font-extrabold uppercase tracking-wider">Activity Logs</h3>
+</div>
+<div class="space-y-0 relative">
+<div class="absolute left-[11px] top-4 bottom-4 w-px bg-outline-variant/30"></div>
+<div class="relative pl-10 pb-6">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface-container-high border-2 border-primary flex items-center justify-center z-10">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+</div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">10:32 PM</p>
+<p class="font-medium text-sm mt-1">Trip started: GJ01AB1234 departed from Ahmedabad Terminal</p>
+</div>
+<div class="relative pl-10 pb-6">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface-container-high border-2 border-tertiary flex items-center justify-center z-10">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+</div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">10:35 PM</p>
+<p class="font-medium text-sm mt-1">Automatic alert triggered: Missing Passenger List</p>
+</div>
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface-container-high border-2 border-on-surface-variant flex items-center justify-center z-10">
+<div class="w-2 h-2 rounded-full bg-on-surface-variant"></div>
+</div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">10:42 PM</p>
+<p class="font-medium text-sm mt-1">Call sequence initiated for Seat 12 (No answer)</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-[#181c20]/90 backdrop-blur-xl border-t border-[#ffffff]/5">
+<div class="flex justify-around items-center h-20 px-4 pb-safe">
+<a class="flex flex-col items-center justify-center text-[#909196] hover:text-[#e0e2e8] transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold tracking-widest uppercase mt-1">DASHBOARD</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#909196] hover:text-[#e0e2e8] transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold tracking-widest uppercase mt-1">PASSENGERS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#a3cbf2] bg-[#262a2f] rounded-xl px-4 py-1 transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings_remote</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold tracking-widest uppercase mt-1">CONTROLS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#909196] hover:text-[#e0e2e8] transition-colors active:scale-90" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-['Inter'] text-[0.6875rem] font-bold tracking-widest uppercase mt-1">LOGS</span>
+</a>
+</div>
+</nav>
+</body></html>
