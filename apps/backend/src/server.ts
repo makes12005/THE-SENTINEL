@@ -17,21 +17,30 @@ dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 const fastify = Fastify({ logger: true });
 
+// ─── Plugins ──────────────────────────────────────────────────────────────────
 // Multipart support for CSV / xlsx uploads (limits: 10 MB file, 100 fields)
 fastify.register(multipart, {
   limits: {
-    fileSize: 10 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10 MB
     files: 1,
     fields: 10,
   },
 });
 
+// ─── Modules ──────────────────────────────────────────────────────────────────
 fastify.register(tripsRoutes,    { prefix: '/api/trips' });
 fastify.register(routesRoutes,   { prefix: '/api/routes' });
+// Operator dashboard API (sprint 7)
+// All routes live under /api: /api/operator/summary, /api/agency/members, /api/logs/alert-logs
 fastify.register(operatorRoutes, { prefix: '/api' });
+// Owner dashboard API (sprint 8)
+// Routes: /api/owner/summary, /api/owner/operators, /api/owner/trips, /api/owner/logs, /api/agency/profile
 fastify.register(ownerRoutes, { prefix: '/api' });
+// Admin dashboard API (sprint 9)
+// Routes: /api/admin/agencies, /api/admin/billing/*, /api/admin/health, /api/admin/audit-logs
 fastify.register(adminRoutes, { prefix: '/api' });
 
+// ─── Health check ─────────────────────────────────────────────────────────────
 fastify.get('/health', async (request, reply) => {
   const start = performance.now();
   
@@ -69,6 +78,7 @@ fastify.get('/health', async (request, reply) => {
   return reply.code(overallStatus === 'ok' ? 200 : 503).send(responsePayload);
 });
 
+// Deprecated old healthcheck for internal compat if any, but mapping it to same.
 fastify.get('/api/health', async (request, reply) => {
   return {
     status: 'ok',
@@ -76,6 +86,7 @@ fastify.get('/api/health', async (request, reply) => {
   };
 });
 
+// ─── Bootstrap ────────────────────────────────────────────────────────────────
 const start = async () => {
   try {
     await fastify.ready();
@@ -86,6 +97,7 @@ const start = async () => {
     if (redisPing !== 'PONG') throw new Error('Redis ping failed');
     fastify.log.info('Redis connected');
 
+    // Attach Socket.IO to the raw http.Server
     const httpServer = createServer(fastify.server);
     initSocketIO(httpServer);
 
