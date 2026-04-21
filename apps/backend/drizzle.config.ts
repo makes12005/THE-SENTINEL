@@ -2,7 +2,10 @@ import { defineConfig } from 'drizzle-kit';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '.env.production'), override: false });
+dotenv.config({ path: path.join(__dirname, '.env'), override: false });
+dotenv.config({ path: path.join(__dirname, '../../.env.production'), override: false });
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: false });
 
 export default defineConfig({
   schema: './src/db/schema.ts',

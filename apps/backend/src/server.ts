@@ -1,19 +1,19 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
 import { createServer } from 'http';
+import authRoutes     from './modules/auth/auth.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
 import routesRoutes   from './modules/trips/routes.routes';
 import operatorRoutes from './modules/operator/operator.routes';
 import ownerRoutes    from './modules/owner/owner.routes';
 import adminRoutes    from './modules/admin/admin.routes';
 import { initSocketIO } from './lib/socket';
+import { loadEnv } from './lib/load-env';
 import { db } from './db';
 import { redis } from './lib/redis';
 import { sql } from 'drizzle-orm';
-import * as dotenv from 'dotenv';
-import path from 'path';
 
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
+loadEnv();
 
 const fastify = Fastify({ logger: true });
 
@@ -28,6 +28,7 @@ fastify.register(multipart, {
 });
 
 // ─── Modules ──────────────────────────────────────────────────────────────────
+fastify.register(authRoutes,     { prefix: '/api/auth' });
 fastify.register(tripsRoutes,    { prefix: '/api/trips' });
 fastify.register(routesRoutes,   { prefix: '/api/routes' });
 // Operator dashboard API (sprint 7)
@@ -99,7 +100,7 @@ const start = async () => {
 
     // Attach Socket.IO to the raw http.Server
     const httpServer = createServer(fastify.server);
-    initSocketIO(httpServer);
+    await initSocketIO(httpServer);
 
     const port = parseInt(process.env.PORT || '3000', 10);
     httpServer.listen(port, '0.0.0.0', () => {

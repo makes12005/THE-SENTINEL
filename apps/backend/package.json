@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "build": "pnpm exec tsc -p shared-types/tsconfig.json && node -e \"require('fs').cpSync('shared-types/dist','node_modules/@busalert/shared-types/dist',{recursive:true,force:true})\" && tsc || exit 0",
-    "dev": "ts-node src/server.ts",
-    "start": "node ./dist/server.js",
-    "worker:alert": "node ./dist/workers/alert.worker.js",
-    "worker:heartbeat": "node ./dist/workers/heartbeat.worker.js",
+    "build": "node -e \"console.log('backend build skipped; Railway runs TypeScript via tsx')\"",
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts",
+    "worker:alert": "tsx src/workers/alert.worker.ts",
+    "worker:heartbeat": "tsx src/workers/heartbeat.worker.ts",
     "lint": "eslint \"src/**/*.ts\"",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg"

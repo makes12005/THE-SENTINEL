@@ -11,7 +11,8 @@
 
 import { db } from '../../db';
 import { trips, users, auditLogs } from '../../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { emitSocketEvent } from '../../lib/socket';
 
 export class TakeoverService {
 
@@ -74,19 +75,19 @@ export class TakeoverService {
     await db.insert(auditLogs).values({
       user_id: driverId,
       action: 'TRIP_TAKEOVER',
-      resource_type: 'trip',
-      resource_id: tripId,
-      metadata: JSON.stringify({
+      entity_type: 'trip',
+      entity_id: tripId,
+      metadata: {
         previous_conductor_id: previousConductorId,
         driver_id: driverId,
         driver_name: driver.name,
         timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-      }),
+      },
     });
 
     // 7. Emit Socket.IO to all trip participants
     try {
-      fastify.io.to(`trip:${tripId}`).emit('conductor_replaced', {
+      await emitSocketEvent(`trip:${tripId}`, 'conductor_replaced', {
         tripId,
         newConductorId: driverId,
         newConductorName: driver.name,

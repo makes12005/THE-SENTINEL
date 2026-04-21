@@ -14,15 +14,10 @@
  * On crash: no state lost — next poll re-derives state from DB.
  */
 
-import 'dotenv/config';
-import path from 'path';
-import * as dotenv from 'dotenv';
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
-
 import { db }                 from '../db';
-import { trips, conductorLocations, users, auditLogs } from '../db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
-import { getIO }              from '../lib/socket';
+import { trips, conductorLocations, auditLogs } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { emitSocketEvent } from '../lib/socket';
 
 const POLL_INTERVAL_MS    = 30_000;   // 30 seconds
 const OFFLINE_THRESHOLD_S = 120;      // 2 minutes in seconds
@@ -87,13 +82,6 @@ async function getActiveTripsWithHeartbeat(): Promise<Array<{
 }
 
 async function poll() {
-  let io: ReturnType<typeof getIO> | null = null;
-  try { io = getIO(); } catch { /* Socket.IO not yet initialised — skip */ }
-  if (!io) {
-    console.warn('[HeartbeatWorker] Socket.IO not initialised yet — skipping poll');
-    return;
-  }
-
   let heartbeats: Awaited<ReturnType<typeof getActiveTripsWithHeartbeat>>;
   try {
     heartbeats = await getActiveTripsWithHeartbeat();
@@ -120,8 +108,7 @@ async function poll() {
       console.warn(`[HeartbeatWorker] conductor OFFLINE — trip ${tripId} | lastSeen: ${lastSeenAt?.toISOString() ?? 'never'}`);
       offlineTrips.add(tripId);
 
-      // Emit to all sockets in trip room
-      io.to(`trip:${tripId}`).emit('conductor_offline', {
+      await emitSocketEvent(`trip:${tripId}`, 'conductor_offline', {
         tripId,
         conductorId,
         driverId,
@@ -148,7 +135,7 @@ async function poll() {
       console.log(`[HeartbeatWorker] conductor RECOVERED — trip ${tripId}`);
       offlineTrips.delete(tripId);
 
-      io.to(`trip:${tripId}`).emit('conductor_online', {
+      await emitSocketEvent(`trip:${tripId}`, 'conductor_online', {
         tripId,
         conductorId,
         recoveredAt: new Date().toISOString(),

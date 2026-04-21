@@ -9,12 +9,12 @@
  */
 
 import { db } from '../../db';
-import { alertLogs, tripPassengers } from '../../db/schema';
+import { alertLogs, tripPassengers, trips } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { triggerCall }     from './call.service';
 import { triggerSMS }      from './sms.service';
 import { triggerWhatsApp } from './whatsapp.service';
-import { getIO }           from '../../lib/socket';
+import { emitSocketEvent } from '../../lib/socket';
 
 export interface AlertJob {
   tripId: string;
@@ -121,17 +121,17 @@ export async function runAlertCascade(job: AlertJob): Promise<void> {
   console.warn(`${tag} All automated channels failed — emitting manual alert to conductor`);
 
   try {
-    const io = getIO();
-    // Conductor socket rooms are keyed by their user ID (joined in auth middleware)
-    const [trip] = await db.query.trips.findMany({
-      where: (t, { eq }) => eq(t.id, tripId),
-      limit: 1,
-    });
+    const [trip] = await db
+      .select({ conductor_id: trips.conductor_id })
+      .from(trips)
+      .where(eq(trips.id, tripId))
+      .limit(1);
 
     const conductorId = trip?.conductor_id;
 
     if (conductorId) {
-      io.to(`user:${conductorId}`).emit('alert_manual_required', {
+      await emitSocketEvent(`user:${conductorId}`, 'alert_manual_required', {
+        passengerId,
         passengerName,
         passengerPhone,
         stopName,

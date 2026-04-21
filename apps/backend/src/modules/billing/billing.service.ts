@@ -16,7 +16,7 @@ import {
   billingTransactions,
 } from '../../db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { getIO } from '../../lib/socket';
+import { emitSocketEvent } from '../../lib/socket';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -99,8 +99,7 @@ export async function deductAlertCost(
   // Emit low-balance Socket.IO event so owner dashboard can show warning
   if (lowBalance) {
     try {
-      const io = getIO();
-      io.to(`agency:${agencyId}`).emit('low_balance_alert', {
+      await emitSocketEvent(`agency:${agencyId}`, 'low_balance_alert', {
         agencyId,
         balancePaise: newBalance,
         balanceRupees: newBalance / 100,

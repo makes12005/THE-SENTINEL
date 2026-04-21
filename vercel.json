@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "installCommand": "npm i -g pnpm@9.15.2 && pnpm install --no-frozen-lockfile",
-  "buildCommand": "pnpm --filter web build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "npm run build --workspace=apps/web",
   "outputDirectory": "apps/web/.next"
 }
