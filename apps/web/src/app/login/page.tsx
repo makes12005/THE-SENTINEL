@@ -15,6 +15,44 @@ const ROLE_REDIRECTS: Record<string, string> = {
   driver:    '/operator/dashboard',
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+
+/* ── Google Sign-In Button ───────────────────────────────────────────────── */
+function GoogleButton({ label = 'Continue with Google' }: { label?: string }) {
+  function handleGoogle() {
+    // Redirect to backend Google OAuth — it will callback with JWT
+    window.location.href = `${API_URL}/api/auth/google`;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleGoogle}
+      className="w-full flex items-center justify-center gap-3 bg-[#1c2024] border border-[#42474e] hover:border-[#a3cbf2]/40 hover:bg-[#222830] text-[#e0e2e8] font-semibold text-sm py-3.5 rounded-xl transition-all active:scale-[0.98]"
+    >
+      {/* Google G SVG */}
+      <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M47.532 24.552c0-1.636-.146-3.2-.418-4.698H24.48v8.883h12.971c-.558 3.013-2.253 5.566-4.8 7.28v6.048h7.771c4.548-4.19 7.11-10.36 7.11-17.513z" fill="#4285F4"/>
+        <path d="M24.48 48c6.51 0 11.97-2.16 15.96-5.835l-7.77-6.048c-2.158 1.449-4.915 2.305-8.19 2.305-6.296 0-11.63-4.252-13.537-9.967H2.897v6.24C6.87 42.933 15.093 48 24.48 48z" fill="#34A853"/>
+        <path d="M10.943 28.455A14.476 14.476 0 0 1 10.11 24c0-1.565.27-3.084.833-4.455v-6.24H2.897A24.02 24.02 0 0 0 .48 24c0 3.882.927 7.553 2.417 10.695l8.046-6.24z" fill="#FBBC05"/>
+        <path d="M24.48 9.578c3.546 0 6.727 1.22 9.23 3.616l6.922-6.922C36.447 2.386 30.99 0 24.48 0 15.093 0 6.87 5.067 2.897 13.305l8.046 6.24c1.906-5.716 7.24-9.967 13.537-9.967z" fill="#EA4335"/>
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+/* ── OR Divider ─────────────────────────────────────────────────────────── */
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3 my-5">
+      <div className="flex-1 h-px bg-[#42474e]/60" />
+      <span className="text-xs font-semibold text-[#42474e] uppercase tracking-widest">or</span>
+      <div className="flex-1 h-px bg-[#42474e]/60" />
+    </div>
+  );
+}
+
 /* ── OTP Login sub-form ─────────────────────────────────────────────────── */
 function OtpLoginForm() {
   const router = useRouter();
@@ -384,6 +422,9 @@ function LoginPageInner() {
 
         {/* Form card */}
         <div className="bg-[#181c20] rounded-2xl p-8 border border-[#42474e]/30 shadow-2xl">
+          {/* Google OAuth — always visible in both tabs */}
+          <GoogleButton label={tab === 'signup' ? 'Sign up with Google' : 'Continue with Google'} />
+          <OrDivider />
           {tab === 'login' ? <PasswordLoginForm /> : <SignUpForm />}
         </div>
 
