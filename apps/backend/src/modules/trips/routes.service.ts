@@ -20,15 +20,21 @@ export async function createRoute(
   agencyId: string,
   payload: CreateRouteRequest
 ) {
+  const name = payload.name!;
+  const fromCity = payload.from_city!;
+  const toCity = payload.to_city!;
+
+  const routeInsert: typeof routes.$inferInsert = {
+    agency_id: agencyId,
+    name,
+    from_city: fromCity,
+    to_city: toCity,
+    created_at: new Date(),
+  };
+
   const [route] = await db
     .insert(routes)
-    .values({
-      agency_id: agencyId,
-      name: payload.name,
-      from_city: payload.from_city,
-      to_city: payload.to_city,
-      created_at: new Date(),
-    })
+    .values(routeInsert)
     .returning();
 
   return route;
@@ -49,6 +55,11 @@ export async function addStop(
   agencyId: string,
   payload: CreateStopRequest
 ) {
+  const name = payload.name!;
+  const sequenceNumber = payload.sequence_number!;
+  const latitude = payload.latitude!;
+  const longitude = payload.longitude!;
+
   // Verify route belongs to this agency
   const [route] = await db
     .select({ id: routes.id })
@@ -67,7 +78,7 @@ export async function addStop(
   const existing = await db
     .select({ id: stops.id })
     .from(stops)
-    .where(and(eq(stops.route_id, routeId), eq(stops.sequence_number, payload.sequence_number)))
+    .where(and(eq(stops.route_id, routeId), eq(stops.sequence_number, sequenceNumber)))
     .limit(1);
 
   if (existing.length > 0) {
@@ -77,15 +88,18 @@ export async function addStop(
     );
   }
 
+  const triggerRadiusKm = payload.trigger_radius_km ?? 10;
+  const stopInsert: typeof stops.$inferInsert = {
+    route_id: routeId,
+    name,
+    sequence_number: sequenceNumber,
+    coordinates: toEWKT(latitude, longitude),
+    trigger_radius_km: String(triggerRadiusKm),
+  };
+
   const [stop] = await db
     .insert(stops)
-    .values({
-      route_id: routeId,
-      name: payload.name,
-      sequence_number: payload.sequence_number,
-      coordinates: toEWKT(payload.latitude, payload.longitude),
-      trigger_radius_km: String(payload.trigger_radius_km ?? 10),
-    })
+    .values(stopInsert)
     .returning({
       id: stops.id,
       name: stops.name,
@@ -93,7 +107,7 @@ export async function addStop(
       trigger_radius_km: stops.trigger_radius_km,
     });
 
-  return { ...stop, latitude: payload.latitude, longitude: payload.longitude };
+  return { ...stop, latitude, longitude };
 }
 
 // ── List Stops on a Route ────────────────────────────────────────────────────

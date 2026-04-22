@@ -1,6 +1,5 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
-import { createServer } from 'http';
 import authRoutes     from './modules/auth/auth.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
 import routesRoutes   from './modules/trips/routes.routes';
@@ -98,14 +97,12 @@ const start = async () => {
     if (redisPing !== 'PONG') throw new Error('Redis ping failed');
     fastify.log.info('Redis connected');
 
-    // Attach Socket.IO to the raw http.Server
-    const httpServer = createServer(fastify.server);
-    await initSocketIO(httpServer);
+    // Fastify already owns the underlying Node http.Server.
+    await initSocketIO(fastify.server);
 
     const port = parseInt(process.env.PORT || '3000', 10);
-    httpServer.listen(port, '0.0.0.0', () => {
-      fastify.log.info(`Server running on port ${port}`);
-    });
+    await fastify.listen({ port, host: '0.0.0.0' });
+    fastify.log.info(`Server running on port ${port}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

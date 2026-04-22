@@ -69,10 +69,10 @@ export async function uploadPassengers(
   if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
 
   // Verify operator's agency owns the route (via join)
-  const routeRows = await db.execute<{ agency_id: string }>(
+  const routeRows = Array.from(await db.execute<{ agency_id: string }>(
     sql`SELECT agency_id FROM routes WHERE id = ${trip.route_id} LIMIT 1`
-  );
-  if (!routeRows.rows[0] || routeRows.rows[0].agency_id !== operatorAgencyId) {
+  ));
+  if (!routeRows[0] || routeRows[0].agency_id !== operatorAgencyId) {
     throw Object.assign(new Error('Trip does not belong to your agency'), { statusCode: 403 });
   }
 
@@ -139,13 +139,16 @@ export async function uploadPassengers(
     if (!parsed.success) {
       parsed.error.issues.forEach((issue) => errors.push(issue.message));
     } else {
-      const { name, phone, stop_name } = parsed.data;
+      const name = parsed.data.name!;
+      const phone = parsed.data.phone!;
+      const stop_name = parsed.data.stop_name!;
+      const normalizedStopName = stop_name.toLowerCase().trim();
 
       // Stop name must exist on this route
-      const stopId = stopNameMap.get(stop_name.toLowerCase().trim());
+      const stopId = stopNameMap.get(normalizedStopName);
       if (!stopId) {
         errors.push(
-          `stop_name "${stop_name}" not found on route. Valid stops: ${[...stopNameMap.keys()].join(', ')}`
+          `stop_name "${stop_name}" not found on route. Valid stops: ${Array.from(stopNameMap.keys()).join(', ')}`
         );
       }
 
@@ -182,16 +185,16 @@ export async function uploadPassengers(
 
   // ── 6. Single-transaction bulk insert ────────────────────────────────────
   await db.transaction(async (tx) => {
-    await tx.insert(tripPassengers).values(
-      readyRows.map((r) => ({
-        trip_id: tripId,
-        passenger_name: r.passengerName,
-        passenger_phone: r.passengerPhone,
-        stop_id: r.stopId,
-        alert_status: 'pending' as const,
-        created_at: new Date(),
-      }))
-    );
+    const passengerInserts: Array<typeof tripPassengers.$inferInsert> = readyRows.map((r) => ({
+      trip_id: tripId,
+      passenger_name: r.passengerName,
+      passenger_phone: r.passengerPhone,
+      stop_id: r.stopId,
+      alert_status: 'pending',
+      created_at: new Date(),
+    }));
+
+    await tx.insert(tripPassengers).values(passengerInserts);
   });
 
   return { uploaded: readyRows.length };

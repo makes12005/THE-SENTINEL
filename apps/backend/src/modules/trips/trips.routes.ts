@@ -47,6 +47,8 @@ function handleError(reply: FastifyReply, err: any) {
 }
 
 export default async function tripsRoutes(fastify: FastifyInstance) {
+  const getTripId = (req: FastifyRequest): string =>
+    (req.params as { id: string }).id;
 
   // ─────────────────────────────────────────────────────────────────
   // Sprint 2 — existing routes
@@ -73,9 +75,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/:id',
     { preHandler: [requireAuth()] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const trip = await TripsService.getTrip(req.params.id);
+        const trip = await TripsService.getTrip(getTripId(req));
         return reply.send({ success: true, data: trip });
       } catch (err) { return handleError(reply, err); }
     }
@@ -85,10 +87,10 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.put(
     '/:id/start',
     { preHandler: [requireAuth([UserRole.CONDUCTOR])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const user: any = (req as any).user;
-        const trip = await TripsService.startTrip(req.params.id, user.id);
+        const trip = await TripsService.startTrip(getTripId(req), user.id);
         return reply.send({ success: true, data: trip });
       } catch (err) { return handleError(reply, err); }
     }
@@ -98,10 +100,10 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.put(
     '/:id/complete',
     { preHandler: [requireAuth([UserRole.CONDUCTOR])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const user: any = (req as any).user;
-        const trip = await TripsService.completeTrip(req.params.id, user.id);
+        const trip = await TripsService.completeTrip(getTripId(req), user.id);
         return reply.send({ success: true, data: trip });
       } catch (err) { return handleError(reply, err); }
     }
@@ -111,20 +113,22 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/:id/location',
     { preHandler: [requireAuth([UserRole.CONDUCTOR])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const parsed = LocationUpdateSchema.safeParse(req.body);
       if (!parsed.success)
         return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: parsed.error.format() } });
 
       try {
         const user: any = (req as any).user;
-        const tripId = req.params.id;
+        const tripId = getTripId(req);
+        const lat = parsed.data.lat!;
+        const lng = parsed.data.lng!;
 
         await LocationService.assertConductorOwnsActiveTrip(tripId, user.id);
         const locationId = await LocationService.save(tripId, user.id, parsed.data);
 
         // Fire-and-forget geo check — never blocks the 10s ping
-        GeoService.checkStopProximity(tripId, parsed.data.lat, parsed.data.lng)
+        GeoService.checkStopProximity(tripId, lat, lng)
           .then((n) => { if (n > 0) fastify.log.info(`[Geo] Trip ${tripId}: ${n} alert(s) triggered`); })
           .catch((e) => fastify.log.error(`[Geo] Proximity error for trip ${tripId}: ${e}`));
 
@@ -137,9 +141,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/:id/location',
     { preHandler: [requireAuth()] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const location = await TripsService.getCurrentLocation(req.params.id);
+        const location = await TripsService.getCurrentLocation(getTripId(req));
         if (!location)
           return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'No location data for this trip yet' } });
         return reply.send({ success: true, data: location });
@@ -151,13 +155,13 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/:id/passengers',
     { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const parsed = AddPassengerSchema.safeParse(req.body);
       if (!parsed.success)
         return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: parsed.error.format() } });
 
       try {
-        const passenger = await TripsService.addPassenger(req.params.id, parsed.data);
+        const passenger = await TripsService.addPassenger(getTripId(req), parsed.data);
         return reply.status(201).send({ success: true, data: passenger });
       } catch (err) { return handleError(reply, err); }
     }
@@ -196,9 +200,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/:id/status',
     { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.CONDUCTOR, UserRole.DRIVER, UserRole.ADMIN])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const status = await TripsService.getTripStatus(req.params.id);
+        const status = await TripsService.getTripStatus(getTripId(req));
         return reply.send({
           success: true,
           data: status,
@@ -212,9 +216,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/:id/passengers',
     { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.CONDUCTOR, UserRole.DRIVER, UserRole.ADMIN])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const passengers = await TripsService.listPassengers(req.params.id);
+        const passengers = await TripsService.listPassengers(getTripId(req));
         return reply.send({
           success: true,
           data: passengers,
@@ -235,10 +239,10 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.put(
     '/:id/takeover',
     { preHandler: [requireAuth([UserRole.DRIVER])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const user: any = (req as any).user;
-        const result = await TakeoverService.takeoverTrip(req.params.id, user.id, fastify);
+        const result = await TakeoverService.takeoverTrip(getTripId(req), user.id, fastify);
         return reply.send({
           success: true,
           data: result,
@@ -253,7 +257,7 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/:id/passengers/upload',
     { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
-    async (req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const user: any = (req as any).user;
 
@@ -281,7 +285,7 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
         const buffer = Buffer.concat(chunks);
 
         const result = await uploadPassengers(
-          req.params.id,
+          getTripId(req),
           user.agencyId,
           buffer,
           mimetype,

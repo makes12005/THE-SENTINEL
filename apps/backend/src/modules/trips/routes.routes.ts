@@ -13,6 +13,9 @@ import { CreateRouteSchema, CreateStopSchema } from '@busalert/shared-types';
 import * as RoutesService from './routes.service';
 
 export default async function routesRoutes(fastify: FastifyInstance) {
+  const getRouteId = (req: FastifyRequest): string =>
+    (req.params as { routeId: string }).routeId;
+
   // ── POST /api/routes ──────────────────────────────────────────────────────
   fastify.post(
     '/',
@@ -75,10 +78,7 @@ export default async function routesRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/:routeId/stops',
     { preHandler: [requireAuth(['operator', 'admin'])] },
-    async (
-      req: FastifyRequest<{ Params: { routeId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const parsed = CreateStopSchema.safeParse(req.body);
         if (!parsed.success) {
@@ -91,7 +91,7 @@ export default async function routesRoutes(fastify: FastifyInstance) {
 
         const { agencyId } = req.user as { agencyId: string };
         const stop = await RoutesService.addStop(
-          req.params.routeId,
+          getRouteId(req),
           agencyId,
           parsed.data
         );
@@ -114,13 +114,10 @@ export default async function routesRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/:routeId/stops',
     { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
-    async (
-      req: FastifyRequest<{ Params: { routeId: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         const { agencyId } = req.user as { agencyId: string };
-        const stopsData = await RoutesService.listStops(req.params.routeId, agencyId);
+        const stopsData = await RoutesService.listStops(getRouteId(req), agencyId);
 
         return reply.send({
           success: true,

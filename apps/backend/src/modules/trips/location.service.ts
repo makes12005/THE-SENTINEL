@@ -18,18 +18,22 @@ export class LocationService {
     conductorId: string,
     payload: LocationUpdateRequest
   ): Promise<string> {
-    const { lat, lng, battery_level, accuracy_meters } = payload;
+    const lat = payload.lat!;
+    const lng = payload.lng!;
+    const battery_level = payload.battery_level;
+    const accuracy_meters = payload.accuracy_meters;
+    const locationInsert: typeof conductorLocations.$inferInsert = {
+      trip_id: tripId,
+      conductor_id: conductorId,
+      coordinates: toEWKT(lat, lng),
+      battery_level: battery_level !== undefined ? String(battery_level) : null,
+      accuracy_meters: accuracy_meters !== undefined ? String(accuracy_meters) : null,
+      recorded_at: new Date(),
+    };
 
     const [saved] = await db
       .insert(conductorLocations)
-      .values({
-        trip_id: tripId,
-        conductor_id: conductorId,
-        coordinates: toEWKT(lat, lng),
-        battery_level: battery_level !== undefined ? String(battery_level) : null,
-        accuracy_meters: accuracy_meters !== undefined ? String(accuracy_meters) : null,
-        recorded_at: new Date(),
-      })
+      .values(locationInsert)
       .returning({ id: conductorLocations.id });
 
     return saved.id;

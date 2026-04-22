@@ -15,11 +15,16 @@ export class TripsService {
     agencyId: string,
     payload: CreateTripRequest
   ) {
+    const routeId = payload.route_id!;
+    const conductorId = payload.conductor_id!;
+    const scheduledDate = payload.scheduled_date!;
+    const driverId = payload.driver_id ?? null;
+
     // Validate route belongs to operator's agency
     const [route] = await db
       .select()
       .from(routes)
-      .where(eq(routes.id, payload.route_id))
+      .where(eq(routes.id, routeId))
       .limit(1);
 
     if (!route) throw Object.assign(new Error('Route not found'), { statusCode: 404 });
@@ -30,8 +35,8 @@ export class TripsService {
     const [conductor] = await db
       .select({ id: users.id, agency_id: users.agency_id, role: users.role })
       .from(users)
-      .where(eq(users.id, payload.conductor_id))
-      .limit(1);
+        .where(eq(users.id, conductorId))
+        .limit(1);
 
     if (!conductor) throw Object.assign(new Error('Conductor not found'), { statusCode: 404 });
     if (conductor.agency_id !== agencyId)
@@ -40,11 +45,11 @@ export class TripsService {
       throw Object.assign(new Error('Assigned user is not a conductor'), { statusCode: 422 });
 
     // Validate driver (optional) belongs to same agency
-    if (payload.driver_id) {
+    if (driverId) {
       const [driver] = await db
         .select({ id: users.id, agency_id: users.agency_id, role: users.role })
         .from(users)
-        .where(eq(users.id, payload.driver_id))
+        .where(eq(users.id, driverId))
         .limit(1);
 
       if (!driver) throw Object.assign(new Error('Driver not found'), { statusCode: 404 });
@@ -54,17 +59,19 @@ export class TripsService {
         throw Object.assign(new Error('Assigned user is not a driver'), { statusCode: 422 });
     }
 
+    const tripInsert: typeof trips.$inferInsert = {
+      route_id: routeId,
+      operator_id: operatorId,
+      conductor_id: conductorId,
+      driver_id: driverId,
+      scheduled_date: scheduledDate,
+      status: 'scheduled',
+      created_at: new Date(),
+    };
+
     const [trip] = await db
       .insert(trips)
-      .values({
-        route_id: payload.route_id,
-        operator_id: operatorId,
-        conductor_id: payload.conductor_id,
-        driver_id: payload.driver_id ?? null,
-        scheduled_date: payload.scheduled_date,
-        status: 'scheduled',
-        created_at: new Date(),
-      })
+      .values(tripInsert)
       .returning();
 
     return trip;
@@ -136,7 +143,7 @@ export class TripsService {
     if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
 
     // Current bus location (PostGIS decode — raw SQL for ST_X/ST_Y)
-    const locationResult = await db.execute<{
+    const locationResult = Array.from(await db.execute<{
       lat: number; lng: number;
       recorded_at: string;
       battery_level: string | null;
@@ -152,9 +159,9 @@ export class TripsService {
       WHERE trip_id = ${tripId}
       ORDER BY recorded_at DESC
       LIMIT 1
-    `);
+    `));
 
-    const loc = locationResult.rows[0] ?? null;
+    const loc = locationResult[0] ?? null;
     const currentLocation = loc
       ? {
           lat: Number(loc.lat),
@@ -166,7 +173,7 @@ export class TripsService {
       : null;
 
     // Passenger alert summary — single aggregation query
-    const summaryResult = await db.execute<{
+    const summaryResult = Array.from(await db.execute<{
       total: string; pending: string; sent: string; failed: string;
     }>(sql`
       SELECT
@@ -176,9 +183,9 @@ export class TripsService {
         COUNT(*) FILTER (WHERE alert_status = 'failed')             AS failed
       FROM trip_passengers
       WHERE trip_id = ${tripId}
-    `);
+    `));
 
-    const s = summaryResult.rows[0] ?? { total: '0', pending: '0', sent: '0', failed: '0' };
+    const s = summaryResult[0] ?? { total: '0', pending: '0', sent: '0', failed: '0' };
 
     return {
       id: trip.id,
@@ -309,16 +316,22 @@ export class TripsService {
     const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
     if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
 
+    const passengerName = payload.passenger_name!;
+    const passengerPhone = payload.passenger_phone!;
+    const stopId = payload.stop_id!;
+
+    const passengerInsert: typeof tripPassengers.$inferInsert = {
+      trip_id: tripId,
+      passenger_name: passengerName,
+      passenger_phone: passengerPhone,
+      stop_id: stopId,
+      alert_status: 'pending',
+      created_at: new Date(),
+    };
+
     const [passenger] = await db
       .insert(tripPassengers)
-      .values({
-        trip_id: tripId,
-        passenger_name: payload.passenger_name,
-        passenger_phone: payload.passenger_phone,
-        stop_id: payload.stop_id,
-        alert_status: 'pending',
-        created_at: new Date(),
-      })
+      .values(passengerInsert)
       .returning();
 
     return passenger;
@@ -329,7 +342,7 @@ export class TripsService {
   // ST_X/ST_Y decode PostGIS POINT back to lng/lat
   // ──────────────────────────────────────────────────────────
   static async getCurrentLocation(tripId: string) {
-    const result = await db.execute<{
+    const rows = Array.from(await db.execute<{
       id: string;
       recorded_at: string;
       battery_level: string | null;
@@ -348,11 +361,11 @@ export class TripsService {
       WHERE trip_id = ${tripId}
       ORDER BY recorded_at DESC
       LIMIT 1
-    `);
+    `));
 
-    if (!result.rows || result.rows.length === 0) return null;
+    if (rows.length === 0) return null;
 
-    const row = result.rows[0];
+    const row = rows[0];
     return {
       lat: Number(row.lat),
       lng: Number(row.lng),

@@ -55,12 +55,13 @@ export class GeoService {
         )
     `);
 
-    if (!result.rows || result.rows.length === 0) return 0;
+    const rows = Array.from(result);
+    if (rows.length === 0) return 0;
 
     const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     let triggered = 0;
 
-    for (const row of result.rows) {
+    for (const row of rows) {
       try {
         // Idempotent: only proceed if still 'pending' (race-condition safe)
         const updated = await db
