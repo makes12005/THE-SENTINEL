@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "build": "node -e \"console.log('backend build skipped; Railway runs TypeScript via tsx')\"",
+    "build": "npx tsc -p tsconfig.json",
     "dev": "tsx src/server.ts",
-    "start": "tsx src/server.ts",
-    "worker:alert": "tsx src/workers/alert.worker.ts",
-    "worker:heartbeat": "tsx src/workers/heartbeat.worker.ts",
+    "start": "node dist/server.js",
+    "worker:alert": "node dist/workers/alert.worker.js",
+    "worker:heartbeat": "node dist/workers/heartbeat.worker.js",
     "lint": "eslint \"src/**/*.ts\"",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg"
