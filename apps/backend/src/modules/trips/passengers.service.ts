@@ -19,7 +19,7 @@ import {
   PassengerRowSchema,
   PassengerRowError,
   UploadPassengersResponse,
-} from '@busalert/shared-types';
+} from '../../lib/shared-types';
 import { ZodIssue } from 'zod';
 
 const MAX_PASSENGERS = 100;

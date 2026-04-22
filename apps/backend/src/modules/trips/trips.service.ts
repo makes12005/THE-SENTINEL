@@ -1,7 +1,7 @@
 import { db } from '../../db';
 import { trips, routes, stops, tripPassengers, users, conductorLocations } from '../../db/schema';
 import { eq, and, sql, desc, count } from 'drizzle-orm';
-import { CreateTripRequest, AddPassengerRequest, TripStatus, TripStatusResponse } from '@busalert/shared-types';
+import { CreateTripRequest, AddPassengerRequest, TripStatus, TripStatusResponse } from '../../lib/shared-types';
 import { deductAlertCost } from '../billing/billing.service';
 
 

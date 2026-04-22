@@ -8,7 +8,7 @@
 import { db } from '../../db';
 import { routes, stops } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
-import { CreateRouteRequest, CreateStopRequest } from '@busalert/shared-types';
+import { CreateRouteRequest, CreateStopRequest } from '../../lib/shared-types';
 
 // ── toEWKT helper (PostGIS expects POINT(lng lat)) ───────────────────────────
 function toEWKT(lat: number, lng: number): string {

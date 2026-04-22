@@ -17,7 +17,7 @@ import {
   eq, and, gte, sql, count, desc, or, inArray,
 } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '@busalert/shared-types';
+import { UserRole } from '../../lib/shared-types';
 
 function handleError(reply: FastifyReply, err: any) {
   const status = err.statusCode ?? 500;

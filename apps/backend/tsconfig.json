@@ -6,10 +6,6 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
-    "paths": {
-      "@busalert/shared-types": ["./shared-types/dist/index.d.ts"]
-    },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

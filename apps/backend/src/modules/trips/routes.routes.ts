@@ -9,7 +9,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/auth.middleware';
-import { CreateRouteSchema, CreateStopSchema } from '@busalert/shared-types';
+import { CreateRouteSchema, CreateStopSchema } from '../../lib/shared-types';
 import * as RoutesService from './routes.service';
 
 export default async function routesRoutes(fastify: FastifyInstance) {

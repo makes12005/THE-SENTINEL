@@ -1,7 +1,7 @@
 import { db } from '../../db';
 import { conductorLocations, trips } from '../../db/schema';
 import { eq } from 'drizzle-orm';
-import { LocationUpdateRequest } from '@busalert/shared-types';
+import { LocationUpdateRequest } from '../../lib/shared-types';
 
 /** Converts lat/lng to PostGIS EWKT. POINT takes (longitude latitude). */
 export function toEWKT(lat: number, lng: number): string {

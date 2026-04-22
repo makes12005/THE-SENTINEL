@@ -33,7 +33,7 @@ import {
   LocationUpdateSchema,
   AddPassengerSchema,
   ListTripsQuerySchema,
-} from '@busalert/shared-types';
+} from '../../lib/shared-types';
 
 function handleError(reply: FastifyReply, err: any) {
   const status = (err as any).statusCode ?? 500;
