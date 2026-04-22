@@ -11,9 +11,7 @@ import { initSocketIO } from './lib/socket';
 import { loadEnv } from './lib/load-env';
 import { db } from './db';
 import { redis } from './lib/redis';
-import { sql, eq, or } from 'drizzle-orm';
-import { users } from './db/schema';
-import bcrypt from 'bcryptjs';
+import { sql } from 'drizzle-orm';
 
 loadEnv();
 
@@ -80,55 +78,6 @@ fastify.get('/health', async (request, reply) => {
   };
 
   return reply.code(overallStatus === 'ok' ? 200 : 503).send(responsePayload);
-});
-
-// ─── Temporary Admin Seeding (Sprint 1 Bootstrapping) ─────────────────────────
-fastify.get('/api/temp-seed-admin', async (request, reply) => {
-  const { secret } = request.query as { secret?: string };
-  if (secret !== 'mahek-admin-secure-2024') {
-    return reply.code(403).send({ success: false, error: 'Forbidden' });
-  }
-
-  try {
-    const adminEmail = 'mahekzalavadiya123@gmail.com';
-    const adminPhone = '+917778069828';
-    const adminPassword = 'Maahek$1210';
-    const hashedPassword = await bcrypt.hash(adminPassword, 12);
-
-    const existingUser = await db.select()
-      .from(users)
-      .where(or(eq(users.email, adminEmail), eq(users.phone, adminPhone)))
-      .limit(1);
-
-    if (existingUser.length > 0) {
-      await db.update(users)
-        .set({
-          role: 'admin',
-          password_hash: hashedPassword,
-          name: 'mahek',
-          is_active: true
-        })
-        .where(eq(users.id, existingUser[0].id));
-      
-      return { success: true, message: 'Admin user updated', id: existingUser[0].id };
-    } else {
-      const [newAdmin] = await db.insert(users)
-        .values({
-          name: 'mahek',
-          email: adminEmail,
-          phone: adminPhone,
-          password_hash: hashedPassword,
-          role: 'admin',
-          is_active: true,
-        })
-        .returning({ id: users.id });
-      
-      return { success: true, message: 'Admin user created', id: newAdmin.id };
-    }
-  } catch (err: any) {
-    fastify.log.error(err);
-    return reply.code(500).send({ success: false, error: err.message });
-  }
 });
 
 // Deprecated old healthcheck for internal compat if any, but mapping it to same.
