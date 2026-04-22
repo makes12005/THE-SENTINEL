@@ -20,6 +20,7 @@ import {
   PassengerRowError,
   UploadPassengersResponse,
 } from '@busalert/shared-types';
+import { ZodIssue } from 'zod';
 
 const MAX_PASSENGERS = 100;
 const E164_RE = /^\+91\d{10}$/;
@@ -137,7 +138,7 @@ export async function uploadPassengers(
     });
 
     if (!parsed.success) {
-      parsed.error.issues.forEach((issue) => errors.push(issue.message));
+      parsed.error.issues.forEach((issue: ZodIssue) => errors.push(issue.message));
     } else {
       const name = parsed.data.name!;
       const phone = parsed.data.phone!;
