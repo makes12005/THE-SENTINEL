@@ -3,8 +3,8 @@ import './globals.css';
 import Providers from './providers';
 
 export const metadata: Metadata = {
-  title:       'BusOps Control — Bus Alert System',
-  description: 'Operator dashboard for managing bus trips, passengers, and real-time alerts.',
+  title:       'THE SENTINEL — Real-Time Bus Alert System, Gujarat',
+  description: 'Never miss your bus again. THE SENTINEL sends real-time WhatsApp & SMS alerts when your bus is 2km away. For passengers, operators, and fleet managers across Gujarat.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
