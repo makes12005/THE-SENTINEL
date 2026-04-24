@@ -43,7 +43,7 @@ export default function AdminAuditPage() {
 
   const load = () => {
     setLoading(true);
-    get<{ data: AuditLog[] }>('/admin/audit-logs')
+    get<{ data: AuditLog[] }>('/api/admin/audit-logs')
       .then((r) => { setLogs(r.data); setFiltered(r.data); })
       .finally(() => setLoading(false));
   };

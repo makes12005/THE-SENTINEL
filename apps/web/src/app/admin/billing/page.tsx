@@ -63,7 +63,7 @@ export default function AdminBillingPage() {
 
   const load = () => {
     setLoading(true);
-    get<{ data: BillingSummary }>('/admin/billing/summary')
+    get<{ data: BillingSummary }>('/api/admin/billing/summary')
       .then((r) => setSummary(r.data))
       .finally(() => setLoading(false));
   };
@@ -74,7 +74,7 @@ export default function AdminBillingPage() {
     setSelected(a);
     setTxLoading(true);
     try {
-      const r = await get<{ data: { transactions: Transaction[] } }>(`/admin/billing/${a.agency_id}`);
+      const r = await get<{ data: { transactions: Transaction[] } }>(`/api/admin/billing/${a.agency_id}`);
       setTxns(r.data.transactions ?? []);
     } finally { setTxLoading(false); }
   };
@@ -83,7 +83,7 @@ export default function AdminBillingPage() {
     if (!selected || !topupAmount) return;
     setTopping(true);
     try {
-      await post(`/admin/billing/${selected.agency_id}/topup`, {
+      await post(`/api/admin/billing/${selected.agency_id}/topup`, {
         amount_rupees: Number(topupAmount),
         description: topupDesc || undefined,
       });
@@ -99,7 +99,7 @@ export default function AdminBillingPage() {
     if (!selected) return;
     setSaving(true);
     try {
-      await put(`/admin/billing/${selected.agency_id}/config`, {
+      await put(`/api/admin/billing/${selected.agency_id}/config`, {
         per_alert_rupees: configPerAlert ? Number(configPerAlert) : undefined,
         low_balance_threshold_rupees: configThreshold ? Number(configThreshold) : undefined,
       });
