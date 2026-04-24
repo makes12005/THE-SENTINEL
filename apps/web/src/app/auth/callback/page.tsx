@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { useAuthStore } from '@/lib/auth-store';
+import { type AuthUser, useAuthStore } from '@/lib/auth-store';
 
 const ROLE_REDIRECTS: Record<string, string> = {
   admin:     '/admin/dashboard',
@@ -11,10 +11,9 @@ const ROLE_REDIRECTS: Record<string, string> = {
   operator:  '/operator/dashboard',
   driver:    '/operator/dashboard',
   conductor: '/operator/dashboard',
-  passenger: '/login',   // passengers shouldn't be on web dashboard
+  passenger: '/login',
 };
 
-/* â”€â”€ Inner component â€” must be inside Suspense for useSearchParams â”€â”€â”€â”€â”€â”€â”€ */
 function OAuthCallbackInner() {
   const router        = useRouter();
   const params        = useSearchParams();
@@ -30,7 +29,6 @@ function OAuthCallbackInner() {
     const userRaw      = params.get('user');
     const error        = params.get('error');
 
-    // â”€â”€ Backend error case
     if (error) {
       router.replace(`/login?error=${encodeURIComponent(error)}`);
       return;
@@ -44,7 +42,8 @@ function OAuthCallbackInner() {
     let user: {
       id: string;
       name: string;
-      phone: string;
+      phone?: string | null;
+      email?: string | null;
       role: string;
       agencyId: string | null;
     };
@@ -56,26 +55,30 @@ function OAuthCallbackInner() {
       return;
     }
 
-    // â”€â”€ Persist in Zustand (same shape as normal login)
+    const normalizedUser: AuthUser = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone ?? null,
+      email: user.email ?? null,
+      role: user.role,
+      agencyId: user.agencyId ?? null,
+    };
+
     setSession({
       accessToken,
       refreshToken: refreshToken ?? '',
-      user: user as { id: string; name: string; phone: string; role: string; agencyId: string },
+      user: normalizedUser,
     });
 
-    // â”€â”€ Navigate to role-specific dashboard
-    const dest = ROLE_REDIRECTS[user.role] ?? '/login';
+    const dest = ROLE_REDIRECTS[normalizedUser.role] ?? '/login';
     router.replace(dest);
   }, [params, setSession, router]);
 
   return (
     <div className="min-h-screen bg-[#13161b] flex flex-col items-center justify-center gap-4">
-      {/* Spinner */}
       <div className="relative w-14 h-14">
         <div className="absolute inset-0 rounded-full border-4 border-[#1e2530]" />
-        <div
-          className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#a3cbf2] animate-spin"
-        />
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#a3cbf2] animate-spin" />
       </div>
       <p className="text-[#8b939f] text-sm font-medium tracking-wide">
         Signing you in&hellip;
@@ -84,7 +87,6 @@ function OAuthCallbackInner() {
   );
 }
 
-/* â”€â”€ Page export (Suspense boundary required for useSearchParams) â”€â”€â”€â”€â”€â”€â”€ */
 export default function OAuthCallbackPage() {
   return (
     <Suspense
