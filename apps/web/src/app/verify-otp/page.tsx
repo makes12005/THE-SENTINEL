@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 
-// ─────────────────────────────────────────────────────────────────────────────
 const ROLE_REDIRECTS: Record<string, string> = {
   admin:     '/admin/dashboard',
   owner:     '/owner/dashboard',
@@ -15,9 +14,6 @@ const ROLE_REDIRECTS: Record<string, string> = {
   passenger: '/access-code',
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Toast
-// ─────────────────────────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose(): void }) {
   useEffect(() => { const t = setTimeout(onClose, 8000); return () => clearTimeout(t); }, [onClose]);
   return (
@@ -30,14 +26,11 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
       display: 'flex', alignItems: 'flex-start', gap: 10,
     }}>
       <span style={{ flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>✕</button>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>âœ•</button>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OTP boxes
-// ─────────────────────────────────────────────────────────────────────────────
 function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: string): void; disabled?: boolean }) {
   const digits = value.padEnd(6, '').split('');
 
@@ -91,10 +84,7 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: st
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────────────────────
-export default function VerifyOtpPage() {
+function VerifyOtpPageInner() {
   const router       = useRouter();
   const params       = useSearchParams();
   const setSession   = useAuthStore((s) => s.setSession);
@@ -108,18 +98,16 @@ export default function VerifyOtpPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const showToast = useCallback((m: string, t: 'success' | 'error' | 'info') => setToast({ message: m, type: t }), []);
 
-  // Grab identifier from sessionStorage (set by login/signup page)
   useEffect(() => {
     const stored = sessionStorage.getItem('auth_identifier')
-                 || sessionStorage.getItem('signup_phone')   // legacy
-                 || sessionStorage.getItem('otp_phone');      // legacy
+                 || sessionStorage.getItem('signup_phone')
+                 || sessionStorage.getItem('otp_phone');
     if (!stored) {
       router.replace('/login');
       return;
     }
     setIdentifier(stored);
     startCountdown();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function startCountdown() {
@@ -139,7 +127,7 @@ export default function VerifyOtpPage() {
       );
       const devOtp = res.data?.data?.otp;
       if (devOtp) showToast(`New OTP (dev): ${devOtp}`, 'info');
-      else        showToast('New OTP sent!', 'success');
+      else showToast('New OTP sent!', 'success');
       startCountdown();
     } catch {
       showToast('Could not send OTP. Try again.', 'error');
@@ -160,16 +148,13 @@ export default function VerifyOtpPage() {
 
       const { accessToken, refreshToken, user } = res.data.data;
       setSession({ accessToken, refreshToken, user });
-
-      // Clean up sessionStorage
       ['auth_identifier', 'auth_source', 'signup_phone', 'otp_phone'].forEach((k) => sessionStorage.removeItem(k));
 
-      // Determine redirect: query param → role default
       const nextParam = params.get('next');
       const roleRedirect = ROLE_REDIRECTS[user?.role] ?? '/access-code';
       const destination  = nextParam ? `/${nextParam.replace(/^\//, '')}` : roleRedirect;
 
-      showToast(`Welcome, ${user?.name ?? 'User'}! 🎉`, 'success');
+      showToast(`Welcome, ${user?.name ?? 'User'}! ðŸŽ‰`, 'success');
       setTimeout(() => router.push(destination), 600);
     } catch (err: any) {
       const msg = err?.response?.data?.error?.message ?? 'Incorrect OTP. Try again.';
@@ -187,92 +172,52 @@ export default function VerifyOtpPage() {
   return (
     <>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif}`}</style>
-
-      <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', padding: 16,
-      }}>
-        <div style={{
-          width: '100%', maxWidth: 420,
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: 20,
-          padding: '40px 32px',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-          textAlign: 'center',
-        }}>
-          {/* Icon */}
-          <div style={{
-            width: 64, height: 64, borderRadius: 16, margin: '0 auto 20px',
-            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 30, boxShadow: '0 8px 24px rgba(99,102,241,0.45)',
-          }}>📱</div>
-
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', padding: 16 }}>
+        <div style={{ width: '100%', maxWidth: 420, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, padding: '40px 32px', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, margin: '0 auto 20px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, boxShadow: '0 8px 24px rgba(99,102,241,0.45)' }}>ðŸ“±</div>
           <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Enter OTP</h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, marginBottom: 32 }}>
             We sent a 6-digit code to<br />
-            <strong style={{ color: '#a5b4fc' }}>{maskedIdentifier || '…'}</strong>
+            <strong style={{ color: '#a5b4fc' }}>{maskedIdentifier || 'â€¦'}</strong>
           </p>
-
           <form onSubmit={handleVerify}>
             <OtpInput value={otp} onChange={setOtp} disabled={busy} />
-
-            <button
-              id="verify-otp-submit"
-              type="submit"
-              disabled={busy || otp.length < 6}
-              style={{
-                width: '100%', marginTop: 28, padding: '14px', borderRadius: 10, border: 'none',
-                background: otp.length === 6 && !busy
-                  ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
-                  : 'rgba(255,255,255,0.1)',
-                color: '#fff', fontSize: 16, fontWeight: 700, cursor: otp.length === 6 ? 'pointer' : 'not-allowed',
-                boxShadow: otp.length === 6 ? '0 4px 20px rgba(99,102,241,0.45)' : 'none',
-                transition: 'all 0.3s',
-              }}
-            >
-              {busy ? 'Verifying…' : 'Verify & Continue →'}
+            <button id="verify-otp-submit" type="submit" disabled={busy || otp.length < 6} style={{ width: '100%', marginTop: 28, padding: '14px', borderRadius: 10, border: 'none', background: otp.length === 6 && !busy ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 16, fontWeight: 700, cursor: otp.length === 6 ? 'pointer' : 'not-allowed', boxShadow: otp.length === 6 ? '0 4px 20px rgba(99,102,241,0.45)' : 'none', transition: 'all 0.3s' }}>
+              {busy ? 'Verifyingâ€¦' : 'Verify & Continue â†’'}
             </button>
           </form>
-
-          {/* Resend */}
           <div style={{ marginTop: 20 }}>
             {resendSeconds > 0 ? (
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
                 Resend OTP in <strong style={{ color: '#a5b4fc' }}>{resendSeconds}s</strong>
               </p>
             ) : (
-              <button
-                id="resend-otp"
-                onClick={handleResend}
-                disabled={busy}
-                style={{
-                  background: 'none', border: 'none', color: '#818cf8',
-                  cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                  textDecoration: 'underline',
-                }}
-              >
+              <button id="resend-otp" onClick={handleResend} disabled={busy} style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: 13, fontWeight: 600, textDecoration: 'underline' }}>
                 Resend OTP
               </button>
             )}
           </div>
-
-          {/* Back */}
-          <button
-            onClick={() => router.push('/login')}
-            style={{
-              marginTop: 16, background: 'none', border: 'none',
-              color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 12,
-            }}
-          >
-            ← Back to login
+          <button onClick={() => router.push('/login')} style={{ marginTop: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 12 }}>
+            â† Back to login
           </button>
         </div>
       </div>
-
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
+          <div style={{ width: 40, height: 40, borderRadius: '9999px', border: '4px solid rgba(255,255,255,0.15)', borderTopColor: '#818cf8', animation: 'spin 1s linear infinite' }} />
+          <style>{'@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }'}</style>
+        </div>
+      }
+    >
+      <VerifyOtpPageInner />
+    </Suspense>
   );
 }
