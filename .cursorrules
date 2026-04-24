@@ -1,0 +1,198 @@
+# Bus Alert System — Master Project Context
+
+## What This Product Is
+Production-grade bus travel alert system for Gujarat, India.
+Passengers get automatic call/SMS/WhatsApp alert before their stop.
+NOT an MVP — this is a fully production system.
+
+## Live URLs
+Frontend:  https://bus-alert-iota.vercel.app
+Backend:   https://api-production-e13f.up.railway.app
+Health:    https://api-production-e13f.up.railway.app/health
+
+## Infrastructure
+Database:  Neon PostgreSQL + PostGIS (AWS Mumbai)
+Cache:     Upstash Redis
+Backend:   Railway (3 services)
+Frontend:  Vercel
+Monorepo:  Turborepo + pnpm
+
+## Tech Stack
+Mobile:    Flutter (Android only, min SDK 26)
+Web:       Next.js 14 App Router + TypeScript
+Backend:   Fastify + TypeScript + Drizzle ORM
+Database:  PostgreSQL + PostGIS
+Realtime:  Socket.IO + Redis Pub/Sub
+Maps:      MapMyIndia (Mappls)
+Calls:     Exotel
+SMS:       MSG91
+WhatsApp:  Gupshup
+Email OTP: Brevo
+Auth:      JWT (15min) + Refresh tokens (30 days)
+Validation: Zod
+State(web): Zustand + React Query
+State(app): Riverpod
+
+## Folder Structure
+bus-alert/
+├── apps/
+│   ├── mobile/          → Flutter conductor+driver app
+│   ├── web/             → Next.js all web dashboards
+│   └── backend/         → Fastify API server
+├── packages/
+│   └── shared-types/    → TypeScript interfaces
+├── docs/
+│   ├── ui/
+│   │   ├── mobile/      → PNG references (mobile)
+│   │   ├── web/         → PNG references (web)
+│   │   └── screen/      → HTML source files
+│   │       ├── auth/
+│   │       ├── conductor/
+│   │       ├── driver/
+│   │       ├── operator/
+│   │       ├── owner/
+│   │       └── admin/
+│   ├── test-reports/    → Test results
+│   └── PROJECT-MEMORY.md → Full project history
+├── .agent/
+│   ├── rules/           → Antigravity rules
+│   ├── skills/          → Custom skills
+│   └── workflows/       → Sprint workflows
+└── infrastructure/      → AWS + Docker configs
+
+## Roles (highest to lowest permission)
+1. Admin    → platform owner (me), controls all agencies
+2. Owner    → agency owner, sees all operators
+3. Operator → creates trips, manages routes/passengers
+4. Driver   → backup for conductor
+5. Conductor → runs live trips, sends GPS
+6. Passenger → receives alerts
+
+## Database Tables
+agencies, users, refresh_tokens, audit_logs,
+routes, stops, trips, trip_passengers,
+conductor_locations, alert_logs,
+billing_config, agency_balances,
+billing_transactions
+
+## Key Business Logic
+GPS Flow:
+Conductor phone → GPS every 10s → backend
+→ PostGIS ST_DWithin check → trigger radius 10km
+→ Redis alert_queue → alert worker
+→ Exotel call x2 → MSG91 SMS → Gupshup WhatsApp
+→ Conductor manual notification
+
+Alert Cascade:
+Exotel call (attempt 1) → wait 30s
+→ Exotel call (attempt 2) → fail
+→ MSG91 SMS → fail
+→ Gupshup WhatsApp → fail
+→ Socket.IO conductor_manual_required
+
+Heartbeat:
+Every 30s check active trips
+If conductor GPS silent > 2min
+→ emit conductor_offline to driver
+→ Driver takeover flow activates
+
+Billing:
+Trip completes → deduct price_per_trip
+from agency balance
+Default: ₹100 per trip
+Low balance → emit balance_low to owner
+
+## Auth Flow (Mobile)
+Welcome screen → Phone/Email + Password
+→ OTP sent (Brevo email / MSG91 phone)
+→ OTP verify → temp_token
+→ Agency invite code (optional, skippable)
+→ Profile setup → Complete signup
+→ Role-based dashboard redirect
+
+Login: Phone/Email + Password OR OTP login
+
+## Code Standards
+- TypeScript everywhere (web + backend)
+- API response: { success, data, error, meta }
+- All routes role-protected from day one
+- No hardcoded values → .env always
+- Parameterized queries only (Drizzle ORM)
+- All timestamps: IST (Asia/Kolkata)
+- Phone numbers: E.164 format (+91XXXXXXXXXX)
+- Offline support in conductor Flutter app
+- Audit log on every state change
+
+## Web Dashboard Routes
+/login              → all roles
+/admin/dashboard    → admin only
+/admin/agencies     → admin only
+/admin/billing      → admin only
+/admin/health       → admin only
+/admin/audit        → admin only
+/owner/dashboard    → owner only
+/owner/operators    → owner only
+/owner/trips        → owner only
+/owner/logs         → owner only
+/owner/settings     → owner only
+/owner/billing      → owner only
+/operator/dashboard → operator only
+/operator/routes    → operator only
+/operator/trips     → operator only
+/operator/monitor   → operator only
+/operator/resources → operator only
+/operator/logs      → operator only
+
+## Mobile App Routes (Flutter)
+/welcome            → auth screens
+/conductor/dashboard
+/conductor/trip/:id
+/conductor/passengers/:tripId
+/driver/dashboard
+/driver/trip/:id
+/driver/takeover/:tripId
+
+## Workers Running on Railway
+1. API server        → node dist/server.js
+2. Alert worker      → node dist/workers/alert.worker.js
+3. Heartbeat worker  → node dist/workers/heartbeat.worker.js
+
+## Current Sprint Status
+Auth system:     ✅ Complete
+GPS tracking:    ✅ Complete
+Alert worker:    ✅ Complete
+Passenger upload:✅ Complete
+Conductor app:   ✅ Complete
+Driver app:      ✅ Complete
+Operator web:    ✅ Complete
+Owner web:       ✅ Complete
+Admin web:       ✅ Complete
+Deployment:      ✅ Live
+Auth flow rebuild:✅ Complete
+Auth testing:    🔄 In progress
+
+## Environment Variables Needed
+Backend (.env.production):
+DATABASE_URL, REDIS_URL,
+JWT_SECRET, REFRESH_TOKEN_SECRET,
+ALERT_PROVIDER, EXOTEL_API_KEY,
+EXOTEL_API_TOKEN, EXOTEL_SID,
+EXOTEL_CALLER_ID, MSG91_AUTH_KEY,
+MSG91_SENDER_ID, MSG91_OTP_TEMPLATE_ID,
+BREVO_API_KEY, PORT, NODE_ENV
+
+Web (.env.production):
+NEXT_PUBLIC_API_URL, NEXTAUTH_SECRET,
+NEXTAUTH_URL, NODE_ENV
+
+## Important Notes
+- Owner cannot see revenue data
+- Driver gets conductor permissions 
+  ONLY for specific trip after takeover
+  NOT globally
+- agency_id is nullable (admin + passengers)
+- Heartbeat uses in-memory Set to 
+  prevent event floods
+- GIST indexes on all coordinate columns
+- alert fires ONCE per passenger per stop
+  never repeats

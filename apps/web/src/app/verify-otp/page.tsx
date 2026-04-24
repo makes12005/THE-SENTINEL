@@ -84,6 +84,9 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: st
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
 function VerifyOtpPageInner() {
   const router       = useRouter();
   const params       = useSearchParams();

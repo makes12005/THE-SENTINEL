@@ -55,6 +55,7 @@ function OAuthCallbackInner() {
       return;
     }
 
+    // ── Persist in Zustand (same shape as normal login)
     const normalizedUser: AuthUser = {
       id: user.id,
       name: user.name,
@@ -70,6 +71,7 @@ function OAuthCallbackInner() {
       user: normalizedUser,
     });
 
+    // ── Navigate to role-specific dashboard
     const dest = ROLE_REDIRECTS[normalizedUser.role] ?? '/login';
     router.replace(dest);
   }, [params, setSession, router]);
