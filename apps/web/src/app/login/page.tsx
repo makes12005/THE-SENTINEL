@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function isEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
@@ -28,9 +28,9 @@ const ROLE_REDIRECTS: Record<string, string> = {
   passenger: '/access-code',
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Toast
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose(): void }) {
   useEffect(() => {
     const t = setTimeout(onClose, 6000);
@@ -51,14 +51,14 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
       }}
     >
       <span style={{ flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>✕</button>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>âœ•</button>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // OTP boxes
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function OtpInput({ value, onChange }: { value: string; onChange(v: string): void }) {
   const digits = value.padEnd(6, '').split('');
 
@@ -110,9 +110,6 @@ function OtpInput({ value, onChange }: { value: string; onChange(v: string): voi
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main page
-// ─────────────────────────────────────────────────────────────────────────────
 type Tab = 'login' | 'signup';
 type LoginMode = 'password' | 'otp';
 type OtpStep = 'enter' | 'verify';
@@ -134,7 +131,6 @@ export default function LoginPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info') => setToast({ message, type }), []);
 
-  // Already logged in → redirect
   useEffect(() => {
     if (user) {
       const redirect = ROLE_REDIRECTS[user.role] ?? '/access-code';
@@ -178,7 +174,7 @@ export default function LoginPage() {
       sessionStorage.setItem('auth_identifier', identifier.trim());
       sessionStorage.setItem('auth_source', 'register');
       const devOtp = otpRes.data?.data?.otp;
-      if (devOtp) showToast(`✅ Account created! Dev OTP: ${devOtp}`, 'info');
+      if (devOtp) showToast(`âœ… Account created! Dev OTP: ${devOtp}`, 'info');
       else showToast('Account created! OTP sent.', 'success');
       router.push('/verify-otp?next=access-code');
     } catch (err: any) {
@@ -230,14 +226,12 @@ export default function LoginPage() {
   return (
     <div className="bg-background text-on-surface font-body selection:bg-primary-container selection:text-primary min-h-screen flex flex-col noise-bg relative overflow-hidden z-0">
       <main className="flex-grow pt-16 pb-12 px-6 max-w-md mx-auto w-full z-10 relative">
-        {/* 1. Top: Welcome Header */}
         <div className="mb-10 text-center">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 bg-primary-container text-on-primary-container flex items-center justify-center text-3xl shadow-lg shadow-primary-container/30">🚌</div>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 bg-primary-container text-on-primary-container flex items-center justify-center text-3xl shadow-lg shadow-primary-container/30">ðŸšŒ</div>
           <h2 className="font-headline font-extrabold text-4xl text-on-surface tracking-tight mb-2">Welcome</h2>
           <p className="text-on-surface-variant font-medium">Access your transit control terminal.</p>
         </div>
 
-        {/* 2. Login / Sign Up toggle */}
         <div className="bg-surface-container-lowest p-1.5 rounded-full flex mb-10 border border-outline-variant/30">
           <button 
             onClick={() => { setTab('login'); setMode('password'); }}
@@ -253,7 +247,6 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* 3. Continue with Google */}
         <div className="mb-8">
           <button className="w-full bg-surface-container-high hover:bg-surface-variant transition-colors border-none py-4 rounded-xl flex items-center justify-center gap-3 font-semibold text-on-surface">
             <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEhMhAS14snMCqgSGt_2gerPVe3WBk6jPpGQ2U9vHPct7gwHzK7f6o22qb-biLlAuFbq77_Xdr2vmPtZYDdltLqcPEFBp1W3_9PN348-b_NrkLDeRjOSR0IAuzz-0GrED78PzxpDZwZ4cJSy0fw_ICSU8Pj4Tm0rVXiYXGCbckBjxTYGq8el4rT5ljYPFDa7d5cPZ95U7Dwzu3Sr_iIFybmdxJOh8h7B9TOmXzmSmcAbXlH1D-Q70SZyd5ZwHXn-lkE3K8U4AKylZG" />
@@ -267,7 +260,6 @@ export default function LoginPage() {
           <div className="flex-1 h-[1px] bg-surface-container-highest"></div>
         </div>
 
-        {/* Auth Forms */}
         <div className="space-y-6">
           {tab === 'signup' ? (
             <form onSubmit={handleSignup} className="space-y-6">
@@ -281,7 +273,7 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Password</label>
-                <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="••••••••" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+                <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" type="password" value={password} onChange={e => setPassword(e.target.value)} />
               </div>
               <div className="pt-2">
                 <button disabled={busy} type="submit" className="w-full bg-primary-container text-on-primary-container font-black text-lg py-5 rounded-xl tracking-widest transition-all active:scale-95 shadow-xl shadow-black/40 uppercase disabled:opacity-50">
@@ -299,7 +291,7 @@ export default function LoginPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Password</label>
-                    <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="••••••••" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+                    <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" type="password" value={password} onChange={e => setPassword(e.target.value)} />
                   </div>
                   <div className="pt-2">
                     <button disabled={busy} type="submit" className="w-full bg-primary-container text-on-primary-container font-black text-lg py-5 rounded-xl tracking-widest transition-all active:scale-95 shadow-xl shadow-black/40 uppercase disabled:opacity-50">
@@ -346,7 +338,7 @@ export default function LoginPage() {
                   </div>
                   <div className="flex flex-col items-center gap-4 pt-4">
                     <button type="button" onClick={() => { setOtpStep('enter'); setOtp(''); }} className="text-sm font-bold text-outline hover:text-on-surface transition-colors uppercase tracking-wider">
-                      ← Change Identifier
+                      â† Change Identifier
                     </button>
                   </div>
                 </form>
@@ -356,7 +348,6 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Visual Polish: Gradient Orbs */}
       <div className="fixed top-[-10%] right-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
       <div className="fixed bottom-[-5%] left-[-10%] w-80 h-80 bg-secondary/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
 
