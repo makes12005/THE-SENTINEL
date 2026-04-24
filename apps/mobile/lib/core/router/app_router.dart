@@ -29,6 +29,18 @@ class AppRoutes {
   static const driverTripDetail = '/driver/trips/:tripId';
 }
 
+String routeForRole(String? role) {
+  switch (role) {
+    case 'driver':
+      return AppRoutes.driverDashboard;
+    case 'conductor':
+    case 'passenger':
+      return AppRoutes.dashboard;
+    default:
+      return AppRoutes.welcome;
+  }
+}
+
 /// go_router configuration with role-based auth redirect guard.
 /// - No session             → /welcome
 /// - conductor session      → /dashboard
@@ -51,14 +63,19 @@ final GoRouter appRouter = GoRouter(
     if (hasSession && isLoggingIn) {
       // Route to the correct dashboard based on role
       final role = await SecureStorage.getRole();
-      return role == 'driver' ? AppRoutes.driverDashboard : AppRoutes.dashboard;
+      return routeForRole(role);
     }
 
-    // Prevent conductors from accessing driver routes and vice versa
+    final role = hasSession ? await SecureStorage.getRole() : null;
     final isDriverRoute = state.matchedLocation.startsWith('/driver');
-    if (hasSession && isDriverRoute) {
-      final role = await SecureStorage.getRole();
-      if (role == 'conductor') return AppRoutes.dashboard;
+    if (hasSession && isDriverRoute && role != 'driver') {
+      return routeForRole(role);
+    }
+
+    final isConductorRoute = state.matchedLocation == AppRoutes.dashboard ||
+        state.matchedLocation.startsWith('/trips/');
+    if (hasSession && isConductorRoute && role == 'driver') {
+      return routeForRole(role);
     }
 
     return null; // no redirect needed

@@ -34,39 +34,25 @@ class VerifyOtpResult {
 class AuthRepository {
   final _dio = ApiClient.instance;
 
-  Future<void> sendOtp(String identifier) async {
+  Future<void> sendOtp(String contact) async {
     await _dio.post(
       Endpoints.sendOtp,
-      data: {'identifier': identifier},
+      data: {'contact': contact},
     );
   }
 
-  Future<VerifyOtpResult> verifyOtp(String identifier, String otp) async {
+  Future<VerifyOtpResult> verifyOtp(String contact, String otp) async {
     final response = await _dio.post(
       Endpoints.verifyOtp,
-      data: {'identifier': identifier, 'otp': otp},
+      data: {'contact': contact, 'otp': otp},
     );
 
     final data = response.data['data'] as Map<String, dynamic>;
 
-    if (data['is_new_user'] == true) {
-      return VerifyOtpResult(
-        isNewUser: true,
-        tempToken: data['temp_token'] as String,
-      );
-    } else {
-      final user = data['user'] as Map<String, dynamic>;
-      return VerifyOtpResult(
-        isNewUser: false,
-        authResult: AuthResult(
-          accessToken: data['access_token'] as String,
-          refreshToken: data['refresh_token'] as String,
-          role: user['role'] as String,
-          userId: user['id'] as String,
-          userName: user['name'] as String,
-        ),
-      );
-    }
+    return VerifyOtpResult(
+      isNewUser: true,
+      tempToken: data['temp_token'] as String,
+    );
   }
 
   Future<AuthResult> signup({
@@ -81,7 +67,7 @@ class AuthRepository {
         'temp_token': tempToken,
         'name': name,
         'password': password,
-        if (inviteCode != null && inviteCode.isNotEmpty) 'invite_code': inviteCode,
+        if (inviteCode != null && inviteCode.isNotEmpty) 'agency_invite_code': inviteCode,
       },
     );
 

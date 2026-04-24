@@ -129,12 +129,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> _handleAuthSuccess(AuthResult result) async {
-    // ROLE GUARD — conductor or driver only
-    const allowedRoles = ['conductor', 'driver'];
+    // Mobile supports conductor, driver, and passenger sessions.
+    const allowedRoles = ['conductor', 'driver', 'passenger'];
     if (!allowedRoles.contains(result.role)) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Access denied. This app is for conductors and drivers only. Role: ${result.role}',
+        error: 'Access denied for role: ${result.role}',
       );
       return false;
     }
@@ -157,6 +157,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       userName: result.userName,
       tempToken: null, // Clear temp token
     );
+
+    // Trigger GoRouter to re-evaluate its redirect guard
+    SessionNotifier.instance.invalidate();
+
     return true;
   }
 

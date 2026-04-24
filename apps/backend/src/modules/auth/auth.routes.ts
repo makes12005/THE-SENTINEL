@@ -71,9 +71,25 @@ function serializeUser(user: DbUser) {
     phone:    user.phone ?? null,
     email:    user.email ?? null,
     role:     user.role,
+    agency_id: user.agency_id ?? null,
     agencyId: user.agency_id ?? null,
     redirect: ROLE_REDIRECTS[user.role] ?? '/operator/dashboard',
   };
+}
+
+function getContactFromBody(body: Record<string, unknown> | undefined): string {
+  const raw =
+    (typeof body?.contact === 'string' && body.contact) ||
+    (typeof body?.identifier === 'string' && body.identifier) ||
+    (typeof body?.phone === 'string' && body.phone) ||
+    (typeof body?.email === 'string' && body.email) ||
+    '';
+
+  return raw.trim();
+}
+
+function normalizeContact(raw: string): string {
+  return isEmail(raw) ? raw.toLowerCase().trim() : normalisePhone(raw);
 }
 
 async function issueTokens(user: DbUser) {
@@ -129,10 +145,12 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   // ── POST /login ─────────────────────────────────────────────────────────────
   fastify.post('/login', async (request, reply) => {
     const schema = z.object({
-      identifier: z.string().min(3),   // phone or email
+      contact:    z.string().min(3).optional(),
+      identifier: z.string().min(3).optional(),
       password:   z.string().min(1),
       // legacy field names — kept for backwards compat
       phone:      z.string().optional(),
+      email:      z.string().email().optional(),
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
@@ -143,7 +161,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Accept "identifier" OR legacy "phone" field
-    const raw = parsed.data.identifier || parsed.data.phone || '';
+    const raw = getContactFromBody(parsed.data);
     const user = await findUserByIdentifier(raw);
 
     if (!user) {
@@ -202,7 +220,12 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── POST /refresh ────────────────────────────────────────────────────────────
   fastify.post('/refresh', async (request, reply) => {
-    const schema = z.object({ refreshToken: z.string().min(1) });
+    const schema = z.object({
+      refreshToken: z.string().min(1).optional(),
+      refresh_token: z.string().min(1).optional(),
+    }).refine((data) => Boolean(data.refreshToken || data.refresh_token), {
+      message: 'refreshToken or refresh_token is required',
+    });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -211,9 +234,17 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
+    const refreshToken = parsed.data.refreshToken || parsed.data.refresh_token;
+    if (!refreshToken) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'refreshToken or refresh_token is required' },
+      });
+    }
+
     let payload: TokenPayload;
     try {
-      payload = jwt.verify(parsed.data.refreshToken, getRefreshSecret()) as TokenPayload;
+      payload = jwt.verify(refreshToken, getRefreshSecret()) as TokenPayload;
     } catch (error: any) {
       return reply.status(401).send({
         success: false,
@@ -229,7 +260,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    const tokenHash = hashToken(parsed.data.refreshToken);
+    const tokenHash = hashToken(refreshToken);
     const [stored] = await db
       .select()
       .from(refreshTokens)
@@ -272,15 +303,22 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // ── POST /logout ─────────────────────────────────────────────────────────────
   fastify.post('/logout', async (request, reply) => {
-    const schema = z.object({ refreshToken: z.string().min(1).optional() }).optional();
+    const schema = z.object({
+      refreshToken: z.string().min(1).optional(),
+      refresh_token: z.string().min(1).optional(),
+    }).optional();
     const parsed = schema.safeParse(request.body);
 
     const authHeader = request.headers.authorization;
     const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     await revokeAccessToken(accessToken);
 
-    if (parsed.success && parsed.data?.refreshToken) {
-      await db.delete(refreshTokens).where(eq(refreshTokens.token_hash, hashToken(parsed.data.refreshToken)));
+    const refreshToken = parsed.success
+      ? parsed.data?.refreshToken || parsed.data?.refresh_token
+      : null;
+
+    if (refreshToken) {
+      await db.delete(refreshTokens).where(eq(refreshTokens.token_hash, hashToken(refreshToken)));
     }
 
     return reply.send({ success: true, data: { loggedOut: true } });
@@ -416,25 +454,27 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   // Accepts: { identifier } — phone or email.
   fastify.post('/send-otp', async (request, reply) => {
     const schema = z.object({
-      identifier: z.string().min(3),
+      contact: z.string().min(3).optional(),
+      identifier: z.string().min(3).optional(),
       phone: z.string().optional(),
+      email: z.string().email().optional(),
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'identifier required' },
+        error: { code: 'VALIDATION_ERROR', message: 'contact is required' },
       });
     }
 
-    const raw = parsed.data.identifier || parsed.data.phone || '';
-    const key = isEmail(raw) ? raw.toLowerCase().trim() : normalisePhone(raw);
+    const raw = getContactFromBody(parsed.data);
+    const key = normalizeContact(raw);
     
     // Rate limit check
     const rlKey = `rl:otp:${key}`;
     const attemptsStr = await redis.get(rlKey);
     const attempts = parseInt(attemptsStr || '0', 10);
-    if (attempts >= 5) {
+    if (attempts >= 3) {
       return reply.status(429).send({
         success: false,
         error: { code: 'RATE_LIMIT', message: 'Too many OTP requests. Try again later.' }
@@ -453,6 +493,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({
       success: true,
       data: {
+        channel: isEmail(raw) ? 'email' : 'sms',
         message: isEmail(raw)
           ? 'OTP sent to your email'
           : 'OTP sent to your phone',
@@ -465,68 +506,40 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   // ── POST /verify-otp ──────────────────────────────────────────────────────────
   fastify.post('/verify-otp', async (request, reply) => {
     const schema = z.object({
-      identifier: z.string().min(3),
+      contact: z.string().min(3).optional(),
+      identifier: z.string().min(3).optional(),
       otp:        z.string().length(6),
       phone:      z.string().optional(),
+      email:      z.string().email().optional(),
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'identifier and 6-digit OTP required' },
+        error: { code: 'VALIDATION_ERROR', message: 'contact and 6-digit OTP are required' },
       });
     }
 
-    const raw = parsed.data.identifier || parsed.data.phone || '';
-    const key = isEmail(raw) ? raw.toLowerCase().trim() : normalisePhone(raw);
+    const raw = getContactFromBody(parsed.data);
+    const key = normalizeContact(raw);
 
-    const isValid = await OTPService.verifyOTP(key, parsed.data.otp);
-    if (!isValid) {
+    const verification = await OTPService.verifyOTP(key, parsed.data.otp);
+    if (!verification.ok) {
       return reply.status(401).send({
         success: false,
-        error: { code: 'INVALID_OTP', message: 'Invalid or expired OTP.' },
-      });
-    }
-
-    const user = await findUserByIdentifier(key);
-    
-    // If user exists, log them in directly
-    if (user) {
-      if (!user.is_active) {
-        return reply.status(403).send({
-          success: false,
-          error: { code: 'USER_DISABLED', message: 'Your account has been disabled' },
-        });
-      }
-
-      await db.delete(refreshTokens).where(eq(refreshTokens.user_id, user.id));
-      const tokens = await issueTokens(user);
-
-      await db.insert(auditLogs).values({
-        user_id:     user.id,
-        action:      'OTP_LOGIN',
-        entity_type: 'auth',
-        entity_id:   user.id,
-        metadata:    { identifier: key },
-        ip_address:  request.ip,
-      });
-
-      return reply.send({
-        success: true,
+        error: {
+          code: verification.expired ? 'OTP_EXPIRED' : 'INVALID_OTP',
+          message: verification.expired ? 'OTP expired. Request a new code.' : 'Invalid OTP.',
+        },
         data: {
-          is_new_user: false,
-          access_token:  tokens.accessToken,
-          accessToken:   tokens.accessToken,
-          refresh_token: tokens.refreshToken,
-          refreshToken:  tokens.refreshToken,
-          user:          serializeUser(user),
+          attempts_remaining: verification.attemptsRemaining,
         },
       });
     }
 
     // If user doesn't exist, issue a temporary token for signup
     const tempToken = jwt.sign(
-      { identifier: key, type: 'signup_temp' },
+      { contact: key, identifier: key, type: 'signup_temp' },
       getJwtSecret(),
       { expiresIn: '15m' }
     );
@@ -534,9 +547,80 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({
       success: true,
       data: {
-        is_new_user: true,
         temp_token: tempToken,
         message: 'Proceed to signup'
+      },
+    });
+  });
+
+  fastify.post('/login-otp', async (request, reply) => {
+    const schema = z.object({
+      contact: z.string().min(3).optional(),
+      identifier: z.string().min(3).optional(),
+      otp: z.string().length(6),
+      phone: z.string().optional(),
+      email: z.string().email().optional(),
+    });
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'contact and 6-digit OTP are required' },
+      });
+    }
+
+    const raw = getContactFromBody(parsed.data);
+    const key = normalizeContact(raw);
+    const verification = await OTPService.verifyOTP(key, parsed.data.otp);
+
+    if (!verification.ok) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: verification.expired ? 'OTP_EXPIRED' : 'INVALID_OTP',
+          message: verification.expired ? 'OTP expired. Request a new code.' : 'Invalid OTP.',
+        },
+        data: {
+          attempts_remaining: verification.attemptsRemaining,
+        },
+      });
+    }
+
+    const user = await findUserByIdentifier(key);
+    if (!user) {
+      return reply.status(404).send({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'No account found for this contact' },
+      });
+    }
+
+    if (!user.is_active) {
+      return reply.status(403).send({
+        success: false,
+        error: { code: 'USER_DISABLED', message: 'Your account has been disabled' },
+      });
+    }
+
+    await db.delete(refreshTokens).where(eq(refreshTokens.user_id, user.id));
+    const tokens = await issueTokens(user);
+
+    await db.insert(auditLogs).values({
+      user_id:     user.id,
+      action:      'OTP_LOGIN',
+      entity_type: 'auth',
+      entity_id:   user.id,
+      metadata:    { contact: key },
+      ip_address:  request.ip,
+    });
+
+    return reply.send({
+      success: true,
+      data: {
+        access_token: tokens.accessToken,
+        accessToken: tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+        refreshToken: tokens.refreshToken,
+        user: serializeUser(user),
       },
     });
   });
@@ -545,9 +629,11 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/signup', async (request, reply) => {
     const schema = z.object({
       name: z.string().min(2).max(255),
+      contact: z.string().min(3).optional(),
       password: z.string().min(8),
       temp_token: z.string().min(1),
-      agency_invite_code: z.string().optional()
+      agency_invite_code: z.string().optional(),
+      invite_code: z.string().optional(),
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
@@ -568,15 +654,30 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    const key = payload.identifier;
+    const key = payload.contact || payload.identifier;
+    if (!key) {
+      return reply.status(401).send({
+        success: false,
+        error: { code: 'INVALID_TEMP_TOKEN', message: 'Temporary token is missing contact details.' }
+      });
+    }
+
+    if (parsed.data.contact && normalizeContact(parsed.data.contact) !== key) {
+      return reply.status(400).send({
+        success: false,
+        error: { code: 'CONTACT_MISMATCH', message: 'Provided contact does not match verified OTP contact' }
+      });
+    }
+
     const identIsEmail = isEmail(key);
     const phone = identIsEmail ? null : key;
     const email = identIsEmail ? key : null;
 
     // Check agency invite code if provided
     let agencyId: string | undefined;
-    if (parsed.data.agency_invite_code) {
-      const [ag] = await db.select().from(agencies).where(eq(agencies.invite_code, parsed.data.agency_invite_code)).limit(1);
+    const inviteCode = parsed.data.agency_invite_code || parsed.data.invite_code;
+    if (inviteCode) {
+      const [ag] = await db.select().from(agencies).where(eq(agencies.invite_code, inviteCode)).limit(1);
       if (!ag) {
         return reply.status(404).send({
           success: false,
@@ -597,12 +698,13 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const password_hash = await bcrypt.hash(parsed.data.password, 12);
+    const assignedRole = agencyId ? 'conductor' : 'passenger';
     const [user] = await db.insert(users).values({
       name: parsed.data.name,
       phone: phone ?? undefined,
       email: email ?? undefined,
       password_hash,
-      role: 'passenger', // Base role, if agency is linked it could be upgraded manually later or based on code type
+      role: assignedRole,
       agency_id: agencyId,
       is_active: true,
     }).returning();
@@ -614,7 +716,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       action: 'SIGNUP',
       entity_type: 'auth',
       entity_id: user.id,
-      metadata: { role: 'passenger', identifier: key, agency_id: agencyId },
+      metadata: { role: assignedRole, contact: key, agency_id: agencyId },
       ip_address: request.ip,
     });
 

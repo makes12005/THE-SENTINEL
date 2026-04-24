@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../provider/auth_provider.dart';
-import '../../../core/router/app_routes.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
@@ -15,23 +15,22 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneCon = TextEditingController();
+  final _contactCon = TextEditingController();
 
   @override
   void dispose() {
-    _phoneCon.dispose();
+    _contactCon.dispose();
     super.dispose();
   }
 
   Future<void> _onSendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     
-    final phone = _phoneCon.text.trim();
+    final contact = _contactCon.text.trim();
     
-    // AuthProvider will store the identifier
-    final success = await ref.read(authProvider.notifier).sendOtp(phone);
+    final success = await ref.read(authProvider.notifier).sendOtp(contact);
     if (success && mounted) {
-      context.push(AppRoutes.otp); // Will create this route later
+      context.push(AppRoutes.otp);
     }
   }
 
@@ -95,7 +94,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Enter your phone number to continue.',
+                            'Enter your phone number or email to continue.',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               color: AppColors.onSurfaceVariant,
@@ -107,7 +106,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     ),
                     const SizedBox(height: 48),
                     Text(
-                      'PHONE NUMBER',
+                      'PHONE OR EMAIL',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -117,17 +116,22 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      controller: _phoneCon,
-                      keyboardType: TextInputType.phone,
+                      controller: _contactCon,
+                      keyboardType: TextInputType.emailAddress,
                       style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
                       decoration: const InputDecoration(
-                        hintText: '+91XXXXXXXXXX',
-                        prefixIcon: Icon(Icons.phone_outlined, color: AppColors.onSurfaceVariant),
+                        hintText: '+91XXXXXXXXXX or name@example.com',
+                        prefixIcon: Icon(Icons.alternate_email, color: AppColors.onSurfaceVariant),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Phone number is required';
-                        if (!v.startsWith('+91') || v.length != 13) {
-                          return 'Use format +91XXXXXXXXXX';
+                        if (v == null || v.isEmpty) return 'Phone number or email is required';
+                        final value = v.trim();
+                        final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
+                        final digits = value.replaceAll(RegExp(r'\D'), '');
+                        final isPhone =
+                            value.startsWith('+') ? digits.length >= 10 : digits.length == 10;
+                        if (!isEmail && !isPhone) {
+                          return 'Enter a valid phone number or email';
                         }
                         return null;
                       },
@@ -168,14 +172,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   Widget _glowOrb(Color color, double size) {
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color,
-      ),
-      child: ImageFiltered(
-        imageFilter: ColorFilter.mode(color, BlendMode.srcIn),
-        child: Container(),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.15),
+            blurRadius: size * 0.4,
+            spreadRadius: size * 0.1,
+          ),
+        ],
       ),
     );
   }

@@ -1,43 +1,65 @@
 /**
- * Bus Alert — Complete Auth System Test
- * Backend: https://api-production-e13f.up.railway.app
+ * Bus Alert — Auth System Integration Tests (DEV MODE)
+ * Target: http://localhost:3005  (pnpm dev in apps/backend)
  *
- * Usage:
+ * In dev mode NODE_ENV=development, /send-otp returns the OTP
+ * directly in the response body — no Redis / Brevo / MSG91 needed.
+ *
+ * Run:
  *   npx tsx apps/backend/src/scripts/auth-test.ts
- *   npx tsx apps/backend/src/scripts/auth-test.ts --phone   (uses real phone, waits for OTP input)
+ *   npx tsx apps/backend/src/scripts/auth-test.ts --phone  (real SMS test)
  */
 
 import * as readline from 'readline';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // ─── Config ────────────────────────────────────────────────────────────────
-const BASE_URL = 'https://api-production-e13f.up.railway.app/api/auth';
+const BASE_URL     = 'http://localhost:3005/api/auth';
+const HEALTH_URL   = 'http://localhost:3005/api/health';
+const USE_PHONE    = process.argv.includes('--phone');
+const REAL_PHONE   = '+917778069828'; // user's real phone for --phone mode
 
-// Upstash REST (to read OTPs from Redis without Brevo/MSG91 dependency in tests)
-const UPSTASH_URL   = 'https://firm-dolphin-86115.upstash.io';
-const UPSTASH_TOKEN = 'gQAAAAAAAVBjAAIncDI4MTgyNjcyYWY2Nzc0MGRmOGM5ZDAwZWFjNzI3NDVhNnAyODYxMTU';
-
-// DB (Neon) — only used for invite-code lookup and cleanup
-const DB_URL = 'postgresql://neondb_owner:npg_yxAdsK94wclz@ep-late-mouse-ancgm810-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
-
-const USE_PHONE_OTP = process.argv.includes('--phone');
-
-// ─── Test accounts ─────────────────────────────────────────────────────────
 const EMAIL_USER        = 'test@busalert.in';
 const CONDUCTOR_EMAIL   = 'conductor@busalert.in';
 const RATE_LIMIT_EMAIL  = 'ratetest@busalert.in';
-const REAL_PHONE        = '+917778069828'; // user's real phone
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
-type TestResult = { id: number; name: string; status: '✅' | '❌' | '⚠️'; notes: string };
-const results: TestResult[] = [];
+// ─── State ─────────────────────────────────────────────────────────────────
+type Result = { id: number; name: string; status: '✅' | '❌' | '⚠️'; notes: string };
+const results: Result[] = [];
 let ACCESS_TOKEN  = '';
 let REFRESH_TOKEN = '';
-let TEMP_TOKEN    = '';
-let INVITE_CODE   = '';
 
+// ─── Utilities ─────────────────────────────────────────────────────────────
 const log = (msg: string) => process.stdout.write(msg);
 
-async function http(method: string, path: string, body?: object, token?: string): Promise<any> {
+/** Clear Redis rate limit keys for test identifiers */
+async function clearRateLimits() {
+  try {
+    const { default: Redis } = await import('ioredis');
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redis = new Redis(redisUrl);
+    
+    const keys = [
+      `rl:otp:${EMAIL_USER}`,
+      `rl:otp:${CONDUCTOR_EMAIL}`,
+      `rl:otp:${RATE_LIMIT_EMAIL}`,
+      `otp:${EMAIL_USER}`,
+      `otp:${CONDUCTOR_EMAIL}`,
+      `otp:${RATE_LIMIT_EMAIL}`
+    ];
+    
+    for (const key of keys) {
+      await redis.del(key);
+    }
+    await redis.quit();
+    log('  ✅ Redis rate limits cleared\n');
+  } catch (e) {
+    log(`  ⚠️  Failed to clear Redis rate limits: ${e}\n`);
+  }
+}
+
+async function http(method: string, path: string, body?: object, token?: string) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -49,29 +71,6 @@ async function http(method: string, path: string, body?: object, token?: string)
   let json: any;
   try { json = JSON.parse(text); } catch { json = { raw: text }; }
   return { status: res.status, body: json };
-}
-
-async function redisGet(key: string): Promise<string | null> {
-  const res = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
-    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-  });
-  const data = await res.json() as any;
-  return data?.result ?? null;
-}
-
-async function dbQuery(sql: string): Promise<any[]> {
-  // We use node-postgres via dynamic import
-  try {
-    const { Client } = await import('pg');
-    const client = new Client({ connectionString: DB_URL });
-    await client.connect();
-    const { rows } = await client.query(sql);
-    await client.end();
-    return rows;
-  } catch (e: any) {
-    log(`  ⚠️  DB query failed: ${e.message}\n`);
-    return [];
-  }
 }
 
 function pass(id: number, name: string, notes = '') {
@@ -89,157 +88,149 @@ function warn(id: number, name: string, notes: string) {
   log(`  ⚠️  WARN: ${name} — ${notes}\n`);
 }
 
-function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-async function prompt(question: string): Promise<string> {
+async function prompt(q: string): Promise<string> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim()); }));
+  return new Promise(resolve => rl.question(q, ans => { rl.close(); resolve(ans.trim()); }));
 }
 
-// ─── TESTS ─────────────────────────────────────────────────────────────────
-
-async function test1_EmailOtpSignup() {
+// ─── TEST 1: Email OTP Signup ───────────────────────────────────────────────
+async function test1() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   log('TEST 1 — Email OTP Signup Flow\n');
 
-  // Step 1: send-otp
-  log('  → POST /send-otp\n');
+  // send-otp
+  log(`  → POST /send-otp  { identifier: "${EMAIL_USER}" }\n`);
   const r1 = await http('POST', '/send-otp', { identifier: EMAIL_USER });
+  log(`     HTTP ${r1.status}: ${JSON.stringify(r1.body)}\n`);
+
   if (r1.status !== 200 || !r1.body.success) {
-    fail(1, 'Email OTP Signup', `send-otp failed: HTTP ${r1.status} — ${JSON.stringify(r1.body)}`);
+    fail(1, 'Email OTP Signup', `send-otp failed: HTTP ${r1.status} — ${JSON.stringify(r1.body.error ?? r1.body)}`);
     return;
   }
-  log(`     Response: ${JSON.stringify(r1.body.data)}\n`);
 
-  // Step 2: get OTP from Redis
-  log('  → Reading OTP from Upstash Redis (key: otp:test@busalert.in)\n');
-  await sleep(500);
-  const otp = await redisGet(`otp:${EMAIL_USER}`);
+  // In dev mode, OTP is returned directly
+  const otp: string = r1.body.data?.otp;
   if (!otp) {
-    fail(1, 'Email OTP Signup', 'OTP not found in Redis — delivery may be broken');
+    fail(1, 'Email OTP Signup', `No OTP in dev response — check NODE_ENV=development: ${JSON.stringify(r1.body)}`);
     return;
   }
-  log(`     OTP from Redis: ${otp}\n`);
+  log(`     📨 OTP (dev mode): ${otp}\n`);
 
-  // Step 3: verify-otp
+  // verify-otp
   log('  → POST /verify-otp\n');
-  const r3 = await http('POST', '/verify-otp', { identifier: EMAIL_USER, otp });
-  if (r3.status !== 200 || !r3.body.success) {
-    fail(1, 'Email OTP Signup', `verify-otp failed: HTTP ${r3.status} — ${JSON.stringify(r3.body)}`);
-    return;
-  }
-  log(`     is_new_user: ${r3.body.data.is_new_user}\n`);
+  const r2 = await http('POST', '/verify-otp', { identifier: EMAIL_USER, otp });
+  log(`     HTTP ${r2.status}: ${JSON.stringify(r2.body)}\n`);
 
-  // If user already exists (repeat test run), grab tokens directly
-  if (!r3.body.data.is_new_user) {
-    ACCESS_TOKEN  = r3.body.data.access_token;
-    REFRESH_TOKEN = r3.body.data.refresh_token;
-    pass(1, 'Email OTP Signup', 'Existing user — OTP login returned tokens (no signup needed)');
+  if (r2.status !== 200 || !r2.body.success) {
+    fail(1, 'Email OTP Signup', `verify-otp failed: ${JSON.stringify(r2.body)}`);
     return;
   }
 
-  TEMP_TOKEN = r3.body.data.temp_token;
-  log(`     temp_token obtained ✓\n`);
+  // Existing user → tokens returned directly
+  if (!r2.body.data?.is_new_user) {
+    ACCESS_TOKEN  = r2.body.data?.access_token ?? r2.body.data?.accessToken;
+    REFRESH_TOKEN = r2.body.data?.refresh_token ?? r2.body.data?.refreshToken;
+    pass(1, 'Email OTP Signup', `Existing user — OTP login succeeded, role=${r2.body.data?.user?.role}`);
+    return;
+  }
 
-  // Step 4: signup
+  const tempToken = r2.body.data?.temp_token;
+  if (!tempToken) {
+    fail(1, 'Email OTP Signup', `is_new_user=true but no temp_token in response`);
+    return;
+  }
+  log(`     temp_token ✓\n`);
+
+  // signup
   log('  → POST /signup\n');
-  const r4 = await http('POST', '/signup', {
-    name: 'Test User',
-    password: 'Test@1234',
-    temp_token: TEMP_TOKEN,
+  const r3 = await http('POST', '/signup', {
+    name:       'Test User',
+    password:   'Test@1234',
+    temp_token: tempToken,
   });
-  if (r4.status !== 201 && r4.status !== 200) {
-    fail(1, 'Email OTP Signup', `signup failed: HTTP ${r4.status} — ${JSON.stringify(r4.body)}`);
-    return;
-  }
-  ACCESS_TOKEN  = r4.body.data?.access_token  ?? r4.body.data?.accessToken;
-  REFRESH_TOKEN = r4.body.data?.refresh_token ?? r4.body.data?.refreshToken;
+  log(`     HTTP ${r3.status}: ${JSON.stringify(r3.body)}\n`);
 
-  if (!ACCESS_TOKEN || !REFRESH_TOKEN) {
-    fail(1, 'Email OTP Signup', `Tokens missing from signup response: ${JSON.stringify(r4.body)}`);
-    return;
+  if ((r3.status === 200 || r3.status === 201) && r3.body.success) {
+    ACCESS_TOKEN  = r3.body.data?.access_token ?? r3.body.data?.accessToken;
+    REFRESH_TOKEN = r3.body.data?.refresh_token ?? r3.body.data?.refreshToken;
+    pass(1, 'Email OTP Signup', `New user created, role=${r3.body.data?.user?.role}`);
+  } else {
+    fail(1, 'Email OTP Signup', `signup: HTTP ${r3.status} — ${JSON.stringify(r3.body)}`);
   }
-
-  log(`     user: ${JSON.stringify(r4.body.data?.user)}\n`);
-  pass(1, 'Email OTP Signup', `New user created, role=${r4.body.data?.user?.role}`);
 }
 
-async function test2_LoginPassword() {
+// ─── TEST 2: Password Login ─────────────────────────────────────────────────
+async function test2() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   log('TEST 2 — Login with Password\n');
 
   const r = await http('POST', '/login', { identifier: EMAIL_USER, password: 'Test@1234' });
-  log(`  → Response: HTTP ${r.status}\n`);
-  if (r.status !== 200 || !r.body.success) {
-    fail(2, 'Login Password', `HTTP ${r.status} — ${JSON.stringify(r.body)}`);
-    return;
-  }
+  log(`  → HTTP ${r.status}: ${JSON.stringify(r.body)}\n`);
 
-  // Refresh tokens from password login (overwrite so TEST 4 tests fresh pair)
-  REFRESH_TOKEN = r.body.data?.refresh_token ?? r.body.data?.refreshToken;
-  ACCESS_TOKEN  = r.body.data?.access_token  ?? r.body.data?.accessToken;
-
-  pass(2, 'Login Password', `role=${r.body.data?.user?.role}`);
-}
-
-async function test3_LoginOtp() {
-  log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  log('TEST 3 — Login with OTP\n');
-
-  // Step 1
-  const r1 = await http('POST', '/send-otp', { identifier: EMAIL_USER });
-  if (!r1.body.success) {
-    fail(3, 'Login OTP', `send-otp failed: ${JSON.stringify(r1.body)}`);
-    return;
-  }
-  log('  → OTP sent\n');
-
-  await sleep(500);
-  const otp = await redisGet(`otp:${EMAIL_USER}`);
-  if (!otp) {
-    fail(3, 'Login OTP', 'OTP not found in Redis');
-    return;
-  }
-  log(`  → OTP from Redis: ${otp}\n`);
-
-  // Existing user → verify-otp gives tokens directly
-  const r2 = await http('POST', '/verify-otp', { identifier: EMAIL_USER, otp });
-  log(`  → verify-otp: HTTP ${r2.status}\n`);
-
-  if (r2.status !== 200 || !r2.body.success) {
-    fail(3, 'Login OTP', `HTTP ${r2.status} — ${JSON.stringify(r2.body)}`);
-    return;
-  }
-
-  if (r2.body.data.access_token) {
-    pass(3, 'Login OTP', 'Existing user login via OTP returned access_token');
+  if (r.status === 200 && r.body.success) {
+    REFRESH_TOKEN = r.body.data?.refresh_token ?? r.body.data?.refreshToken;
+    ACCESS_TOKEN  = r.body.data?.access_token  ?? r.body.data?.accessToken;
+    pass(2, 'Login Password', `role=${r.body.data?.user?.role}`);
   } else {
-    fail(3, 'Login OTP', `Expected access_token for existing user but got: ${JSON.stringify(r2.body.data)}`);
+    fail(2, 'Login Password', `HTTP ${r.status} — ${JSON.stringify(r.body)}`);
   }
 }
 
-async function test4_TokenRefresh() {
+// ─── TEST 3: OTP Login (existing user) ─────────────────────────────────────
+async function test3() {
+  log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  log('TEST 3 — Login with OTP (existing user)\n');
+
+  const r1 = await http('POST', '/send-otp', { identifier: EMAIL_USER });
+  const otp: string = r1.body.data?.otp;
+  log(`  → OTP: ${otp}\n`);
+
+  if (!otp) {
+    fail(3, 'Login OTP', `No OTP in response: ${JSON.stringify(r1.body)}`);
+    return;
+  }
+
+  const r2 = await http('POST', '/verify-otp', { identifier: EMAIL_USER, otp });
+  log(`  → HTTP ${r2.status}: is_new_user=${r2.body.data?.is_new_user}\n`);
+
+  if (r2.status === 200 && r2.body.success && r2.body.data?.access_token) {
+    // OTP login deletes ALL old refresh tokens and issues a new one.
+    // Capture the new tokens so Test 4 (refresh) uses the current valid token.
+    ACCESS_TOKEN  = r2.body.data.access_token  ?? r2.body.data.accessToken;
+    REFRESH_TOKEN = r2.body.data.refresh_token ?? r2.body.data.refreshToken;
+    log(`  → Updated ACCESS_TOKEN + REFRESH_TOKEN from OTP login\n`);
+    pass(3, 'Login OTP', 'Existing user returned access_token via verify-otp');
+  } else {
+    fail(3, 'Login OTP', `HTTP ${r2.status} — ${JSON.stringify(r2.body)}`);
+  }
+}
+
+// ─── TEST 4: Token Refresh ──────────────────────────────────────────────────
+async function test4() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   log('TEST 4 — Token Refresh\n');
 
   if (!REFRESH_TOKEN) {
-    warn(4, 'Token Refresh', 'No refresh_token available — TEST 2 must pass first');
+    warn(4, 'Token Refresh', 'No refresh_token — TEST 2 must pass first');
     return;
   }
 
   const r = await http('POST', '/refresh', { refreshToken: REFRESH_TOKEN });
-  log(`  → HTTP ${r.status}\n`);
-  if (r.status !== 200 || !r.body.success) {
-    fail(4, 'Token Refresh', `HTTP ${r.status} — ${JSON.stringify(r.body)}`);
-    return;
-  }
+  log(`  → HTTP ${r.status}: ${JSON.stringify(r.body)}\n`);
 
-  ACCESS_TOKEN  = r.body.data?.access_token  ?? r.body.data?.accessToken;
-  REFRESH_TOKEN = r.body.data?.refresh_token ?? r.body.data?.refreshToken;
-  pass(4, 'Token Refresh', 'Rotating refresh token issued successfully');
+  if (r.status === 200 && r.body.success) {
+    ACCESS_TOKEN  = r.body.data?.access_token  ?? r.body.data?.accessToken;
+    REFRESH_TOKEN = r.body.data?.refresh_token ?? r.body.data?.refreshToken;
+    pass(4, 'Token Refresh', 'Rotating refresh token issued');
+  } else {
+    fail(4, 'Token Refresh', `HTTP ${r.status} — ${JSON.stringify(r.body)}`);
+  }
 }
 
-async function test5_LogoutBlacklist() {
+// ─── TEST 5: Logout + Blacklist ─────────────────────────────────────────────
+async function test5() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   log('TEST 5 — Logout + Token Blacklist\n');
 
@@ -248,143 +239,149 @@ async function test5_LogoutBlacklist() {
     return;
   }
 
-  const tokenBeforeLogout = ACCESS_TOKEN;
+  const tokenToBlacklist = ACCESS_TOKEN;
 
-  // Logout
-  const rLogout = await http('POST', '/logout', { refreshToken: REFRESH_TOKEN }, tokenBeforeLogout);
+  const rLogout = await http('POST', '/logout', { refreshToken: REFRESH_TOKEN }, tokenToBlacklist);
   log(`  → Logout: HTTP ${rLogout.status}\n`);
-  if (!rLogout.body.success) {
-    fail(5, 'Logout Blacklist', `Logout failed: ${JSON.stringify(rLogout.body)}`);
-    return;
-  }
 
-  // Try using blacklisted token on /me
-  await sleep(200);
-  const rMe = await http('GET', '/me', undefined, tokenBeforeLogout);
+  await sleep(300);
+
+  // Blacklisted token should be rejected on /me
+  const rMe = await http('GET', '/me', undefined, tokenToBlacklist);
   log(`  → /me with blacklisted token: HTTP ${rMe.status}\n`);
 
   if (rMe.status === 401) {
-    pass(5, 'Logout Blacklist', 'Blacklisted token correctly rejected (401)');
+    pass(5, 'Logout Blacklist', 'Token correctly blacklisted (401 on /me)');
   } else {
-    fail(5, 'Logout Blacklist', `Expected 401 but got ${rMe.status}: ${JSON.stringify(rMe.body)}`);
+    fail(5, 'Logout Blacklist', `Expected 401 but got HTTP ${rMe.status}: ${JSON.stringify(rMe.body)}`);
+  }
+
+  // Re-issue tokens for later tests
+  const r = await http('POST', '/login', { identifier: EMAIL_USER, password: 'Test@1234' });
+  if (r.status === 200 && r.body.success) {
+    ACCESS_TOKEN  = r.body.data?.access_token  ?? r.body.data?.accessToken;
+    REFRESH_TOKEN = r.body.data?.refresh_token ?? r.body.data?.refreshToken;
+    log(`  → Re-issued tokens for subsequent tests\n`);
   }
 }
 
-async function test6_AgencyInvite() {
+// ─── TEST 6: Agency Invite Code ─────────────────────────────────────────────
+async function test6() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   log('TEST 6 — Agency Invite Code Flow\n');
 
-  // Get invite code from DB
-  const rows = await dbQuery('SELECT invite_code, name FROM agencies LIMIT 1');
-  if (rows.length === 0) {
-    warn(6, 'Agency Invite', 'No agencies in DB — seed one first. Skipping.');
+  // Get invite code from DB using the postgres driver (same dep as the backend)
+  let inviteCode = '';
+  try {
+    const { default: postgres } = await import('postgres');
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) throw new Error('DATABASE_URL not set');
+    const sql = postgres(dbUrl, { max: 1, idle_timeout: 5 });
+    const rows = await sql`SELECT invite_code, name FROM agencies LIMIT 1`;
+    await sql.end();
+    if (rows.length > 0) {
+      inviteCode = rows[0].invite_code as string;
+      log(`  → Agency invite code from DB: ${inviteCode} (${rows[0].name})\n`);
+    }
+  } catch (e: any) {
+    log(`  ⚠️  DB lookup failed: ${e.message}\n`);
+  }
+
+  if (!inviteCode) {
+    warn(6, 'Agency Invite', 'No agencies in DB — seed one first to test invite codes');
     return;
   }
-  INVITE_CODE = rows[0].invite_code;
-  log(`  → Agency: "${rows[0].name}", invite_code: ${INVITE_CODE}\n`);
 
-  // Send OTP for new conductor user
+  // send-otp for new conductor user
   const r1 = await http('POST', '/send-otp', { identifier: CONDUCTOR_EMAIL });
-  if (!r1.body.success) {
+  const otp: string = r1.body.data?.otp;
+  log(`  → OTP for conductor: ${otp}\n`);
+
+  if (!otp) {
     fail(6, 'Agency Invite', `send-otp failed: ${JSON.stringify(r1.body)}`);
     return;
   }
 
-  await sleep(500);
-  const otp = await redisGet(`otp:${CONDUCTOR_EMAIL}`);
-  if (!otp) {
-    fail(6, 'Agency Invite', 'OTP not found in Redis for conductor user');
-    return;
-  }
-
   const r2 = await http('POST', '/verify-otp', { identifier: CONDUCTOR_EMAIL, otp });
-  if (!r2.body.success || !r2.body.data?.temp_token) {
-    // Existing user
-    if (r2.body.data?.access_token) {
-      warn(6, 'Agency Invite', 'conductor@busalert.in already exists — skipping signup step. Clean up and re-run.');
-      return;
-    }
+  if (!r2.body.success) {
     fail(6, 'Agency Invite', `verify-otp failed: ${JSON.stringify(r2.body)}`);
     return;
   }
 
-  const tempTok = r2.body.data.temp_token;
+  // If user already exists, skip signup
+  if (!r2.body.data?.is_new_user) {
+    warn(6, 'Agency Invite', 'conductor@busalert.in already exists — delete and rerun');
+    return;
+  }
 
   const r3 = await http('POST', '/signup', {
-    name:              'Test Conductor',
-    password:          'Test@1234',
-    temp_token:        tempTok,
-    agency_invite_code: INVITE_CODE,
+    name:               'Test Conductor',
+    password:           'Test@1234',
+    temp_token:         r2.body.data.temp_token,
+    agency_invite_code: inviteCode,
   });
-  log(`  → signup: HTTP ${r3.status}\n`);
-  log(`     user: ${JSON.stringify(r3.body.data?.user)}\n`);
+  log(`  → signup: HTTP ${r3.status}: ${JSON.stringify(r3.body)}\n`);
 
-  if ((r3.status === 201 || r3.status === 200) && r3.body.data?.user?.agency_id) {
+  if ((r3.status === 200 || r3.status === 201) && r3.body.data?.user?.agencyId) {
     pass(6, 'Agency Invite', `agency_id=${r3.body.data.user.agencyId}, role=${r3.body.data.user.role}`);
   } else {
     fail(6, 'Agency Invite', `HTTP ${r3.status} — ${JSON.stringify(r3.body)}`);
   }
 }
 
-async function test7_RateLimiting() {
+// ─── TEST 7: Rate Limiting ──────────────────────────────────────────────────
+async function test7() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  log('TEST 7 — Rate Limiting (5 OTP requests → 429 on 6th)\n');
+  log('TEST 7 — Rate Limiting (> 5 OTP requests → 429)\n');
 
-  // Clear rate limit key first (so test is deterministic)
-  await fetch(`${UPSTASH_URL}/del/rl:otp:${RATE_LIMIT_EMAIL}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-  });
-  log('  → Rate limit key cleared in Redis\n');
-
+  // We don't pre-clear Redis in local dev — just blast 6 requests
   let got429 = false;
   for (let i = 1; i <= 6; i++) {
     const r = await http('POST', '/send-otp', { identifier: RATE_LIMIT_EMAIL });
     log(`  → Request ${i}: HTTP ${r.status}\n`);
     if (r.status === 429) {
       got429 = true;
-      log(`     Got 429 on request #${i} ✓\n`);
+      log(`     ✓ 429 returned on request #${i}\n`);
       break;
     }
-    await sleep(100);
+    await sleep(50);
   }
 
   if (got429) {
-    pass(7, 'Rate Limiting', '429 returned after limit exceeded');
+    pass(7, 'Rate Limiting', '429 Too Many Requests correctly returned');
   } else {
-    fail(7, 'Rate Limiting', 'Never got 429 after 6 OTP requests');
+    fail(7, 'Rate Limiting', 'Did not receive 429 after 6 OTP requests — check Redis rl: key');
   }
 }
 
-async function test8_InvalidOtp() {
+// ─── TEST 8: Invalid OTP ────────────────────────────────────────────────────
+async function test8() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  log('TEST 8 — Invalid OTP (wrong code)\n');
+  log('TEST 8 — Invalid OTP Rejection\n');
 
-  // Send fresh OTP first to create a valid Redis entry
+  // First send a fresh OTP so there is a valid entry in Redis
   await http('POST', '/send-otp', { identifier: EMAIL_USER });
-  await sleep(300);
+  await sleep(200);
 
   const r = await http('POST', '/verify-otp', { identifier: EMAIL_USER, otp: '000000' });
   log(`  → HTTP ${r.status}: ${JSON.stringify(r.body)}\n`);
 
-  if (r.status === 401 || r.status === 400) {
-    const msg = JSON.stringify(r.body);
-    pass(8, 'Invalid OTP', `Correctly rejected — ${msg.slice(0, 80)}`);
+  if (r.status === 401 && !r.body.success) {
+    pass(8, 'Invalid OTP', `Correctly rejected with 401 — ${r.body.error?.code}`);
   } else {
-    fail(8, 'Invalid OTP', `Expected 401/400 but got HTTP ${r.status}: ${JSON.stringify(r.body)}`);
+    fail(8, 'Invalid OTP', `Expected 401 but got HTTP ${r.status}: ${JSON.stringify(r.body)}`);
   }
 }
 
-async function test9_RealPhoneOtp() {
-  if (!USE_PHONE_OTP) {
-    log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    log('TEST 9 — Real Phone OTP (SKIPPED — run with --phone flag to enable)\n');
-    warn(9, 'Real Phone OTP', 'Skipped — use --phone flag to enable');
+// ─── TEST 9: Real Phone OTP ─────────────────────────────────────────────────
+async function test9() {
+  if (!USE_PHONE) {
+    warn(9, 'Real Phone OTP (MSG91)', 'Skipped — run with --phone flag to enable');
     return;
   }
 
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  log(`TEST 9 — Real Phone OTP (phone: ${REAL_PHONE})\n`);
+  log(`TEST 9 — Real Phone OTP via MSG91 (${REAL_PHONE})\n`);
 
   const r1 = await http('POST', '/send-otp', { identifier: REAL_PHONE });
   log(`  → send-otp: HTTP ${r1.status}: ${JSON.stringify(r1.body)}\n`);
@@ -394,9 +391,7 @@ async function test9_RealPhoneOtp() {
     return;
   }
 
-  log(`  → OTP sent to ${REAL_PHONE} via MSG91\n`);
-  const otp = await prompt('  ↳ Enter the OTP you received on your phone: ');
-
+  const otp = await prompt(`  ↳ Enter OTP received on ${REAL_PHONE}: `);
   if (!otp || otp.length !== 6) {
     fail(9, 'Real Phone OTP', `Invalid OTP entered: "${otp}"`);
     return;
@@ -412,52 +407,53 @@ async function test9_RealPhoneOtp() {
   }
 }
 
-async function test10_Cleanup() {
+// ─── TEST 10: Cleanup ───────────────────────────────────────────────────────
+async function test10() {
   log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  log('TEST 10 — Cleanup (delete test users)\n');
+  log('TEST 10 — Cleanup (remove test users from DB)\n');
 
-  const sql = `
-    DELETE FROM users
-    WHERE email IN ('test@busalert.in', 'conductor@busalert.in', 'ratetest@busalert.in')
-    OR phone = '${REAL_PHONE}'
-    RETURNING email, phone, id;
-  `;
+  try {
+    const { default: postgres } = await import('postgres');
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) throw new Error('DATABASE_URL not set');
+    const sql = postgres(dbUrl, { max: 1, idle_timeout: 5 });
 
-  const deleted = await dbQuery(sql);
-  log(`  → Deleted ${deleted.length} users\n`);
-  deleted.forEach(r => log(`     - ${r.email ?? r.phone} (${r.id})\n`));
+    const userRows = await sql`
+      SELECT id FROM users
+      WHERE email IN (${EMAIL_USER}, ${CONDUCTOR_EMAIL}, ${RATE_LIMIT_EMAIL})
+    `;
 
-  // Also clean Redis rate-limit keys
-  for (const key of [
-    `rl:otp:${EMAIL_USER}`,
-    `rl:otp:${CONDUCTOR_EMAIL}`,
-    `rl:otp:${RATE_LIMIT_EMAIL}`,
-  ]) {
-    await fetch(`${UPSTASH_URL}/del/${encodeURIComponent(key)}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-    });
+    if (userRows.length > 0) {
+      const ids = userRows.map((r: any) => r.id);
+      // Delete dependent audit_logs first (FK constraint)
+      await sql`DELETE FROM audit_logs WHERE user_id = ANY(${ids}::uuid[])`;
+      // Delete dependent refresh_tokens
+      await sql`DELETE FROM refresh_tokens WHERE user_id = ANY(${ids}::uuid[])`;
+      // Now delete users
+      const deleted = await sql`
+        DELETE FROM users WHERE id = ANY(${ids}::uuid[]) RETURNING email, id
+      `;
+      log(`  → Deleted ${deleted.length} user(s)\n`);
+      deleted.forEach((r: any) => log(`     - ${r.email} (${r.id})\n`));
+      pass(10, 'Cleanup', `${deleted.length} test user(s) removed`);
+    } else {
+      pass(10, 'Cleanup', 'No test users found in DB (already cleaned up)');
+    }
+    await sql.end();
+  } catch (e: any) {
+    warn(10, 'Cleanup', `DB cleanup failed (manual cleanup may be needed): ${e.message}`);
   }
-  log('  → Rate-limit keys cleared in Redis\n');
-  pass(10, 'Cleanup', `${deleted.length} test users removed`);
 }
 
-// ─── Report ────────────────────────────────────────────────────────────────
-
-function buildReport(): string {
-  const now = new Date().toLocaleDateString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric', month: 'long', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
-
+// ─── Report ─────────────────────────────────────────────────────────────────
+function buildReport() {
+  const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   const passed = results.filter(r => r.status === '✅').length;
   const failed = results.filter(r => r.status === '❌').length;
   const warned = results.filter(r => r.status === '⚠️').length;
-  const total  = results.length;
 
   const table = results.map(r =>
-    `| ${String(r.id).padEnd(5)} | ${r.name.padEnd(22)} | ${r.status}   | ${r.notes.slice(0, 70)} |`
+    `| ${String(r.id).padEnd(5)} | ${r.name.padEnd(26)} | ${r.status}   | ${r.notes.slice(0, 65)} |`
   ).join('\n');
 
   const failures = results
@@ -465,18 +461,16 @@ function buildReport(): string {
     .map(r => `### Test ${r.id} — ${r.name}\n- **Error**: ${r.notes}`)
     .join('\n\n');
 
-  const ready = failed === 0 ? 'YES ✅' : 'NO ❌';
-
-  return `# Auth System Test Report
+  return `# Auth System Test Report — DEV MODE
 
 **Date:** ${now} (IST)  
-**Backend:** https://api-production-e13f.up.railway.app  
-**Test Mode:** ${USE_PHONE_OTP ? 'Phone OTP enabled' : 'Email + Redis OTP'}
+**Backend:** http://localhost:3005 (development)  
+**Mode:** NODE_ENV=development (OTP returned inline, no email/SMS sent)
 
-## Results
+## Test Results
 
-| Test  | Description             | Status | Notes |
-|-------|-------------------------|--------|-------|
+| Test  | Description                | Status | Notes |
+|-------|----------------------------|--------|-------|
 ${table}
 
 ## Failed Tests
@@ -487,72 +481,90 @@ ${failed === 0 ? '_No failures_ ✅' : failures}
 
 | Metric   | Count |
 |----------|-------|
-| Total    | ${total}  |
-| Passed   | ${passed}  |
-| Warnings | ${warned}  |
-| Failed   | ${failed}  |
+| Total    | ${results.length} |
+| Passed   | ${passed} |
+| Warnings | ${warned} |
+| Failed   | ${failed} |
 
-**Ready for production:** ${ready}
+**Ready for production:** ${failed === 0 ? 'YES ✅' : 'NO ❌ — fix failures above first'}
 
-## Notes
+## Dev Notes
 
-- OTP read directly from Upstash Redis REST API — bypasses actual SMS/email delivery for speed
-- To test real SMS delivery: \`npx tsx apps/backend/src/scripts/auth-test.ts --phone\`
-- Rate limit: 5 OTP requests per identifier per hour (enforced in Redis)
-- Refresh tokens are rotated on each use (one-time use)
-- Access tokens are blacklisted in Redis on logout
+- OTP is returned inline in \`/send-otp\` response (dev mode only)
+- No real SMS or email is sent during these tests
+- To test real MSG91 SMS: \`npx tsx apps/backend/src/scripts/auth-test.ts --phone\`
+- Rate limiting tested by sending 6 OTP requests to the same identifier
 `;
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────
-
+// ─── Main ────────────────────────────────────────────────────────────────────
 async function main() {
-  log('╔══════════════════════════════════════════════════════╗\n');
-  log('║   Bus Alert — Auth System Integration Tests           ║\n');
-  log('║   Backend: api-production-e13f.up.railway.app         ║\n');
-  log('╚══════════════════════════════════════════════════════╝\n');
+  // Load .env.local
+  const envPath = path.resolve('apps/backend/.env.local');
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const [key, ...rest] = trimmed.split('=');
+      if (key && rest.length) {
+        process.env[key.trim()] ??= rest.join('=').trim().replace(/^["']|["']$/g, '');
+      }
+    }
+  }
 
-  // Health check
-  log('\nChecking backend health...\n');
-  try {
-    const health = await fetch('https://api-production-e13f.up.railway.app/api/health');
-    log(`  → /api/health: HTTP ${health.status}\n`);
-  } catch (e: any) {
-    log(`  ❌ Backend unreachable: ${e.message}\n`);
+  log('╔══════════════════════════════════════════════════════╗\n');
+  log('║   Bus Alert — Auth Tests  (DEV MODE / localhost)      ║\n');
+  log('╚══════════════════════════════════════════════════════╝\n');
+  log(`\nNODE_ENV=${process.env.NODE_ENV}\n`);
+
+  // Wait for server to be ready
+  log('\nWaiting for backend on http://localhost:3005...\n');
+  let ready = false;
+  for (let attempt = 1; attempt <= 15; attempt++) {
+    try {
+      const r = await fetch(HEALTH_URL, { signal: AbortSignal.timeout(2000) });
+      if (r.ok) { ready = true; log(`  ✅ Backend ready (attempt ${attempt})\n`); break; }
+    } catch { /* retry */ }
+    log(`  ... attempt ${attempt}/15\n`);
+    await sleep(2000);
+  }
+  if (!ready) {
+    log('\n❌ Backend not reachable. Start it first:\n');
+    log('   pnpm --filter backend dev\n\n');
     process.exit(1);
   }
 
-  await test1_EmailOtpSignup();
-  await test2_LoginPassword();
-  await test3_LoginOtp();
-  await test4_TokenRefresh();
-  await test5_LogoutBlacklist();
-  await test6_AgencyInvite();
-  await test7_RateLimiting();
-  await test8_InvalidOtp();
-  await test9_RealPhoneOtp();
-  await test10_Cleanup();
+  await clearRateLimits();
+
+  await test1();
+  await test2();
+  await test3();
+  await test4();
+  await test5();
+  await test6();
+  await test7();
+  await test8();
+  await test9();
+  await test10();
 
   const report = buildReport();
 
-  // Console summary
+  // Print summary
+  const passed = results.filter(r => r.status === '✅').length;
+  const failed = results.filter(r => r.status === '❌').length;
   log('\n╔══════════════════════════════════════════════════════╗\n');
-  log(`║  Results: ${results.filter(r=>r.status==='✅').length} passed, ${results.filter(r=>r.status==='❌').length} failed, ${results.filter(r=>r.status==='⚠️').length} warned\n`);
+  log(`║  RESULTS: ${passed} passed  |  ${failed} failed  |  ${results.filter(r=>r.status==='⚠️').length} skipped\n`);
   log('╚══════════════════════════════════════════════════════╝\n');
 
-  // Write report
-  const fs = await import('fs');
-  const path = await import('path');
-
+  // Save report
   const reportDir  = path.resolve('docs/test-reports');
-  const reportPath = path.join(reportDir, 'auth-test-report.md');
-
+  const reportFile = path.join(reportDir, 'auth-test-report.md');
   fs.mkdirSync(reportDir, { recursive: true });
-  fs.writeFileSync(reportPath, report);
-  log(`\nReport saved → ${reportPath}\n`);
+  fs.writeFileSync(reportFile, report, 'utf8');
+  log(`\n📄 Report saved → ${reportFile}\n`);
+
+  process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+main().catch(e => { console.error(e); process.exit(1); });

@@ -43,6 +43,9 @@ dependencies:
   # Manrope + Inter fonts
   google_fonts: ^6.2.1
 
+  # OTP input grid
+  pinput: ^5.0.0
+
   # Refresh token lock
   synchronized: ^3.1.0+1
 

@@ -6,6 +6,12 @@ export interface OTPResult {
   statusCode?: number;
 }
 
+export interface OTPVerificationResult {
+  ok: boolean;
+  attemptsRemaining: number;
+  expired: boolean;
+}
+
 // Ensure these exist in environment
 const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
 const MSG91_SENDER_ID = process.env.MSG91_SENDER_ID;
@@ -50,34 +56,44 @@ export class OTPService {
 
   /**
    * Verifies the provided OTP against Redis.
-   * Returns true if valid. Handles max attempts.
+   * Returns a structured result so handlers can show attempts remaining.
    */
-  static async verifyOTP(contact: string, inputOtp: string): Promise<boolean> {
+  static async verifyOTP(contact: string, inputOtp: string): Promise<OTPVerificationResult> {
     const key = `otp:${contact}`;
     const storedStr = await redis.get(key);
 
-    if (!storedStr) return false;
+    if (!storedStr) {
+      return { ok: false, attemptsRemaining: 0, expired: true };
+    }
 
     try {
       const data = JSON.parse(storedStr);
       if (data.attempts >= MAX_ATTEMPTS) {
-        // Delete after max attempts
         await redis.del(key);
-        return false;
+        return { ok: false, attemptsRemaining: 0, expired: true };
       }
 
       if (data.otp === inputOtp) {
-        // Success
         await redis.del(key);
-        return true;
-      } else {
-        // Increment attempts
-        data.attempts += 1;
-        await redis.set(key, JSON.stringify(data), 'KEEPTTL');
-        return false;
+        return {
+          ok: true,
+          attemptsRemaining: Math.max(MAX_ATTEMPTS - data.attempts, 0),
+          expired: false,
+        };
       }
+
+      data.attempts += 1;
+      const attemptsRemaining = Math.max(MAX_ATTEMPTS - data.attempts, 0);
+
+      if (attemptsRemaining === 0) {
+        await redis.del(key);
+      } else {
+        await redis.set(key, JSON.stringify(data), 'KEEPTTL');
+      }
+
+      return { ok: false, attemptsRemaining, expired: false };
     } catch {
-      return false;
+      return { ok: false, attemptsRemaining: 0, expired: true };
     }
   }
 
