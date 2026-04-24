@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { useAuthStore } from '@/lib/auth-store';
+import { type AuthUser, useAuthStore } from '@/lib/auth-store';
 
 const ROLE_REDIRECTS: Record<string, string> = {
   admin:     '/admin/dashboard',
@@ -44,7 +44,8 @@ function OAuthCallbackInner() {
     let user: {
       id: string;
       name: string;
-      phone: string;
+      phone?: string | null;
+      email?: string | null;
       role: string;
       agencyId: string | null;
     };
@@ -57,14 +58,23 @@ function OAuthCallbackInner() {
     }
 
     // ── Persist in Zustand (same shape as normal login)
+    const normalizedUser: AuthUser = {
+      id: user.id,
+      name: user.name,
+      phone: user.phone ?? null,
+      email: user.email ?? null,
+      role: user.role,
+      agencyId: user.agencyId ?? null,
+    };
+
     setSession({
       accessToken,
       refreshToken: refreshToken ?? '',
-      user: user as { id: string; name: string; phone: string; role: string; agencyId: string },
+      user: normalizedUser,
     });
 
     // ── Navigate to role-specific dashboard
-    const dest = ROLE_REDIRECTS[user.role] ?? '/login';
+    const dest = ROLE_REDIRECTS[normalizedUser.role] ?? '/login';
     router.replace(dest);
   }, [params, setSession, router]);
 

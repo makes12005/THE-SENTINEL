@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 
 // ─────────────────────────────────────────────────────────────────────────────
 const ROLE_REDIRECTS: Record<string, string> = {
@@ -94,7 +94,7 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: st
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
-export default function VerifyOtpPage() {
+function VerifyOtpPageInner() {
   const router       = useRouter();
   const params       = useSearchParams();
   const setSession   = useAuthStore((s) => s.setSession);
@@ -274,5 +274,37 @@ export default function VerifyOtpPage() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '9999px',
+              border: '4px solid rgba(255,255,255,0.15)',
+              borderTopColor: '#818cf8',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <style>{'@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }'}</style>
+        </div>
+      }
+    >
+      <VerifyOtpPageInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,30 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-04-17 (IST)
+Last Updated: 2026-04-24 (IST)
+
+## 2026-04-24 - Auth Production Go-Live Update
+
+- Auth system: ✅ Live in production
+- Test report: saved at `docs/test-reports/auth-live-test-report.md`
+- Push date: 2026-04-24
+- Next action: Operator dashboard testing
+
+## 2026-04-24 - Production Auth Live-Test Handoff
+
+### What Happened
+- Production deploys were brought back to green on Railway (`api`, `alert-worker`, `heartbeat-worker`) and Vercel before the auth verification request.
+- A direct live auth test pass against `https://api-production-e13f.up.railway.app` was then requested, including Upstash OTP reads, blacklist verification, rate-limit verification, and cleanup of test users.
+- This Codex sandbox could not reach Railway or Upstash over the network, so the live pass could not be executed from here.
+
+### Durable Learnings
+- Do not assume this shell can hit public Railway URLs just because deployment status is green in MCP. In this environment, outbound HTTP and raw socket access can be blocked at the sandbox level.
+- For auth verification work in this repo, keep a dedicated production runner in source control instead of relying on ad hoc shell commands. The current runner is [apps/backend/src/scripts/auth-live-test.ts](/F:/wakup%20system/bus-alert/apps/backend/src/scripts/auth-live-test.ts).
+- Upstash access for OTP inspection should use `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` when possible. This avoids coupling the test flow to dev-mode OTP leakage.
+- Checked-in production env values can be CLI-shaped rather than plain URLs. `REDIS_URL` in this repo may arrive as `redis-cli --tls -u redis://...`, so any standalone script that talks to Redis directly must normalize that input or avoid it.
+- Cleanup after auth tests should remove rows from `refresh_tokens` and `audit_logs` before deleting `users`, then clear `otp:*` and `rl:otp:*` Redis keys for the test contacts.
+
+### Operational Reminder
+- When the task is "run live tests against production", truthfulness matters more than optimistic reporting. If the shell cannot reach the target, record the exact blocker, leave a runnable test harness in-repo, and do not claim pass/fail for steps that never executed.
 
 ## Project Overview
 
