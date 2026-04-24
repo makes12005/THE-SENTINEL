@@ -92,6 +92,11 @@ function normalizeContact(raw: string): string {
   return isEmail(raw) ? raw.toLowerCase().trim() : normalisePhone(raw);
 }
 
+function isIndianPhoneLike(raw: string): boolean {
+  const normalized = raw.trim();
+  return /^(\+91\d{10}|\d{10})$/.test(normalized);
+}
+
 async function issueTokens(user: DbUser) {
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, agencyId: user.agency_id, name: user.name },
@@ -371,31 +376,51 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // â”€â”€ POST /register â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Accepts: { name, identifier (phone or email), password }
-  // The `identifier` field is auto-detected as phone or email.
+  // Accepts: { name, identifier/contact/phone/email, password }
+  // Contact is auto-detected as phone or email and normalized to canonical form.
   fastify.post('/register', async (request, reply) => {
+    console.log('Register body:', request.body);
     const schema = z.object({
       name:       z.string().min(2).max(255),
-      identifier: z.string().min(3),   // phone or email
+      identifier: z.string().min(3).optional(),
+      contact:    z.string().min(3).optional(),
       password:   z.string().min(8),
       // legacy fields â€” kept for backwards compat
       phone:      z.string().optional(),
       email:      z.string().email().optional(),
+    }).superRefine((data, ctx) => {
+      const rawContact = getContactFromBody(data);
+      if (!rawContact) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'identifier/contact/phone/email is required',
+          path: ['identifier'],
+        });
+        return;
+      }
+      if (!isEmail(rawContact) && !isIndianPhoneLike(rawContact)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Phone must be 10 digits or +91 followed by 10 digits',
+          path: ['identifier'],
+        });
+      }
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
+      console.log('Validation error:', parsed.error.format());
       return reply.status(400).send({
         success: false,
         error: {
           code:    'VALIDATION_ERROR',
-          message: 'name, identifier (phone or email), and password (min 8 chars) required',
+          message: 'name, contact (phone/email), and password (min 8 chars) required',
           details: parsed.error.format(),
         },
       });
     }
 
     const { name, password } = parsed.data;
-    const raw = parsed.data.identifier || parsed.data.phone || parsed.data.email || '';
+    const raw = getContactFromBody(parsed.data);
     const identIsEmail = isEmail(raw);
 
     // Resolve to canonical form
@@ -431,6 +456,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       role:          'passenger',
       is_active:     true,
     }).returning();
+    const tokens = await issueTokens(user);
 
     await db.insert(auditLogs).values({
       user_id:     user.id,
@@ -441,11 +467,14 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       ip_address:  request.ip,
     });
 
-    return reply.status(201).send({
+    return reply.status(200).send({
       success: true,
       data: {
-        message:         'Account created. Please verify your identity.',
-        identifier_type: identIsEmail ? 'email' : 'phone',
+        access_token:  tokens.accessToken,
+        accessToken:   tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+        refreshToken:  tokens.refreshToken,
+        user:          serializeUser(user),
       },
     });
   });
@@ -627,6 +656,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // â”€â”€ POST /signup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/signup', async (request, reply) => {
+    console.log('Signup body:', request.body);
     const schema = z.object({
       name: z.string().min(2).max(255),
       contact: z.string().min(3).optional(),
@@ -637,6 +667,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
+      console.log('Validation error:', parsed.error.format());
       return reply.status(400).send({
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'Invalid payload' },

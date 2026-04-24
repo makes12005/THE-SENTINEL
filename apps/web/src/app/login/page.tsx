@@ -19,6 +19,15 @@ function classifyIdentifier(v: string): 'phone' | 'email' | 'unknown' {
   return 'unknown';
 }
 
+function normalizeIdentifierForAuth(value: string): string {
+  const trimmed = value.trim();
+  if (isEmail(trimmed)) return trimmed.toLowerCase();
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`;
+  return trimmed;
+}
+
 const ROLE_REDIRECTS: Record<string, string> = {
   admin:     '/admin/dashboard',
   owner:     '/owner/dashboard',
@@ -169,9 +178,23 @@ export default function LoginPage() {
     }
     setBusy(true);
     try {
-      await api.post('/api/auth/register', { name: name.trim(), identifier: identifier.trim(), password });
-      const otpRes = await api.post<{ success: boolean; data: { otp?: string; message: string } }>('/api/auth/send-otp', { identifier: identifier.trim() });
-      sessionStorage.setItem('auth_identifier', identifier.trim());
+      const normalizedIdentifier = normalizeIdentifierForAuth(identifier);
+      const registerPayload = { name: name.trim(), identifier: normalizedIdentifier, password };
+      console.log('Sending to API:', registerPayload);
+      const registerRes = await api.post<{
+        success: boolean;
+        data: { accessToken?: string; access_token?: string; refreshToken?: string; refresh_token?: string; user?: any };
+      }>('/api/auth/register', registerPayload);
+
+      const accessToken = registerRes.data?.data?.accessToken ?? registerRes.data?.data?.access_token;
+      const refreshToken = registerRes.data?.data?.refreshToken ?? registerRes.data?.data?.refresh_token;
+      const user = registerRes.data?.data?.user;
+      if (accessToken && refreshToken && user) {
+        setSession({ accessToken, refreshToken, user });
+      }
+
+      const otpRes = await api.post<{ success: boolean; data: { otp?: string; message: string } }>('/api/auth/send-otp', { identifier: normalizedIdentifier });
+      sessionStorage.setItem('auth_identifier', normalizedIdentifier);
       sessionStorage.setItem('auth_source', 'register');
       const devOtp = otpRes.data?.data?.otp;
       if (devOtp) showToast(`âœ… Account created! Dev OTP: ${devOtp}`, 'info');
