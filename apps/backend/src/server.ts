@@ -22,8 +22,8 @@ const defaultCorsOrigins = [
   'http://localhost:3001',
   'http://localhost:3000',
 ];
-const corsOrigins =
-  process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) || defaultCorsOrigins;
+const envCorsOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) || [];
+const corsOrigins = Array.from(new Set([...defaultCorsOrigins, ...envCorsOrigins]));
 
 // ─── Plugins ──────────────────────────────────────────────────────────────────
 fastify.register(cors, {
@@ -36,7 +36,7 @@ fastify.register(cors, {
       callback(null, true);
       return;
     }
-    callback(new Error('Not allowed by CORS'), false);
+    callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
