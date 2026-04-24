@@ -115,6 +115,14 @@ fastify.get('/api/health', async (request, reply) => {
   };
 });
 
+// Temporary debug endpoint to inspect registered Fastify routes in production.
+fastify.get('/api/debug/routes', async () => {
+  return {
+    success: true,
+    data: fastify.printRoutes(),
+  };
+});
+
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 const start = async () => {
   try {
