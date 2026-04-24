@@ -40,8 +40,8 @@ export default function AdminAgenciesPage() {
 
   const load = () => {
     setLoading(true);
-    get<{ data: Agency[] }>('/api/admin/agencies')
-      .then((r) => { setAgencies(r.data); setFiltered(r.data); })
+    get<Agency[]>('/api/admin/agencies')
+      .then((r) => { setAgencies(r); setFiltered(r); })
       .finally(() => setLoading(false));
   };
 

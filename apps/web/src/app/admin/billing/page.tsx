@@ -63,8 +63,8 @@ export default function AdminBillingPage() {
 
   const load = () => {
     setLoading(true);
-    get<{ data: BillingSummary }>('/api/admin/billing/summary')
-      .then((r) => setSummary(r.data))
+    get<BillingSummary>('/api/admin/billing/summary')
+      .then((r) => setSummary(r))
       .finally(() => setLoading(false));
   };
 
@@ -74,8 +74,8 @@ export default function AdminBillingPage() {
     setSelected(a);
     setTxLoading(true);
     try {
-      const r = await get<{ data: { transactions: Transaction[] } }>(`/api/admin/billing/${a.agency_id}`);
-      setTxns(r.data.transactions ?? []);
+      const r = await get<{ transactions: Transaction[] }>(`/api/admin/billing/${a.agency_id}`);
+      setTxns(r.transactions ?? []);
     } finally { setTxLoading(false); }
   };
 
