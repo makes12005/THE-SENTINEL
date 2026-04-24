@@ -17,12 +17,27 @@ import { sql } from 'drizzle-orm';
 loadEnv();
 
 const fastify = Fastify({ logger: true });
+const defaultCorsOrigins = [
+  'https://bus-alert-iota.vercel.app',
+  'http://localhost:3001',
+  'http://localhost:3000',
+];
 const corsOrigins =
-  process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) || ['http://localhost:3001'];
+  process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) || defaultCorsOrigins;
 
 // ─── Plugins ──────────────────────────────────────────────────────────────────
 fastify.register(cors, {
-  origin: corsOrigins,
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (corsOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('Not allowed by CORS'), false);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
