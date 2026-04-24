@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
+import cors from '@fastify/cors';
 import authRoutes       from './modules/auth/auth.routes';
 import googleAuthRoutes from './modules/auth/google.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
@@ -16,8 +17,19 @@ import { sql } from 'drizzle-orm';
 loadEnv();
 
 const fastify = Fastify({ logger: true });
+const corsOrigins =
+  process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) || ['http://localhost:3001'];
 
 // ─── Plugins ──────────────────────────────────────────────────────────────────
+fastify.register(cors, {
+  origin: corsOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  preflight: true,
+  preflightContinue: false,
+});
+
 // Multipart support for CSV / xlsx uploads (limits: 10 MB file, 100 fields)
 fastify.register(multipart, {
   limits: {
