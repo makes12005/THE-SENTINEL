@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:synchronized/synchronized.dart';
+import '../auth/session_notifier.dart';
 import '../storage/secure_storage.dart';
 import '../env.dart';
 
@@ -80,8 +81,9 @@ class TokenInterceptor extends Interceptor {
     ErrorInterceptorHandler handler,
   ) async {
     await SecureStorage.clearAll();
-    // Signal to router that we need to go to /login.
-    // We use a custom error type that the router's redirect can detect.
+    // Notify GoRouter's refreshListenable so it immediately re-evaluates
+    // the redirect guard and sends the user to /welcome.
+    SessionNotifier.instance.invalidate();
     handler.reject(
       DioException(
         requestOptions: err.requestOptions,

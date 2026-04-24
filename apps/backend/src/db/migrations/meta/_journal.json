@@ -15,6 +15,13 @@
       "when": 1776395791223,
       "tag": "0001_friendly_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1776978144794,
+      "tag": "0002_fresh_william_stryker",
+      "breakpoints": true
     }
   ]
 }

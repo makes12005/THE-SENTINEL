@@ -1,183 +1,278 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import api from '@/lib/api';
-import toast from 'react-hot-toast';
+import { useAuthStore } from '@/lib/auth-store';
+import { api } from '@/lib/api';
 
-function VerifyOtpInner() {
-  const router      = useRouter();
-  const searchParams = useSearchParams();
-  const nextRoute   = searchParams.get('next') ?? 'dashboard';
+// ─────────────────────────────────────────────────────────────────────────────
+const ROLE_REDIRECTS: Record<string, string> = {
+  admin:     '/admin/dashboard',
+  owner:     '/owner/dashboard',
+  operator:  '/operator/dashboard',
+  driver:    '/operator/dashboard',
+  conductor: '/operator/dashboard',
+  passenger: '/access-code',
+};
 
-  const [phone,   setPhone]   = useState('');
-  const [digits,  setDigits]  = useState(['', '', '', '', '', '']);
-  const [loading, setLoading] = useState(false);
-  const [timer,   setTimer]   = useState(30);
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-
-  useEffect(() => {
-    const p = sessionStorage.getItem('signup_phone') ?? '';
-    setPhone(p);
-  }, []);
-
-  useEffect(() => {
-    if (timer === 0) return;
-    const id = setInterval(() => setTimer((t) => (t > 0 ? t - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, [timer]);
-
-  function handleDigit(index: number, val: string) {
-    if (!/^\d?$/.test(val)) return;
-    const next = [...digits];
-    next[index] = val;
-    setDigits(next);
-    if (val && index < 5) inputRefs.current[index + 1]?.focus();
-  }
-
-  function handleKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }
-
-  function handlePaste(e: React.ClipboardEvent) {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pasted.length === 6) {
-      setDigits(pasted.split(''));
-      inputRefs.current[5]?.focus();
-    }
-    e.preventDefault();
-  }
-
-  async function handleVerify() {
-    const otp = digits.join('');
-    if (otp.length < 6) return toast.error('Enter all 6 digits');
-    setLoading(true);
-    try {
-      await api.post('/api/auth/verify-otp', { phone, otp });
-      toast.success('Phone verified!');
-      if (nextRoute === 'access-code') {
-        router.push('/access-code');
-      } else {
-        router.push('/operator/dashboard');
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message ?? 'Invalid OTP. Try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function resendOtp() {
-    if (timer > 0) return;
-    try {
-      await api.post('/api/auth/send-otp', { phone });
-      setTimer(30);
-      setDigits(['', '', '', '', '', '']);
-      toast.success('New OTP sent!');
-    } catch {
-      toast.error('Failed to resend OTP');
-    }
-  }
-
-  const fmt = `0:${String(timer).padStart(2, '0')}`;
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────────────────────────────────────
+function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose(): void }) {
+  useEffect(() => { const t = setTimeout(onClose, 8000); return () => clearTimeout(t); }, [onClose]);
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center px-4 py-12" style={{ fontFamily: 'Manrope, sans-serif' }}>
-      {/* Background glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-[#0b3c5d]/25 rounded-full blur-[140px]" />
-      </div>
-
-      <div className="relative w-full max-w-sm">
-        {/* Back */}
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-xs text-[#8c9198] hover:text-[#a3cbf2] transition-colors mb-8"
-        >
-          <span className="material-symbols-outlined text-[15px]">arrow_back</span>
-          Verify OTP
-        </button>
-
-        {/* Icon */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-[#1a2a3a] border border-[#a3cbf2]/20 mb-6">
-            <span className="material-symbols-outlined text-4xl text-[#a3cbf2]">shield_lock</span>
-          </div>
-          <h1 className="text-3xl font-black text-white mb-2">Enter Code</h1>
-          <p className="text-sm text-[#8c9198]">
-            Enter the 6-digit code sent to your phone.
-          </p>
-          {phone && (
-            <p className="text-xs text-[#a3cbf2] mt-1">{phone}</p>
-          )}
-        </div>
-
-        {/* OTP boxes */}
-        <div className="flex gap-3 justify-center mb-8" onPaste={handlePaste}>
-          {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={(el) => { inputRefs.current[i] = el; }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={d}
-              onChange={(e) => handleDigit(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              className={`w-12 h-14 text-center text-xl font-bold rounded-xl border transition-all bg-[#1c2024] text-[#e0e2e8] focus:outline-none ${
-                d
-                  ? 'border-[#a3cbf2] ring-2 ring-[#a3cbf2]/30 text-[#a3cbf2]'
-                  : 'border-[#42474e] focus:border-[#a3cbf2] focus:ring-2 focus:ring-[#a3cbf2]/30'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Verify button */}
-        <button
-          onClick={handleVerify}
-          disabled={loading || digits.join('').length < 6}
-          className="w-full flex items-center justify-center gap-2 bg-[#e07b39] text-white font-bold text-sm uppercase tracking-[0.15em] py-4 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed mb-5"
-        >
-          {loading ? (
-            <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>Verify <span className="material-symbols-outlined text-[18px]">chevron_right</span></>
-          )}
-        </button>
-
-        {/* Timer & resend */}
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-1.5 text-[#8c9198] text-sm">
-            <span className="material-symbols-outlined text-[16px]">timer</span>
-            <span className="font-mono font-bold text-[#a3cbf2]">{fmt}</span>
-          </div>
-          <button
-            onClick={resendOtp}
-            disabled={timer > 0}
-            className={`text-xs font-semibold uppercase tracking-widest transition-all ${
-              timer > 0 ? 'text-[#42474e] cursor-not-allowed' : 'text-[#a3cbf2] hover:underline'
-            }`}
-          >
-            Resend OTP
-          </button>
-        </div>
-
-        <p className="text-center text-[0.6rem] text-[#42474e] uppercase tracking-[0.2em] mt-12">
-          Sentinel Secure Node V4.2.0
-        </p>
-      </div>
+    <div style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+      padding: '12px 20px', borderRadius: 10, maxWidth: 400,
+      color: '#fff', fontFamily: 'Inter, sans-serif', fontSize: 14,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      background: type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#0284c7',
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+    }}>
+      <span style={{ flex: 1 }}>{message}</span>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>✕</button>
     </div>
   );
 }
 
-export default function VerifyOtpPage() {
+// ─────────────────────────────────────────────────────────────────────────────
+// OTP boxes
+// ─────────────────────────────────────────────────────────────────────────────
+function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: string): void; disabled?: boolean }) {
+  const digits = value.padEnd(6, '').split('');
+
+  function handleKey(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace') {
+      const next = value.slice(0, idx === 0 ? 0 : idx - 1) + value.slice(idx + 1);
+      onChange(next.slice(0, 6));
+      if (idx > 0) (document.getElementById(`ov-${idx - 1}`) as HTMLInputElement)?.focus();
+    }
+  }
+
+  function handleChange(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const char = e.target.value.slice(-1);
+    if (!/\d/.test(char)) return;
+    const arr = value.padEnd(6, '').split('');
+    arr[idx] = char;
+    const next = arr.join('').slice(0, 6);
+    onChange(next);
+    if (idx < 5) (document.getElementById(`ov-${idx + 1}`) as HTMLInputElement)?.focus();
+  }
+
+  function handlePaste(e: React.ClipboardEvent) {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted.length) { onChange(pasted); e.preventDefault(); }
+  }
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
-      <VerifyOtpInner />
-    </Suspense>
+    <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }} onPaste={handlePaste}>
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          id={`ov-${i}`}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          disabled={disabled}
+          value={d === ' ' ? '' : d}
+          onChange={(ev) => handleChange(i, ev)}
+          onKeyDown={(ev) => handleKey(i, ev)}
+          style={{
+            width: 52, height: 60, textAlign: 'center', fontSize: 24, fontWeight: 700,
+            borderRadius: 12, border: '2px solid',
+            borderColor: d !== ' ' && d ? 'rgba(99,102,241,0.8)' : 'rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.06)', color: '#fff',
+            outline: 'none', caretColor: 'transparent',
+            transition: 'border-color 0.2s',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
+export default function VerifyOtpPage() {
+  const router       = useRouter();
+  const params       = useSearchParams();
+  const setSession   = useAuthStore((s) => s.setSession);
+
+  const [identifier, setIdentifier] = useState('');
+  const [otp, setOtp]               = useState('');
+  const [busy, setBusy]             = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(30);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const showToast = useCallback((m: string, t: 'success' | 'error' | 'info') => setToast({ message: m, type: t }), []);
+
+  // Grab identifier from sessionStorage (set by login/signup page)
+  useEffect(() => {
+    const stored = sessionStorage.getItem('auth_identifier')
+                 || sessionStorage.getItem('signup_phone')   // legacy
+                 || sessionStorage.getItem('otp_phone');      // legacy
+    if (!stored) {
+      router.replace('/login');
+      return;
+    }
+    setIdentifier(stored);
+    startCountdown();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function startCountdown() {
+    setResendSeconds(30);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setResendSeconds((s) => { if (s <= 1) { clearInterval(timerRef.current!); return 0; } return s - 1; });
+    }, 1000);
+  }
+
+  async function handleResend() {
+    if (resendSeconds > 0 || !identifier) return;
+    setBusy(true);
+    try {
+      const res = await api.post<{ success: boolean; data: { otp?: string } }>(
+        '/api/auth/send-otp', { identifier }
+      );
+      const devOtp = res.data?.data?.otp;
+      if (devOtp) showToast(`New OTP (dev): ${devOtp}`, 'info');
+      else        showToast('New OTP sent!', 'success');
+      startCountdown();
+    } catch {
+      showToast('Could not send OTP. Try again.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (otp.length !== 6) { showToast('Enter all 6 digits.', 'error'); return; }
+    setBusy(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        data: { accessToken: string; refreshToken: string; user: any };
+      }>('/api/auth/verify-otp', { identifier, otp });
+
+      const { accessToken, refreshToken, user } = res.data.data;
+      setSession({ accessToken, refreshToken, user });
+
+      // Clean up sessionStorage
+      ['auth_identifier', 'auth_source', 'signup_phone', 'otp_phone'].forEach((k) => sessionStorage.removeItem(k));
+
+      // Determine redirect: query param → role default
+      const nextParam = params.get('next');
+      const roleRedirect = ROLE_REDIRECTS[user?.role] ?? '/access-code';
+      const destination  = nextParam ? `/${nextParam.replace(/^\//, '')}` : roleRedirect;
+
+      showToast(`Welcome, ${user?.name ?? 'User'}! 🎉`, 'success');
+      setTimeout(() => router.push(destination), 600);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? 'Incorrect OTP. Try again.';
+      showToast(msg, 'error');
+      setOtp('');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const maskedIdentifier = identifier.includes('@')
+    ? identifier.replace(/^(.{2}).*(@.*)$/, '$1***$2')
+    : identifier.replace(/(\+?\d{2,3})\d+(\d{4})/, '$1*****$2');
+
+  return (
+    <>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif}`}</style>
+
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', padding: 16,
+      }}>
+        <div style={{
+          width: '100%', maxWidth: 420,
+          background: 'rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 20,
+          padding: '40px 32px',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+          textAlign: 'center',
+        }}>
+          {/* Icon */}
+          <div style={{
+            width: 64, height: 64, borderRadius: 16, margin: '0 auto 20px',
+            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 30, boxShadow: '0 8px 24px rgba(99,102,241,0.45)',
+          }}>📱</div>
+
+          <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Enter OTP</h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, marginBottom: 32 }}>
+            We sent a 6-digit code to<br />
+            <strong style={{ color: '#a5b4fc' }}>{maskedIdentifier || '…'}</strong>
+          </p>
+
+          <form onSubmit={handleVerify}>
+            <OtpInput value={otp} onChange={setOtp} disabled={busy} />
+
+            <button
+              id="verify-otp-submit"
+              type="submit"
+              disabled={busy || otp.length < 6}
+              style={{
+                width: '100%', marginTop: 28, padding: '14px', borderRadius: 10, border: 'none',
+                background: otp.length === 6 && !busy
+                  ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+                  : 'rgba(255,255,255,0.1)',
+                color: '#fff', fontSize: 16, fontWeight: 700, cursor: otp.length === 6 ? 'pointer' : 'not-allowed',
+                boxShadow: otp.length === 6 ? '0 4px 20px rgba(99,102,241,0.45)' : 'none',
+                transition: 'all 0.3s',
+              }}
+            >
+              {busy ? 'Verifying…' : 'Verify & Continue →'}
+            </button>
+          </form>
+
+          {/* Resend */}
+          <div style={{ marginTop: 20 }}>
+            {resendSeconds > 0 ? (
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+                Resend OTP in <strong style={{ color: '#a5b4fc' }}>{resendSeconds}s</strong>
+              </p>
+            ) : (
+              <button
+                id="resend-otp"
+                onClick={handleResend}
+                disabled={busy}
+                style={{
+                  background: 'none', border: 'none', color: '#818cf8',
+                  cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                  textDecoration: 'underline',
+                }}
+              >
+                Resend OTP
+              </button>
+            )}
+          </div>
+
+          {/* Back */}
+          <button
+            onClick={() => router.push('/login')}
+            style={{
+              marginTop: 16, background: 'none', border: 'none',
+              color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 12,
+            }}
+          >
+            ← Back to login
+          </button>
+        </div>
+      </div>
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </>
   );
 }

@@ -31,15 +31,17 @@ export function loadEnv(): void {
   const candidates: string[] = [];
   for (const dir of baseDirs) {
     candidates.push(
-      path.join(dir, '.env'),
       path.join(dir, '.env.production'),
+      path.join(dir, '.env'),
+      path.join(dir, '.env.local'),
+      path.join(dir, 'apps', 'backend', '.env.production'),
       path.join(dir, 'apps', 'backend', '.env'),
-      path.join(dir, 'apps', 'backend', '.env.production')
+      path.join(dir, 'apps', 'backend', '.env.local')
     );
   }
 
   for (const file of uniqueExistingFiles(candidates)) {
-    dotenv.config({ path: file, override: false });
+    dotenv.config({ path: file, override: true });
   }
 
   loaded = true;

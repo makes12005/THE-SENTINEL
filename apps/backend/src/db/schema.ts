@@ -27,9 +27,10 @@ export const alertLogStatusEnum = pgEnum('alert_log_status', ['success', 'failed
 export const agencies = pgTable('agencies', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
-  phone: varchar('phone', { length: 20 }).notNull(),
+  phone: varchar('phone', { length: 12 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   state: varchar('state', { length: 255 }).notNull(),
+  invite_code: varchar('invite_code', { length: 20 }).unique(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 
@@ -37,7 +38,7 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   agency_id: uuid('agency_id').references(() => agencies.id),
   name: varchar('name', { length: 255 }).notNull(),
-  phone: varchar('phone', { length: 20 }).notNull().unique(),
+  phone: varchar('phone', { length: 20 }).unique(),        // nullable — email-only users have no phone
   email: varchar('email', { length: 255 }),
   password_hash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull(),

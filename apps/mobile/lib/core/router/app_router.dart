@@ -1,39 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/auth/ui/login_screen.dart';
+import '../../features/auth/ui/welcome_screen.dart';
+import '../../features/auth/ui/otp_screen.dart';
+import '../../features/auth/ui/signup_screen.dart';
 import '../../features/trips/ui/dashboard_screen.dart';
 import '../../features/trips/ui/trip_detail_screen.dart';
 import '../../features/passengers/ui/passengers_screen.dart';
 import '../../features/driver/ui/driver_dashboard_screen.dart';
 import '../../features/driver/ui/driver_trip_overview_screen.dart';
+import '../auth/session_notifier.dart';
 import '../storage/secure_storage.dart';
 
 /// All named route constants
 class AppRoutes {
   AppRoutes._();
+  // ── Auth ────────────────────────────────────────────────────
+  static const welcome    = '/welcome';
+  static const otp        = '/otp';
+  static const signup     = '/signup';
+
   // ── Conductor ──────────────────────────────────────────────
-  static const login      = '/login';
   static const dashboard  = '/dashboard';
   static const tripDetail = '/trips/:tripId';
   static const passengers = '/trips/:tripId/passengers';
+
   // ── Driver ────────────────────────────────────────────────
   static const driverDashboard  = '/driver';
   static const driverTripDetail = '/driver/trips/:tripId';
 }
 
 /// go_router configuration with role-based auth redirect guard.
-/// - No session             → /login
+/// - No session             → /welcome
 /// - conductor session      → /dashboard
 /// - driver session         → /driver
 final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.login,
+  initialLocation: AppRoutes.welcome,
   debugLogDiagnostics: true,
+  // Re-evaluate redirect guard whenever the session is forcibly invalidated
+  // (e.g., refresh token expired in TokenInterceptor → _forceLogout).
+  refreshListenable: SessionNotifier.instance,
 
   redirect: (BuildContext context, GoRouterState state) async {
     final hasSession = await SecureStorage.hasValidSession();
-    final isLoggingIn = state.matchedLocation == AppRoutes.login;
+    final isLoggingIn = state.matchedLocation == AppRoutes.welcome || 
+                        state.matchedLocation == AppRoutes.otp || 
+                        state.matchedLocation == AppRoutes.signup;
 
-    if (!hasSession && !isLoggingIn) return AppRoutes.login;
+    if (!hasSession && !isLoggingIn) return AppRoutes.welcome;
 
     if (hasSession && isLoggingIn) {
       // Route to the correct dashboard based on role
@@ -54,9 +67,19 @@ final GoRouter appRouter = GoRouter(
   routes: [
     // ── Auth ────────────────────────────────────────────────────────────────
     GoRoute(
-      path: AppRoutes.login,
-      name: 'login',
-      builder: (context, state) => const LoginScreen(),
+      path: AppRoutes.welcome,
+      name: 'welcome',
+      builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.otp,
+      name: 'otp',
+      builder: (context, state) => const OtpScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.signup,
+      name: 'signup',
+      builder: (context, state) => const SignupScreen(),
     ),
 
     // ── Conductor ────────────────────────────────────────────────────────────

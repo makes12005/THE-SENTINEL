@@ -1,445 +1,366 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
-import api from '@/lib/api';
-import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function isEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function classifyIdentifier(v: string): 'phone' | 'email' | 'unknown' {
+  if (isEmail(v)) return 'email';
+  const digits = v.replace(/\D/g, '');
+  if (digits.length >= 10) return 'phone';
+  return 'unknown';
+}
 
 const ROLE_REDIRECTS: Record<string, string> = {
-  operator:  '/operator/dashboard',
-  owner:     '/owner/dashboard',
   admin:     '/admin/dashboard',
-  conductor: '/operator/dashboard',
+  owner:     '/owner/dashboard',
+  operator:  '/operator/dashboard',
   driver:    '/operator/dashboard',
+  conductor: '/operator/dashboard',
+  passenger: '/access-code',
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+// ─────────────────────────────────────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────────────────────────────────────
+function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose(): void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000);
+    return () => clearTimeout(t);
+  }, [onClose]);
 
-/* ── Google Sign-In Button ───────────────────────────────────────────────── */
-function GoogleButton({ label = 'Continue with Google' }: { label?: string }) {
-  function handleGoogle() {
-    // Redirect to backend Google OAuth — it will callback with JWT
-    window.location.href = `${API_URL}/api/auth/google`;
-  }
+  const bg = type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#0284c7';
 
   return (
-    <button
-      type="button"
-      onClick={handleGoogle}
-      className="w-full flex items-center justify-center gap-3 bg-[#1c2024] border border-[#42474e] hover:border-[#a3cbf2]/40 hover:bg-[#222830] text-[#e0e2e8] font-semibold text-sm py-3.5 rounded-xl transition-all active:scale-[0.98]"
+    <div
+      style={{
+        position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+        padding: '12px 20px', borderRadius: 10, maxWidth: 380,
+        color: '#fff', fontFamily: 'Inter, sans-serif', fontSize: 14,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        background: bg,
+        display: 'flex', alignItems: 'flex-start', gap: 10,
+      }}
     >
-      {/* Google G SVG */}
-      <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M47.532 24.552c0-1.636-.146-3.2-.418-4.698H24.48v8.883h12.971c-.558 3.013-2.253 5.566-4.8 7.28v6.048h7.771c4.548-4.19 7.11-10.36 7.11-17.513z" fill="#4285F4"/>
-        <path d="M24.48 48c6.51 0 11.97-2.16 15.96-5.835l-7.77-6.048c-2.158 1.449-4.915 2.305-8.19 2.305-6.296 0-11.63-4.252-13.537-9.967H2.897v6.24C6.87 42.933 15.093 48 24.48 48z" fill="#34A853"/>
-        <path d="M10.943 28.455A14.476 14.476 0 0 1 10.11 24c0-1.565.27-3.084.833-4.455v-6.24H2.897A24.02 24.02 0 0 0 .48 24c0 3.882.927 7.553 2.417 10.695l8.046-6.24z" fill="#FBBC05"/>
-        <path d="M24.48 9.578c3.546 0 6.727 1.22 9.23 3.616l6.922-6.922C36.447 2.386 30.99 0 24.48 0 15.093 0 6.87 5.067 2.897 13.305l8.046 6.24c1.906-5.716 7.24-9.967 13.537-9.967z" fill="#EA4335"/>
-      </svg>
-      {label}
-    </button>
-  );
-}
-
-/* ── OR Divider ─────────────────────────────────────────────────────────── */
-function OrDivider() {
-  return (
-    <div className="flex items-center gap-3 my-5">
-      <div className="flex-1 h-px bg-[#42474e]/60" />
-      <span className="text-xs font-semibold text-[#42474e] uppercase tracking-widest">or</span>
-      <div className="flex-1 h-px bg-[#42474e]/60" />
+      <span style={{ flex: 1 }}>{message}</span>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>✕</button>
     </div>
   );
 }
 
-/* ── OTP Login sub-form ─────────────────────────────────────────────────── */
-function OtpLoginForm() {
-  const router = useRouter();
-  const login  = useAuthStore((s) => s.login);
-  const [phone,   setPhone]   = useState('');
-  const [otp,     setOtp]     = useState('');
-  const [step,    setStep]    = useState<'phone' | 'otp'>('phone');
-  const [loading, setLoading] = useState(false);
-  const [timer,   setTimer]   = useState(0);
+// ─────────────────────────────────────────────────────────────────────────────
+// OTP boxes
+// ─────────────────────────────────────────────────────────────────────────────
+function OtpInput({ value, onChange }: { value: string; onChange(v: string): void }) {
+  const digits = value.padEnd(6, '').split('');
 
-  useEffect(() => {
-    if (timer === 0) return;
-    const id = setInterval(() => setTimer((t) => (t > 0 ? t - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, [timer]);
-
-  async function sendOtp() {
-    if (!phone) return toast.error('Enter your phone number');
-    setLoading(true);
-    try {
-      await api.post('/api/auth/send-otp', { phone });
-      setStep('otp');
-      setTimer(30);
-      toast.success('OTP sent!');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message ?? 'Failed to send OTP');
-    } finally {
-      setLoading(false);
+  function handleKey(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Backspace') {
+      const next = value.slice(0, idx === 0 ? 0 : idx - 1) + value.slice(idx + 1);
+      onChange(next.slice(0, 6));
+      if (idx > 0) {
+        const prev = document.getElementById(`otp-${idx - 1}`) as HTMLInputElement;
+        prev?.focus();
+      }
     }
   }
 
-  async function verifyOtp() {
-    if (otp.length < 6) return toast.error('Enter the 6-digit OTP');
-    setLoading(true);
-    try {
-      await api.post('/api/auth/verify-otp', { phone, otp });
-      const user = useAuthStore.getState().user;
-      const role = user?.role ?? '';
-      router.push(ROLE_REDIRECTS[role] ?? '/operator/dashboard');
-      toast.success('Welcome back!');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message ?? 'Invalid OTP');
-    } finally {
-      setLoading(false);
+  function handleChange(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const char = e.target.value.slice(-1);
+    if (!/\d/.test(char)) return;
+    const arr = value.padEnd(6, '').split('');
+    arr[idx] = char;
+    const next = arr.join('').slice(0, 6);
+    onChange(next);
+    if (idx < 5) {
+      const el = document.getElementById(`otp-${idx + 1}`) as HTMLInputElement;
+      el?.focus();
     }
   }
 
-  if (step === 'phone') {
-    return (
-      <div className="space-y-5">
-        <div>
-          <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-            Phone Number
-          </label>
-          <div className="relative">
-            <span className="absolute inset-y-0 left-4 flex items-center text-[#8c9198]">
-              <span className="material-symbols-outlined text-[18px]">phone</span>
-            </span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 (555) 000-0000"
-              className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl pl-11 pr-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all"
-              autoComplete="tel"
-            />
-          </div>
-        </div>
-        <button
-          onClick={sendOtp}
-          disabled={loading}
-          className="w-full bg-[#a3cbf2] text-[#003353] font-bold text-sm uppercase tracking-[0.15em] py-4 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="inline-block w-4 h-4 border-2 border-[#003353]/30 border-t-[#003353] rounded-full animate-spin" />
-              Sending OTP…
-            </span>
-          ) : 'Send OTP'}
-        </button>
-      </div>
-    );
+  function handlePaste(e: React.ClipboardEvent) {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted.length) { onChange(pasted); e.preventDefault(); }
   }
 
   return (
-    <div className="space-y-5">
-      <p className="text-sm text-[#8c9198]">OTP sent to <span className="text-[#a3cbf2] font-semibold">{phone}</span></p>
-      <div>
-        <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-          6-Digit OTP
-        </label>
+    <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+      {digits.map((d, i) => (
         <input
+          key={i}
+          id={`otp-${i}`}
           type="text"
           inputMode="numeric"
-          maxLength={6}
-          value={otp}
-          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          placeholder="000000"
-          className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl px-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all text-center text-2xl tracking-[0.4em]"
+          maxLength={1}
+          value={d === ' ' ? '' : d}
+          onChange={(e) => handleChange(i, e)}
+          onKeyDown={(e) => handleKey(i, e)}
+          className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-none bg-surface-container-high text-on-surface focus:ring-2 focus:ring-primary/50 outline-none transition-all"
         />
-      </div>
-      <button
-        onClick={verifyOtp}
-        disabled={loading}
-        className="w-full bg-[#a3cbf2] text-[#003353] font-bold text-sm uppercase tracking-[0.15em] py-4 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="inline-block w-4 h-4 border-2 border-[#003353]/30 border-t-[#003353] rounded-full animate-spin" />
-            Verifying…
-          </span>
-        ) : 'Verify & Login'}
-      </button>
-      <div className="text-center">
-        {timer > 0 ? (
-          <span className="text-xs text-[#8c9198]">Resend OTP in {timer}s</span>
-        ) : (
-          <button onClick={sendOtp} className="text-xs text-[#a3cbf2] hover:underline">
-            Resend OTP
-          </button>
-        )}
-      </div>
+      ))}
     </div>
   );
 }
 
-/* ── Password Login sub-form ────────────────────────────────────────────── */
-function PasswordLoginForm() {
-  const router  = useRouter();
-  const login   = useAuthStore((s) => s.login);
-  const [phone,    setPhone]    = useState('');
-  const [password, setPassword] = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [showOtp,  setShowOtp]  = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!phone || !password) return toast.error('Enter phone and password');
-    setLoading(true);
-    try {
-      await login(phone, password);
-      const user = useAuthStore.getState().user;
-      const role = user?.role ?? '';
-      const dest = ROLE_REDIRECTS[role] ?? '/operator/dashboard';
-      toast.success(`Welcome back, ${user?.name ?? 'User'}!`);
-      router.push(dest);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message ?? 'Login failed. Check credentials.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (showOtp) return <OtpLoginForm />;
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-          Phone Number
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-4 flex items-center text-[#8c9198]">
-            <span className="material-symbols-outlined text-[18px]">phone</span>
-          </span>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+91 (555) 000-0000"
-            className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl pl-11 pr-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all"
-            autoComplete="tel"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-          Password
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-4 flex items-center text-[#8c9198]">
-            <span className="material-symbols-outlined text-[18px]">lock</span>
-          </span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl pl-11 pr-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all"
-            autoComplete="current-password"
-          />
-        </div>
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-[#a3cbf2] text-[#003353] font-bold text-sm uppercase tracking-[0.15em] py-4 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ fontFamily: 'Manrope, sans-serif' }}
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="inline-block w-4 h-4 border-2 border-[#003353]/30 border-t-[#003353] rounded-full animate-spin" />
-            Signing in…
-          </span>
-        ) : 'Login'}
-      </button>
-      <button
-        type="button"
-        onClick={() => setShowOtp(true)}
-        className="w-full text-center text-sm font-semibold text-[#a3cbf2] hover:underline transition-all py-1"
-      >
-        Login with OTP
-      </button>
-    </form>
-  );
-}
-
-/* ── Sign Up sub-form ───────────────────────────────────────────────────── */
-function SignUpForm() {
-  const router = useRouter();
-  const [name,     setName]     = useState('');
-  const [phone,    setPhone]    = useState('');
-  const [password, setPassword] = useState('');
-  const [loading,  setLoading]  = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name || !phone || !password) return toast.error('Fill all fields');
-    if (password.length < 8) return toast.error('Password must be at least 8 characters');
-    setLoading(true);
-    try {
-      await api.post('/api/auth/register', { name, phone, password });
-      // Store phone for OTP step
-      sessionStorage.setItem('signup_phone', phone);
-      await api.post('/api/auth/send-otp', { phone });
-      toast.success('OTP sent to your phone!');
-      router.push('/verify-otp?next=access-code');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message ?? 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-          Full Name
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-4 flex items-center text-[#8c9198]">
-            <span className="material-symbols-outlined text-[18px]">person</span>
-          </span>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your full name"
-            className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl pl-11 pr-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-          Phone Number
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-4 flex items-center text-[#8c9198]">
-            <span className="material-symbols-outlined text-[18px]">phone</span>
-          </span>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+91 (555) 000-0000"
-            className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl pl-11 pr-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all"
-            autoComplete="tel"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-          Password
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-4 flex items-center text-[#8c9198]">
-            <span className="material-symbols-outlined text-[18px]">lock</span>
-          </span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Min 8 characters"
-            className="w-full bg-[#1c2024] border border-[#42474e] rounded-xl pl-11 pr-4 py-3.5 text-[#e0e2e8] placeholder-[#8c9198] focus:outline-none focus:ring-2 focus:ring-[#a3cbf2]/50 focus:border-[#a3cbf2] transition-all"
-            autoComplete="new-password"
-          />
-        </div>
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-[#a3cbf2] text-[#003353] font-bold text-sm uppercase tracking-[0.15em] py-4 rounded-xl hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ fontFamily: 'Manrope, sans-serif' }}
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="inline-block w-4 h-4 border-2 border-[#003353]/30 border-t-[#003353] rounded-full animate-spin" />
-            Creating account…
-          </span>
-        ) : 'Sign Up →'}
-      </button>
-    </form>
-  );
-}
-
-/* ── Main Login Page ────────────────────────────────────────────────────── */
-function LoginPageInner() {
-  const searchParams = useSearchParams();
-  const [tab, setTab] = useState<'login' | 'signup'>(
-    searchParams.get('tab') === 'signup' ? 'signup' : 'login'
-  );
-
-  return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center px-4 py-12" style={{ fontFamily: 'Manrope, sans-serif' }}>
-      {/* Background glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#0b3c5d]/25 rounded-full blur-[140px]" />
-      </div>
-
-      <div className="relative w-full max-w-md">
-        {/* Back to home */}
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-[#8c9198] hover:text-[#a3cbf2] transition-colors mb-8">
-          <span className="material-symbols-outlined text-[15px]">arrow_back</span>
-          Back to home
-        </Link>
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-white mb-1">Welcome</h1>
-          <p className="text-sm text-[#8c9198]">Access your transit control terminal.</p>
-        </div>
-
-        {/* Tab switcher */}
-        <div className="flex bg-[#181c20] border border-[#42474e]/50 rounded-2xl p-1 mb-6">
-          <button
-            onClick={() => setTab('login')}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all ${
-              tab === 'login'
-                ? 'bg-[#2a3038] text-[#a3cbf2] shadow-inner'
-                : 'text-[#8c9198] hover:text-[#c2c7ce]'
-            }`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setTab('signup')}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all ${
-              tab === 'signup'
-                ? 'bg-[#2a3038] text-[#a3cbf2] shadow-inner'
-                : 'text-[#8c9198] hover:text-[#c2c7ce]'
-            }`}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {/* Form card */}
-        <div className="bg-[#181c20] rounded-2xl p-8 border border-[#42474e]/30 shadow-2xl">
-          {/* Google OAuth — always visible in both tabs */}
-          <GoogleButton label={tab === 'signup' ? 'Sign up with Google' : 'Continue with Google'} />
-          <OrDivider />
-          {tab === 'login' ? <PasswordLoginForm /> : <SignUpForm />}
-        </div>
-
-        <p className="text-center text-xs text-[#8c9198] mt-6">
-          Bus Alert System · Secure Operations Portal
-        </p>
-      </div>
-    </div>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Main page
+// ─────────────────────────────────────────────────────────────────────────────
+type Tab = 'login' | 'signup';
+type LoginMode = 'password' | 'otp';
+type OtpStep = 'enter' | 'verify';
 
 export default function LoginPage() {
+  const router   = useRouter();
+  const { user, setSession } = useAuthStore();
+  
+  const [tab, setTab]   = useState<Tab>('login');
+  const [mode, setMode] = useState<LoginMode>('password');
+  const [otpStep, setOtpStep] = useState<OtpStep>('enter');
+
+  const [name, setName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info') => setToast({ message, type }), []);
+
+  // Already logged in → redirect
+  useEffect(() => {
+    if (user) {
+      const redirect = ROLE_REDIRECTS[user.role] ?? '/access-code';
+      router.replace(redirect);
+    }
+  }, [user, router]);
+
+  async function handleLoginPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!identifier.trim() || !password.trim()) {
+      showToast('Please enter your phone/email and password.', 'error'); return;
+    }
+    setBusy(true);
+    try {
+      const res = await api.post<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/api/auth/login', { identifier: identifier.trim(), password });
+      const { accessToken, refreshToken, user } = res.data.data;
+      setSession({ accessToken, refreshToken, user });
+      const redirect = user?.redirect ?? ROLE_REDIRECTS[user?.role] ?? '/access-code';
+      showToast(`Welcome back, ${user?.name ?? 'User'}!`, 'success');
+      router.push(redirect);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? 'Login failed. Check your credentials.';
+      showToast(msg, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !identifier.trim() || !password.trim()) {
+      showToast('Please fill in all fields.', 'error'); return;
+    }
+    if (password.length < 8) {
+      showToast('Password must be at least 8 characters.', 'error'); return;
+    }
+    setBusy(true);
+    try {
+      await api.post('/api/auth/register', { name: name.trim(), identifier: identifier.trim(), password });
+      const otpRes = await api.post<{ success: boolean; data: { otp?: string; message: string } }>('/api/auth/send-otp', { identifier: identifier.trim() });
+      sessionStorage.setItem('auth_identifier', identifier.trim());
+      sessionStorage.setItem('auth_source', 'register');
+      const devOtp = otpRes.data?.data?.otp;
+      if (devOtp) showToast(`✅ Account created! Dev OTP: ${devOtp}`, 'info');
+      else showToast('Account created! OTP sent.', 'success');
+      router.push('/verify-otp?next=access-code');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? 'Sign-up failed. Please try again.';
+      showToast(msg, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSendOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!identifier.trim()) { showToast('Enter your phone or email first.', 'error'); return; }
+    setBusy(true);
+    try {
+      const res = await api.post<{ success: boolean; data: { otp?: string; message: string } }>('/api/auth/send-otp', { identifier: identifier.trim() });
+      const devOtp = res.data?.data?.otp;
+      if (devOtp) showToast(`Dev OTP: ${devOtp}`, 'info');
+      else showToast('OTP sent! Check your phone or email.', 'success');
+      setOtpStep('verify');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? 'Could not send OTP. Try again.';
+      showToast(msg, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (otp.length !== 6) { showToast('Enter the 6-digit OTP.', 'error'); return; }
+    setBusy(true);
+    try {
+      const res = await api.post<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/api/auth/verify-otp', { identifier: identifier.trim(), otp });
+      const { accessToken, refreshToken, user } = res.data.data;
+      setSession({ accessToken, refreshToken, user });
+      const redirect = user?.redirect ?? ROLE_REDIRECTS[user?.role] ?? '/access-code';
+      showToast(`Welcome, ${user?.name ?? 'User'}!`, 'success');
+      router.push(redirect);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? 'OTP verification failed.';
+      showToast(msg, 'error');
+      setOtp('');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
-      <LoginPageInner />
-    </Suspense>
+    <div className="bg-background text-on-surface font-body selection:bg-primary-container selection:text-primary min-h-screen flex flex-col noise-bg relative overflow-hidden z-0">
+      <main className="flex-grow pt-16 pb-12 px-6 max-w-md mx-auto w-full z-10 relative">
+        {/* 1. Top: Welcome Header */}
+        <div className="mb-10 text-center">
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-4 bg-primary-container text-on-primary-container flex items-center justify-center text-3xl shadow-lg shadow-primary-container/30">🚌</div>
+          <h2 className="font-headline font-extrabold text-4xl text-on-surface tracking-tight mb-2">Welcome</h2>
+          <p className="text-on-surface-variant font-medium">Access your transit control terminal.</p>
+        </div>
+
+        {/* 2. Login / Sign Up toggle */}
+        <div className="bg-surface-container-lowest p-1.5 rounded-full flex mb-10 border border-outline-variant/30">
+          <button 
+            onClick={() => { setTab('login'); setMode('password'); }}
+            className={`flex-1 py-3 px-4 rounded-full text-sm font-bold tracking-wider transition-all ${tab === 'login' ? 'bg-surface-container-highest text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+          >
+            LOGIN
+          </button>
+          <button 
+            onClick={() => setTab('signup')}
+            className={`flex-1 py-3 px-4 rounded-full text-sm font-bold tracking-wider transition-all ${tab === 'signup' ? 'bg-surface-container-highest text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+          >
+            SIGN UP
+          </button>
+        </div>
+
+        {/* 3. Continue with Google */}
+        <div className="mb-8">
+          <button className="w-full bg-surface-container-high hover:bg-surface-variant transition-colors border-none py-4 rounded-xl flex items-center justify-center gap-3 font-semibold text-on-surface">
+            <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEhMhAS14snMCqgSGt_2gerPVe3WBk6jPpGQ2U9vHPct7gwHzK7f6o22qb-biLlAuFbq77_Xdr2vmPtZYDdltLqcPEFBp1W3_9PN348-b_NrkLDeRjOSR0IAuzz-0GrED78PzxpDZwZ4cJSy0fw_ICSU8Pj4Tm0rVXiYXGCbckBjxTYGq8el4rT5ljYPFDa7d5cPZ95U7Dwzu3Sr_iIFybmdxJOh8h7B9TOmXzmSmcAbXlH1D-Q70SZyd5ZwHXn-lkE3K8U4AKylZG" />
+            Continue with Google
+          </button>
+        </div>
+
+        <div className="flex items-center gap-4 mb-8">
+          <div className="flex-1 h-[1px] bg-surface-container-highest"></div>
+          <span className="text-[0.6875rem] font-bold text-outline-variant tracking-widest uppercase">Or</span>
+          <div className="flex-1 h-[1px] bg-surface-container-highest"></div>
+        </div>
+
+        {/* Auth Forms */}
+        <div className="space-y-6">
+          {tab === 'signup' ? (
+            <form onSubmit={handleSignup} className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Full Name</label>
+                <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ravi Patel" type="text" value={name} onChange={e => setName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Phone Number / Email</label>
+                <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="+91 98765 43210 or you@example.com" value={identifier} onChange={e => setIdentifier(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Password</label>
+                <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="••••••••" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+              </div>
+              <div className="pt-2">
+                <button disabled={busy} type="submit" className="w-full bg-primary-container text-on-primary-container font-black text-lg py-5 rounded-xl tracking-widest transition-all active:scale-95 shadow-xl shadow-black/40 uppercase disabled:opacity-50">
+                  {busy ? 'CREATING...' : 'CREATE ACCOUNT'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              {mode === 'password' && (
+                <form onSubmit={handleLoginPassword} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Phone Number / Email</label>
+                    <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="+91 98765 43210 or you@example.com" value={identifier} onChange={e => setIdentifier(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Password</label>
+                    <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="••••••••" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+                  </div>
+                  <div className="pt-2">
+                    <button disabled={busy} type="submit" className="w-full bg-primary-container text-on-primary-container font-black text-lg py-5 rounded-xl tracking-widest transition-all active:scale-95 shadow-xl shadow-black/40 uppercase disabled:opacity-50">
+                      {busy ? 'LOGGING IN...' : 'LOGIN'}
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center gap-4 pt-4">
+                    <button type="button" onClick={() => setMode('otp')} className="text-sm font-bold text-primary hover:underline transition-colors uppercase tracking-wider">
+                      Login with OTP
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {mode === 'otp' && otpStep === 'enter' && (
+                <form onSubmit={handleSendOtp} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="block text-[0.6875rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase ml-1">Phone Number / Email</label>
+                    <input required className="w-full bg-surface-container-high border-none rounded-xl py-4 px-4 text-on-surface placeholder:text-outline-variant font-medium focus:ring-2 focus:ring-primary/50 outline-none" placeholder="+91 98765 43210 or you@example.com" value={identifier} onChange={e => setIdentifier(e.target.value)} />
+                  </div>
+                  <div className="pt-2">
+                    <button disabled={busy} type="submit" className="w-full bg-tertiary-container text-on-tertiary-container font-bold py-5 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg shadow-tertiary-container/10 uppercase tracking-widest disabled:opacity-50">
+                      {busy ? 'SENDING...' : 'SEND OTP'}
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center gap-4 pt-4">
+                    <button type="button" onClick={() => setMode('password')} className="text-sm font-bold text-primary hover:underline transition-colors uppercase tracking-wider">
+                      Login with Password
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {mode === 'otp' && otpStep === 'verify' && (
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                  <p className="text-center text-on-surface-variant font-medium text-sm">
+                    OTP sent to <strong className="text-primary">{identifier}</strong>
+                  </p>
+                  <OtpInput value={otp} onChange={setOtp} />
+                  <div className="pt-2">
+                    <button disabled={busy || otp.length < 6} type="submit" className="w-full bg-primary-container text-on-primary-container font-black text-lg py-5 rounded-xl tracking-widest transition-all active:scale-95 shadow-xl shadow-black/40 uppercase disabled:opacity-50">
+                      {busy ? 'VERIFYING...' : 'VERIFY & LOGIN'}
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center gap-4 pt-4">
+                    <button type="button" onClick={() => { setOtpStep('enter'); setOtp(''); }} className="text-sm font-bold text-outline hover:text-on-surface transition-colors uppercase tracking-wider">
+                      ← Change Identifier
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+
+      {/* Visual Polish: Gradient Orbs */}
+      <div className="fixed top-[-10%] right-[-10%] w-64 h-64 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+      <div className="fixed bottom-[-5%] left-[-10%] w-80 h-80 bg-secondary/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </div>
   );
 }

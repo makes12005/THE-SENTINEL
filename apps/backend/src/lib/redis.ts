@@ -10,6 +10,11 @@ function normalizeRedisUrl(rawValue?: string): string {
   const cliMatch = trimmed.match(/-u\s+("?)(redis:\/\/[^\s"]+)\1/);
   const extracted = cliMatch?.[2] ?? trimmed;
 
+  // Upstash endpoints require TLS even when the injected URL uses redis://.
+  if (extracted.startsWith('redis://') && extracted.includes('.upstash.io')) {
+    return `rediss://${extracted.slice('redis://'.length)}`;
+  }
+
   if (trimmed.includes('--tls') && extracted.startsWith('redis://')) {
     return `rediss://${extracted.slice('redis://'.length)}`;
   }

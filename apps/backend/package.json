@@ -4,7 +4,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "npx tsc -p tsconfig.json",
-    "dev": "tsx src/server.ts",
+    "dev": "npx tsx src/server.ts",
     "start": "node dist/server.js",
     "worker:alert": "node dist/workers/alert.worker.js",
     "worker:heartbeat": "node dist/workers/heartbeat.worker.js",
@@ -36,7 +36,7 @@
     "@types/node": "^20.0.0",
     "drizzle-kit": "^0.20.14",
     "ts-node": "^10.9.2",
-    "tsx": "^4.7.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   }
 }

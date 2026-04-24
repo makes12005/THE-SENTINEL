@@ -2,57 +2,67 @@
 
 /* ── Design tokens from HTML reference ───────────────────────────────────────── */
 @theme inline {
-  --color-background:               #101418;
-  --color-surface:                  #101418;
-  --color-surface-dim:              #101418;
+  --color-surface-tint: #a3cbf2;
+  --color-surface-bright: #363a3e;
+  --color-tertiary: #ffb68b;
   --color-surface-container-lowest: #0b0f13;
-  --color-surface-container-low:    #181c20;
-  --color-surface-container:        #1c2024;
-  --color-surface-container-high:   #262a2f;
-  --color-surface-container-highest:#31353a;
-  --color-surface-bright:           #363a3e;
-  --color-surface-variant:          #31353a;
+  --color-outline: #8c9198;
+  --color-on-secondary-fixed: #100069;
+  --color-background: #101418;
+  --color-primary-fixed: #cee5ff;
+  --color-on-tertiary: #522300;
+  --color-inverse-surface: #e0e2e8;
+  --color-on-secondary: #2000a4;
+  --color-on-primary-fixed-variant: #1f4a6c;
+  --color-surface-container-highest: #31353a;
+  --color-primary: #a3cbf2;
+  --color-surface: #101418;
+  --color-on-surface-variant: #c2c7ce;
+  --color-tertiary-container: #602a00;
+  --color-on-error: #690005;
+  --color-inverse-primary: #396285;
+  --color-error: #ffb4ab;
+  --color-primary-container: #0b3c5d;
+  --color-secondary: #c4c0ff;
+  --color-on-primary: #003353;
+  --color-error-container: #93000a;
+  --color-on-primary-fixed: #001d32;
+  --color-on-primary-container: #7fa7cd;
+  --color-inverse-on-surface: #2d3135;
+  --color-tertiary-fixed-dim: #ffb68b;
+  --color-tertiary-fixed: #ffdbc8;
+  --color-surface-dim: #101418;
+  --color-on-error-container: #ffdad6;
+  --color-on-tertiary-fixed-variant: #753400;
+  --color-on-secondary-fixed-variant: #3622ca;
+  --color-secondary-fixed-dim: #c4c0ff;
+  --color-on-secondary-container: #b4b0ff;
+  --color-surface-container-low: #181c20;
+  --color-secondary-fixed: #e3dfff;
+  --color-secondary-container: #3826cd;
+  --color-outline-variant: #42474e;
+  --color-on-surface: #e0e2e8;
+  --color-primary-fixed-dim: #a3cbf2;
+  --color-on-background: #e0e2e8;
+  --color-on-tertiary-container: #ff801d;
+  --color-surface-container: #1c2024;
+  --color-surface-container-high: #262a2f;
+  --color-on-tertiary-fixed: #321200;
+  --color-surface-variant: #31353a;
 
-  --color-on-surface:               #e0e2e8;
-  --color-on-surface-variant:       #c2c7ce;
-  --color-on-background:            #e0e2e8;
+  --font-headline: 'Manrope', 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-label: 'Inter', sans-serif;
 
-  --color-primary:                  #a3cbf2;
-  --color-on-primary:               #003353;
-  --color-primary-container:        #0b3c5d;
-  --color-on-primary-container:     #7fa7cd;
-  --color-primary-fixed:            #cee5ff;
-  --color-primary-fixed-dim:        #a3cbf2;
-  --color-inverse-primary:          #396285;
-
-  --color-secondary:                #c4c0ff;
-  --color-on-secondary:             #2000a4;
-  --color-secondary-container:      #3826cd;
-  --color-on-secondary-container:   #b4b0ff;
-
-  --color-tertiary:                 #ffb68b;
-  --color-on-tertiary:              #522300;
-  --color-tertiary-container:       #602a00;
-  --color-on-tertiary-container:    #ff801d;
-
-  --color-error:                    #ffb4ab;
-  --color-on-error:                 #690005;
-  --color-error-container:          #93000a;
-  --color-on-error-container:       #ffdad6;
-
-  --color-outline:                  #8c9198;
-  --color-outline-variant:          #42474e;
-  --color-inverse-surface:          #e0e2e8;
-  --color-inverse-on-surface:       #2d3135;
-
-  --font-headline: "Manrope", sans-serif;
-  --font-body:     "Inter", sans-serif;
-  --font-label:    "Inter", sans-serif;
-
-  --radius-sm:   0.25rem;
-  --radius-md:   0.5rem;
-  --radius-lg:   0.75rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 2rem;
   --radius-full: 9999px;
+
+  --glass-bg: rgba(26, 26, 46, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 }
 
 /* ── Base resets ─────────────────────────────────────────────────────────────── */
@@ -61,11 +71,41 @@
 html { color-scheme: dark; }
 
 body {
-  background-color: #101418;
-  color: #e0e2e8;
-  font-family: "Inter", sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(167, 139, 250, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* ── Premium Utilities ───────────────────────────────────────────────────────── */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #991b1b 100%);
 }
 
 /* ── Material Symbols icon font ─────────────────────────────────────────────── */
@@ -85,18 +125,54 @@ body {
   user-select: none;
 }
 
-/* ── Scrollbar hiding ────────────────────────────────────────────────────────── */
+/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-outline-variant); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-outline); }
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Utility classes ─────────────────────────────────────────────────────────── */
-.tonal-layer-1 { background-color: #181c20; }
-.tonal-layer-2 { background-color: #262a2f; }
+/* ── Animations ────────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-/* ── Pulse animation for status dots ────────────────────────────────────────── */
+.animate-fade-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
 @keyframes pulse-ring {
   0%   { transform: scale(1); opacity: 1; }
   70%  { transform: scale(2.2); opacity: 0; }
   100% { transform: scale(2.2); opacity: 0; }
 }
 .pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin { animation: spin 1s linear infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}

@@ -3,37 +3,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../provider/auth_provider.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class WelcomeScreen extends ConsumerStatefulWidget {
+  const WelcomeScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _formKey    = GlobalKey<FormState>();
-  final _phoneCon   = TextEditingController();
-  final _passCon    = TextEditingController();
-  bool  _obscure    = true;
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _phoneCon = TextEditingController();
 
   @override
   void dispose() {
     _phoneCon.dispose();
-    _passCon.dispose();
     super.dispose();
   }
 
-  Future<void> _onLogin() async {
+  Future<void> _onSendOtp() async {
     if (!_formKey.currentState!.validate()) return;
-    final success = await ref.read(authProvider.notifier).login(
-      phone:    _phoneCon.text.trim(),
-      password: _passCon.text,
-    );
+    
+    final phone = _phoneCon.text.trim();
+    
+    // AuthProvider will store the identifier
+    final success = await ref.read(authProvider.notifier).sendOtp(phone);
     if (success && mounted) {
-      context.go(AppRoutes.dashboard);
+      context.push(AppRoutes.otp); // Will create this route later
     }
   }
 
@@ -54,7 +52,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Ambient glow orbs ────────────────────────────────────────────
           Positioned(
             top: -80, right: -80,
             child: _glowOrb(AppColors.primary.withOpacity(0.08), 260),
@@ -63,8 +60,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             bottom: -60, left: -80,
             child: _glowOrb(AppColors.secondary.withOpacity(0.05), 320),
           ),
-
-          // ── Main content ─────────────────────────────────────────────────
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -74,12 +69,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 40),
-
-                    // ── Welcome header ──────────────────────────────────────
                     Center(
                       child: Column(
                         children: [
-                          // Bus Alert icon
                           Container(
                             width: 72, height: 72,
                             decoration: BoxDecoration(
@@ -103,7 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Access your transit control terminal.',
+                            'Enter your phone number to continue.',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               color: AppColors.onSurfaceVariant,
@@ -113,10 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 48),
-
-                    // ── Phone field ─────────────────────────────────────────
                     Text(
                       'PHONE NUMBER',
                       style: GoogleFonts.inter(
@@ -143,50 +132,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         return null;
                       },
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // ── Password field ──────────────────────────────────────
-                    Text(
-                      'PASSWORD',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurfaceVariant,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _passCon,
-                      obscureText: _obscure,
-                      style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
-                      decoration: InputDecoration(
-                        hintText: '••••••••',
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.onSurfaceVariant),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                        ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Password is required';
-                        if (v.length < 6)           return 'Password too short';
-                        return null;
-                      },
-                    ),
-
                     const SizedBox(height: 32),
-
-                    // ── Login button ────────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       height: 60,
                       child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _onLogin,
+                        onPressed: auth.isLoading ? null : _onSendOtp,
                         child: auth.isLoading
                             ? const SizedBox(
                                 width: 24, height: 24,
@@ -196,27 +147,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               )
                             : Text(
-                                'LOGIN',
+                                'SEND OTP',
                                 style: GoogleFonts.manrope(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
                                   letterSpacing: 3,
                                 ),
                               ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ── Footer notice ───────────────────────────────────────
-                    Center(
-                      child: Text(
-                        'Conductor access only',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.outline,
-                          fontWeight: FontWeight.w500,
-                        ),
                       ),
                     ),
                   ],

@@ -11,23 +11,29 @@ import api from './api';
 export interface AuthUser {
   id:       string;
   name:     string;
-  phone:    string;
+  phone:    string | null;   // null for email-only accounts
+  email:    string | null;   // null for phone-only accounts
   role:     string;
-  agencyId: string;
+  agencyId: string | null;
+  redirect?: string;         // server-side redirect hint
 }
 
 interface AuthState {
-  user:  AuthUser | null;
-  token: string | null;
-  login:  (phone: string, password: string) => Promise<void>;
-  logout: () => void;
+  user:         AuthUser | null;
+  token:        string | null;
+  refreshToken: string | null;
+  login:        (phone: string, password: string) => Promise<void>;
+  /** Used by OAuth (Google) callback to inject tokens directly */
+  setSession: (payload: { accessToken: string; refreshToken: string; user: AuthUser }) => void;
+  logout:       () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user:  null,
-      token: null,
+      user:         null,
+      token:        null,
+      refreshToken: null,
 
       login: async (phone, password) => {
         const res = await api.post<{ success: boolean; data: { access_token: string; user: AuthUser } }>(
@@ -42,19 +48,25 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('user', JSON.stringify(user));
 
-        set({ user, token: access_token });
+        set({ user, token: access_token, refreshToken: null });
+      },
+
+      setSession: ({ accessToken, refreshToken, user }) => {
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        set({ user, token: accessToken, refreshToken });
       },
 
       logout: () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
-        set({ user: null, token: null });
+        set({ user: null, token: null, refreshToken: null });
         window.location.href = '/login';
       },
     }),
     {
       name: 'busalert-auth',
-      partialize: (s) => ({ user: s.user, token: s.token }),
+      partialize: (s) => ({ user: s.user, token: s.token, refreshToken: s.refreshToken }),
     }
   )
 );

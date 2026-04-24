@@ -6,7 +6,10 @@ class Endpoints {
   Endpoints._();
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  static String login    = '/api/auth/login';
+  static String sendOtp  = '/api/auth/send-otp';
+  static String verifyOtp = '/api/auth/verify-otp';
+  static String signup   = '/api/auth/signup';
+  static String login    = '/api/auth/login'; // Keeping for backward comp if needed
   static String refresh  = '/api/auth/refresh';
   static String logout   = '/api/auth/logout';
 

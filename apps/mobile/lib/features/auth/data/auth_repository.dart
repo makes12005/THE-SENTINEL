@@ -19,29 +19,81 @@ class AuthResult {
   });
 }
 
+class VerifyOtpResult {
+  final bool isNewUser;
+  final String? tempToken;
+  final AuthResult? authResult;
+
+  const VerifyOtpResult({
+    required this.isNewUser,
+    this.tempToken,
+    this.authResult,
+  });
+}
+
 class AuthRepository {
   final _dio = ApiClient.instance;
 
-  /// Login with phone + password. Returns AuthResult on success.
-  /// Throws [DioException] or [String] error message on failure.
-  Future<AuthResult> login({
-    required String phone,
+  Future<void> sendOtp(String identifier) async {
+    await _dio.post(
+      Endpoints.sendOtp,
+      data: {'identifier': identifier},
+    );
+  }
+
+  Future<VerifyOtpResult> verifyOtp(String identifier, String otp) async {
+    final response = await _dio.post(
+      Endpoints.verifyOtp,
+      data: {'identifier': identifier, 'otp': otp},
+    );
+
+    final data = response.data['data'] as Map<String, dynamic>;
+
+    if (data['is_new_user'] == true) {
+      return VerifyOtpResult(
+        isNewUser: true,
+        tempToken: data['temp_token'] as String,
+      );
+    } else {
+      final user = data['user'] as Map<String, dynamic>;
+      return VerifyOtpResult(
+        isNewUser: false,
+        authResult: AuthResult(
+          accessToken: data['access_token'] as String,
+          refreshToken: data['refresh_token'] as String,
+          role: user['role'] as String,
+          userId: user['id'] as String,
+          userName: user['name'] as String,
+        ),
+      );
+    }
+  }
+
+  Future<AuthResult> signup({
+    required String tempToken,
+    required String name,
     required String password,
+    String? inviteCode,
   }) async {
     final response = await _dio.post(
-      Endpoints.login,
-      data: {'phone': phone, 'password': password},
+      Endpoints.signup,
+      data: {
+        'temp_token': tempToken,
+        'name': name,
+        'password': password,
+        if (inviteCode != null && inviteCode.isNotEmpty) 'invite_code': inviteCode,
+      },
     );
 
     final data = response.data['data'] as Map<String, dynamic>;
     final user = data['user'] as Map<String, dynamic>;
 
     return AuthResult(
-      accessToken:  data['accessToken']  as String,
-      refreshToken: data['refreshToken'] as String,
-      role:         user['role']         as String,
-      userId:       user['id']           as String,
-      userName:     user['name']         as String,
+      accessToken: data['access_token'] as String,
+      refreshToken: data['refresh_token'] as String,
+      role: user['role'] as String,
+      userId: user['id'] as String,
+      userName: user['name'] as String,
     );
   }
 
