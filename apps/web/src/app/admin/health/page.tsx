@@ -69,8 +69,8 @@ export default function AdminHealthPage() {
 
   const load = () => {
     setLoading(true);
-    get<{ data: HealthData }>('/admin/health')
-      .then((r) => { setData(r.data); setLastRefresh(new Date()); })
+    get<HealthData>('/api/admin/health')
+      .then((r) => { setData(r); setLastRefresh(new Date()); })
       .finally(() => setLoading(false));
   };
 

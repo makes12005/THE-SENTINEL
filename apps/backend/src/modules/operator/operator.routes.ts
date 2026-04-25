@@ -130,6 +130,55 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
   );
 
   // ─────────────────────────────────────────────────────────────────────────
+  // GET /api/operator/trips
+  // Returns trips visible to operator's agency.
+  // ─────────────────────────────────────────────────────────────────────────
+  fastify.get(
+    '/operator/trips',
+    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const user: any = (req as any).user;
+        const agencyId = user.agencyId as string;
+        const query: any = req.query ?? {};
+
+        const conditions: any[] = [
+          inArray(
+            trips.operator_id,
+            db.select({ id: users.id }).from(users).where(eq(users.agency_id, agencyId))
+          ),
+        ];
+        if (query.status) {
+          conditions.push(eq(trips.status, query.status));
+        }
+
+        const rows = await db
+          .select({
+            id: trips.id,
+            route_id: trips.route_id,
+            operator_id: trips.operator_id,
+            conductor_id: trips.conductor_id,
+            driver_id: trips.driver_id,
+            status: trips.status,
+            scheduled_date: trips.scheduled_date,
+            started_at: trips.started_at,
+            completed_at: trips.completed_at,
+            created_at: trips.created_at,
+          })
+          .from(trips)
+          .where(and(...conditions))
+          .orderBy(desc(trips.created_at));
+
+        return reply.send({
+          success: true,
+          data: rows,
+          meta: { count: rows.length, timestamp: new Date().toISOString() },
+        });
+      } catch (err) { return handleError(reply, err); }
+    }
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
   // POST /api/agency/members
   // Body: { name, phone, password, role: 'conductor' | 'driver' }
   // Creates a new user attached to the operator's agency

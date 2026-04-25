@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
+import cors from '@fastify/cors';
 import authRoutes       from './modules/auth/auth.routes';
 import googleAuthRoutes from './modules/auth/google.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
@@ -16,8 +17,34 @@ import { sql } from 'drizzle-orm';
 loadEnv();
 
 const fastify = Fastify({ logger: true });
+const defaultCorsOrigins = [
+  'https://bus-alert-iota.vercel.app',
+  'http://localhost:3001',
+  'http://localhost:3000',
+];
+const envCorsOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) || [];
+const corsOrigins = Array.from(new Set([...defaultCorsOrigins, ...envCorsOrigins]));
 
 // ─── Plugins ──────────────────────────────────────────────────────────────────
+fastify.register(cors, {
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (corsOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  preflight: true,
+  preflightContinue: false,
+});
+
 // Multipart support for CSV / xlsx uploads (limits: 10 MB file, 100 fields)
 fastify.register(multipart, {
   limits: {
@@ -85,6 +112,14 @@ fastify.get('/api/health', async (request, reply) => {
   return {
     status: 'ok',
     timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+  };
+});
+
+// Temporary debug endpoint to inspect registered Fastify routes in production.
+fastify.get('/api/debug/routes', async () => {
+  return {
+    success: true,
+    data: fastify.printRoutes(),
   };
 });
 

@@ -10,9 +10,9 @@ import { PREFIX_BLACKLIST, redis } from '../../lib/redis';
 import { requireAuth } from './auth.middleware';
 import { OTPService } from './otp.service';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Returns true when the string looks like an e-mail address */
 function isEmail(id: string): boolean {
@@ -27,7 +27,7 @@ function normalisePhone(raw: string): string {
   const digits = raw.replace(/\D/g, '');
   if (digits.startsWith('91') && digits.length === 12) return `+${digits}`;
   if (digits.length === 10) return `+91${digits}`;
-  // already well-formed or foreign number — prepend + if missing
+  // already well-formed or foreign number â€” prepend + if missing
   return raw.startsWith('+') ? raw : `+${digits}`;
 }
 
@@ -92,6 +92,11 @@ function normalizeContact(raw: string): string {
   return isEmail(raw) ? raw.toLowerCase().trim() : normalisePhone(raw);
 }
 
+function isIndianPhoneLike(raw: string): boolean {
+  const normalized = raw.trim();
+  return /^(\+91\d{10}|\d{10})$/.test(normalized);
+}
+
 async function issueTokens(user: DbUser) {
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, agencyId: user.agency_id, name: user.name },
@@ -137,18 +142,18 @@ async function findUserByIdentifier(identifier: string): Promise<DbUser | undefi
   return u;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Route plugin
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const authRoutes: FastifyPluginAsync = async (fastify) => {
 
-  // ── POST /login ─────────────────────────────────────────────────────────────
+  // â”€â”€ POST /login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/login', async (request, reply) => {
     const schema = z.object({
       contact:    z.string().min(3).optional(),
       identifier: z.string().min(3).optional(),
       password:   z.string().min(1),
-      // legacy field names — kept for backwards compat
+      // legacy field names â€” kept for backwards compat
       phone:      z.string().optional(),
       email:      z.string().email().optional(),
     });
@@ -218,7 +223,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     };
   });
 
-  // ── POST /refresh ────────────────────────────────────────────────────────────
+  // â”€â”€ POST /refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/refresh', async (request, reply) => {
     const schema = z.object({
       refreshToken: z.string().min(1).optional(),
@@ -301,7 +306,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     };
   });
 
-  // ── POST /logout ─────────────────────────────────────────────────────────────
+  // â”€â”€ POST /logout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/logout', async (request, reply) => {
     const schema = z.object({
       refreshToken: z.string().min(1).optional(),
@@ -324,12 +329,12 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ success: true, data: { loggedOut: true } });
   });
 
-  // ── GET /me ──────────────────────────────────────────────────────────────────
+  // â”€â”€ GET /me â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.get('/me', { preHandler: requireAuth() }, async (request) => {
     return { success: true, data: (request as any).user };
   });
 
-  // ── POST /change-password ─────────────────────────────────────────────────────
+  // â”€â”€ POST /change-password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/change-password', { preHandler: requireAuth() }, async (request, reply) => {
     const schema = z.object({
       current_password: z.string().min(1),
@@ -370,32 +375,52 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true, data: { changed: true } };
   });
 
-  // ── POST /register ────────────────────────────────────────────────────────────
-  // Accepts: { name, identifier (phone or email), password }
-  // The `identifier` field is auto-detected as phone or email.
+  // â”€â”€ POST /register â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Accepts: { name, identifier/contact/phone/email, password }
+  // Contact is auto-detected as phone or email and normalized to canonical form.
   fastify.post('/register', async (request, reply) => {
+    console.log('Register body:', request.body);
     const schema = z.object({
       name:       z.string().min(2).max(255),
-      identifier: z.string().min(3),   // phone or email
+      identifier: z.string().min(3).optional(),
+      contact:    z.string().min(3).optional(),
       password:   z.string().min(8),
-      // legacy fields — kept for backwards compat
+      // legacy fields â€” kept for backwards compat
       phone:      z.string().optional(),
       email:      z.string().email().optional(),
+    }).superRefine((data, ctx) => {
+      const rawContact = getContactFromBody(data);
+      if (!rawContact) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'identifier/contact/phone/email is required',
+          path: ['identifier'],
+        });
+        return;
+      }
+      if (!isEmail(rawContact) && !isIndianPhoneLike(rawContact)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Phone must be 10 digits or +91 followed by 10 digits',
+          path: ['identifier'],
+        });
+      }
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
+      console.log('Validation error:', parsed.error.format());
       return reply.status(400).send({
         success: false,
         error: {
           code:    'VALIDATION_ERROR',
-          message: 'name, identifier (phone or email), and password (min 8 chars) required',
+          message: 'name, contact (phone/email), and password (min 8 chars) required',
           details: parsed.error.format(),
         },
       });
     }
 
     const { name, password } = parsed.data;
-    const raw = parsed.data.identifier || parsed.data.phone || parsed.data.email || '';
+    const raw = getContactFromBody(parsed.data);
     const identIsEmail = isEmail(raw);
 
     // Resolve to canonical form
@@ -431,6 +456,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       role:          'passenger',
       is_active:     true,
     }).returning();
+    const tokens = await issueTokens(user);
 
     await db.insert(auditLogs).values({
       user_id:     user.id,
@@ -441,17 +467,20 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       ip_address:  request.ip,
     });
 
-    return reply.status(201).send({
+    return reply.status(200).send({
       success: true,
       data: {
-        message:         'Account created. Please verify your identity.',
-        identifier_type: identIsEmail ? 'email' : 'phone',
+        access_token:  tokens.accessToken,
+        accessToken:   tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+        refreshToken:  tokens.refreshToken,
+        user:          serializeUser(user),
       },
     });
   });
 
-  // ── POST /send-otp ────────────────────────────────────────────────────────────
-  // Accepts: { identifier } — phone or email.
+  // â”€â”€ POST /send-otp â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Accepts: { identifier } â€” phone or email.
   fastify.post('/send-otp', async (request, reply) => {
     const schema = z.object({
       contact: z.string().min(3).optional(),
@@ -503,7 +532,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // ── POST /verify-otp ──────────────────────────────────────────────────────────
+  // â”€â”€ POST /verify-otp â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/verify-otp', async (request, reply) => {
     const schema = z.object({
       contact: z.string().min(3).optional(),
@@ -625,8 +654,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // ── POST /signup ──────────────────────────────────────────────────────────────
+  // â”€â”€ POST /signup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/signup', async (request, reply) => {
+    console.log('Signup body:', request.body);
     const schema = z.object({
       name: z.string().min(2).max(255),
       contact: z.string().min(3).optional(),
@@ -637,6 +667,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) {
+      console.log('Validation error:', parsed.error.format());
       return reply.status(400).send({
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'Invalid payload' },
@@ -730,7 +761,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // ── POST /join-agency ─────────────────────────────────────────────────────────
+  // â”€â”€ POST /join-agency â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   fastify.post('/join-agency', { preHandler: requireAuth() }, async (request, reply) => {
     const schema = z.object({
       agencyId:   z.string().uuid().optional(),

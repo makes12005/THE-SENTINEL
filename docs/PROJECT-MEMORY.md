@@ -2,6 +2,13 @@
 
 Last Updated: 2026-04-24 (IST)
 
+## 2026-04-25 - Full Codebase Audit Completed
+
+- Full backend + frontend audit executed across routes, auth guards, API parity, env config, and TypeScript health.
+- Fixed OTP login endpoint mismatch, strict role guards for owner/operator layouts, and added backend `GET /api/operator/trips`.
+- Audit report saved at `docs/test-reports/full-audit-report.md`.
+- Next action: deploy latest commit to production, then re-run token-authenticated endpoint verification for admin/owner/operator routes.
+
 ## 2026-04-24 - Auth Production Go-Live Update
 
 - Auth system: ✅ Live in production
@@ -403,27 +410,3 @@ Deploy the Bus Alert backend (API + Socket.IO + Background Workers) and frontend
 ### Next Actions
 - Execute the Gujarat pilot test physically in tracking vehicles.
 - Monitor active connections and Exotel payload delivery times during real-world simulation.
-
----
-
-## 2026-04-24 â€” Auth Contract Hardening Pass
-
-### What Changed
-- Backend auth routes were aligned to the current production test contract:
-  - `contact` is now accepted across `send-otp`, `verify-otp`, `login`, and `signup`
-  - added `POST /api/auth/login-otp`
-  - `verify-otp` now returns `temp_token` instead of auto-login tokens
-  - OTP failures now return `attempts_remaining`
-  - OTP rate limit reduced to 3 requests per hour
-  - `refresh` and `logout` accept both `refreshToken` and `refresh_token`
-  - serialized user now exposes both `agency_id` and `agencyId`
-- Mobile auth flow was updated to match the current merged-screen implementation:
-  - welcome screen now accepts phone or email in one field
-  - signup screen exposes an explicit skip action for invite code
-  - passenger role is no longer rejected by the mobile auth provider
-  - router redirect logic is centralized by role
-
-### Important Notes
-- The repo does not currently contain separate `agency_code_screen.dart` or `profile_setup_screen.dart`; that flow is merged into `signup_screen.dart`.
-- The shell environment on this machine cannot reach external DB/Redis/HTTP endpoints, so live Railway auth tests and cleanup SQL were not executed from this pass.
-- Railway production inspection still confirmed the `api` service is online and has both `DATABASE_URL` and `REDIS_URL` configured.

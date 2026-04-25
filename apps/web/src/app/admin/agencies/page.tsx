@@ -40,8 +40,8 @@ export default function AdminAgenciesPage() {
 
   const load = () => {
     setLoading(true);
-    get<{ data: Agency[] }>('/admin/agencies')
-      .then((r) => { setAgencies(r.data); setFiltered(r.data); })
+    get<Agency[]>('/api/admin/agencies')
+      .then((r) => { setAgencies(r); setFiltered(r); })
       .finally(() => setLoading(false));
   };
 
@@ -56,7 +56,7 @@ export default function AdminAgenciesPage() {
 
   const toggle = async (id: string) => {
     setToggling(id);
-    await post(`/admin/agencies/${id}/toggle`, {});
+    await post(`/api/admin/agencies/${id}/toggle`, {});
     await load();
     setToggling(null);
   };
@@ -68,7 +68,7 @@ export default function AdminAgenciesPage() {
     }
     setCreating(true);
     try {
-      await post('/admin/agencies', form);
+      await post('/api/admin/agencies', form);
       setShowModal(false);
       setForm({ name: '', ownerName: '', ownerPhone: '+91', ownerEmail: '', ownerPassword: '', state: '' });
       load();

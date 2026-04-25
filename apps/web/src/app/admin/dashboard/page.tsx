@@ -72,11 +72,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      get<{ data: HealthData }>('/admin/health'),
-      get<{ data: BillingSummary }>('/admin/billing/summary'),
+      get<HealthData>('/api/admin/health'),
+      get<BillingSummary>('/api/admin/billing/summary'),
     ]).then(([h, b]) => {
-      setHealth(h.data);
-      setBilling(b.data);
+      setHealth(h);
+      setBilling(b);
     }).finally(() => setLoading(false));
   }, []);
 

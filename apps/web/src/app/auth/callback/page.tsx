@@ -11,10 +11,9 @@ const ROLE_REDIRECTS: Record<string, string> = {
   operator:  '/operator/dashboard',
   driver:    '/operator/dashboard',
   conductor: '/operator/dashboard',
-  passenger: '/login',   // passengers shouldn't be on web dashboard
+  passenger: '/login',
 };
 
-/* ── Inner component — must be inside Suspense for useSearchParams ─────── */
 function OAuthCallbackInner() {
   const router        = useRouter();
   const params        = useSearchParams();
@@ -30,7 +29,6 @@ function OAuthCallbackInner() {
     const userRaw      = params.get('user');
     const error        = params.get('error');
 
-    // ── Backend error case
     if (error) {
       router.replace(`/login?error=${encodeURIComponent(error)}`);
       return;
@@ -80,12 +78,9 @@ function OAuthCallbackInner() {
 
   return (
     <div className="min-h-screen bg-[#13161b] flex flex-col items-center justify-center gap-4">
-      {/* Spinner */}
       <div className="relative w-14 h-14">
         <div className="absolute inset-0 rounded-full border-4 border-[#1e2530]" />
-        <div
-          className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#a3cbf2] animate-spin"
-        />
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#a3cbf2] animate-spin" />
       </div>
       <p className="text-[#8b939f] text-sm font-medium tracking-wide">
         Signing you in&hellip;
@@ -94,7 +89,6 @@ function OAuthCallbackInner() {
   );
 }
 
-/* ── Page export (Suspense boundary required for useSearchParams) ─────── */
 export default function OAuthCallbackPage() {
   return (
     <Suspense
