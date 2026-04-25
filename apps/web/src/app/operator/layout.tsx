@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
 import { useAuthStore } from '@/lib/auth-store';
 
+const ROLE_REDIRECTS: Record<string, string> = {
+  admin: '/admin/dashboard',
+  owner: '/owner/dashboard',
+  operator: '/operator/dashboard',
+  driver: '/operator/dashboard',
+  conductor: '/operator/dashboard',
+  passenger: '/access-code',
+};
+
 export default function OperatorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user   = useAuthStore((s) => s.user);
@@ -15,13 +24,13 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
       router.push('/login');
       return;
     }
-    // Block non-operator roles from this layout
-    if (!['operator', 'admin'].includes(user.role)) {
-      router.push('/login');
+    // Strict operator-only guard for /operator/*
+    if (user.role !== 'operator') {
+      router.push(ROLE_REDIRECTS[user.role] ?? '/login');
     }
   }, [token, user, router]);
 
-  if (!token || !user) return null;
+  if (!token || !user || user.role !== 'operator') return null;
 
   return (
     <div className="flex min-h-screen bg-[#101418]">

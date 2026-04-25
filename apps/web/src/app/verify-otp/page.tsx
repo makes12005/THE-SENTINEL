@@ -147,7 +147,7 @@ function VerifyOtpPageInner() {
       const res = await api.post<{
         success: boolean;
         data: { accessToken: string; refreshToken: string; user: any };
-      }>('/api/auth/verify-otp', { identifier, otp });
+      }>('/api/auth/login-otp', { identifier, otp });
 
       const { accessToken, refreshToken, user } = res.data.data;
       setSession({ accessToken, refreshToken, user });

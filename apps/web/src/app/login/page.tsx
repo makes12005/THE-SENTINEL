@@ -231,7 +231,7 @@ export default function LoginPage() {
     if (otp.length !== 6) { showToast('Enter the 6-digit OTP.', 'error'); return; }
     setBusy(true);
     try {
-      const res = await api.post<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/api/auth/verify-otp', { identifier: identifier.trim(), otp });
+      const res = await api.post<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/api/auth/login-otp', { identifier: identifier.trim(), otp });
       const { accessToken, refreshToken, user } = res.data.data;
       setSession({ accessToken, refreshToken, user });
       const redirect = user?.redirect ?? ROLE_REDIRECTS[user?.role] ?? '/access-code';
