@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { get, post } from '@/lib/api';
-import { Plus, Search, Building2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Plus, Search, Building2, CheckCircle2, XCircle, Loader2, Mail, Phone, RefreshCcw, ExternalLink } from 'lucide-react';
 
 interface Agency {
   id: string;
@@ -11,8 +11,17 @@ interface Agency {
   owner_phone: string;
   is_active: boolean;
   trips_this_month: number;
-  balance_rupees: number;
+  trips_remaining: number;
   state: string;
+  created_at: string;
+}
+
+interface Invite {
+  id: string;
+  phone: string;
+  invite_token: string;
+  status: string;
+  expires_at: string;
   created_at: string;
 }
 
@@ -27,22 +36,35 @@ const TH: React.CSSProperties = {
 
 export default function AdminAgenciesPage() {
   const [agencies, setAgencies]   = useState<Agency[]>([]);
+  const [invites, setInvites]     = useState<Invite[]>([]);
   const [filtered, setFiltered]   = useState<Agency[]>([]);
   const [search, setSearch]       = useState('');
   const [loading, setLoading]     = useState(true);
   const [toggling, setToggling]   = useState<string | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Create form
-  const [form, setForm] = useState({ name: '', ownerName: '', ownerPhone: '+91', ownerEmail: '', ownerPassword: '', state: '' });
-  const [creating, setCreating]   = useState(false);
-  const [formError, setFormError] = useState('');
+  // Invite form
+  const [invitePhone, setInvitePhone] = useState('+91');
+  const [inviting, setInviting]       = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [lastInviteLink, setLastInviteLink] = useState('');
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    get<Agency[]>('/api/admin/agencies')
-      .then((r) => { setAgencies(r); setFiltered(r); })
-      .finally(() => setLoading(false));
+    try {
+      const [agRes, invRes] = await Promise.all([
+        get<Agency[]>('/api/admin/agencies'),
+        get<Invite[]>('/api/admin/agencies/invites')
+      ]);
+      setAgencies(agRes);
+      setFiltered(agRes);
+      setInvites(invRes);
+    } catch (e) {
+      console.error('Failed to load agencies/invites', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -61,21 +83,34 @@ export default function AdminAgenciesPage() {
     setToggling(null);
   };
 
-  const createAgency = async () => {
-    setFormError('');
-    if (!form.name || !form.ownerName || !form.ownerPhone || !form.ownerPassword) {
-      return setFormError('All required fields must be filled.');
+  const sendInvite = async () => {
+    setInviteError('');
+    if (!invitePhone || invitePhone.length < 10) {
+      return setInviteError('Valid phone number is required.');
     }
-    setCreating(true);
+    setInviting(true);
     try {
-      await post('/api/admin/agencies', form);
-      setShowModal(false);
-      setForm({ name: '', ownerName: '', ownerPhone: '+91', ownerEmail: '', ownerPassword: '', state: '' });
+      const res: any = await post('/api/admin/agencies/invite', { phone: invitePhone });
+      setLastInviteLink(res.data.invite_link);
+      setInvitePhone('+91');
       load();
     } catch (e: any) {
-      setFormError(e?.message ?? 'Failed to create agency');
+      setInviteError(e?.message ?? 'Failed to send invite');
     } finally {
-      setCreating(false);
+      setInviting(false);
+    }
+  };
+
+  const resendInvite = async (id: string) => {
+    setResending(id);
+    try {
+      const res: any = await post(`/api/admin/agencies/invite/${id}/resend`, {});
+      alert(`Invite link: ${res.data.invite_link}`);
+      load();
+    } catch (e: any) {
+      alert(e?.message ?? 'Failed to resend invite');
+    } finally {
+      setResending(null);
     }
   };
 
@@ -89,11 +124,11 @@ export default function AdminAgenciesPage() {
             {agencies.length} total · {agencies.filter((a) => a.is_active).length} active
           </p>
         </div>
-        <button id="create-agency-btn" onClick={() => setShowModal(true)} style={{
+        <button id="invite-agency-btn" onClick={() => { setShowModal(true); setLastInviteLink(''); }} style={{
           display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 9,
           background: '#ef4444', border: 'none', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
         }}>
-          <Plus size={15} /> New Agency
+          <Mail size={15} /> Invite Agency
         </button>
       </div>
 
@@ -111,15 +146,16 @@ export default function AdminAgenciesPage() {
         />
       </div>
 
-      {/* Table */}
+      {/* Main Agency Table */}
       <div style={{
         background: 'linear-gradient(135deg, #13131f 0%, #16162a 100%)',
         border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, overflow: 'hidden',
+        marginBottom: 40
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Agency', 'Owner', 'State', 'Trips/Month', 'Balance', 'Status', 'Action'].map((h) => (
+              {['Agency', 'Owner', 'State', 'Trips/Month', 'Remaining', 'Status', 'Action'].map((h) => (
                 <th key={h} style={TH}>{h}</th>
               ))}
             </tr>
@@ -143,9 +179,9 @@ export default function AdminAgenciesPage() {
                 </td>
                 <td style={{ ...CELL, color: '#9ca3af' }}>{a.state || '—'}</td>
                 <td style={{ ...CELL, textAlign: 'center' }}>{a.trips_this_month}</td>
-                <td style={{ ...CELL, fontWeight: 700, color: a.balance_rupees < 100 ? '#ef4444' : '#22c55e' }}>
-                  ₹{a.balance_rupees.toFixed(2)}
-                  {a.balance_rupees < 100 && (
+                <td style={{ ...CELL, fontWeight: 700, color: a.trips_remaining < 5 ? '#ef4444' : '#22c55e' }}>
+                  {a.trips_remaining} trips
+                  {a.trips_remaining < 5 && (
                     <div style={{ fontSize: 9, color: '#ef4444', fontWeight: 700, letterSpacing: '0.06em' }}>LOW</div>
                   )}
                 </td>
@@ -181,7 +217,59 @@ export default function AdminAgenciesPage() {
         </table>
       </div>
 
-      {/* Create Agency Modal */}
+      {/* Pending Invites Section */}
+      <h2 style={{ fontSize: 18, fontWeight: 800, color: '#f3f4f6', marginBottom: 16 }}>Pending Invites</h2>
+      <div style={{
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, overflow: 'hidden',
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Phone', 'Status', 'Expires', 'Created At', 'Action'].map((h) => (
+                <th key={h} style={TH}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {!loading && invites.filter(i => i.status === 'pending').length === 0 ? (
+              <tr><td colSpan={5} style={{ textAlign: 'center', color: '#4b5563', padding: 32 }}>No pending invites</td></tr>
+            ) : invites.filter(i => i.status === 'pending').map((i) => (
+              <tr key={i.id}>
+                <td style={CELL}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Phone size={13} color="#6b7280" />
+                    <span style={{ color: '#e5e7eb' }}>{i.phone}</span>
+                  </div>
+                </td>
+                <td style={CELL}>
+                  <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600, textTransform: 'uppercase' }}>
+                    {i.status}
+                  </span>
+                </td>
+                <td style={{ ...CELL, color: '#9ca3af' }}>{new Date(i.expires_at).toLocaleDateString()}</td>
+                <td style={{ ...CELL, color: '#6b7280' }}>{new Date(i.created_at).toLocaleString()}</td>
+                <td style={CELL}>
+                  <button
+                    onClick={() => resendInvite(i.id)}
+                    disabled={resending === i.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#d1d5db'
+                    }}
+                  >
+                    {resending === i.id ? <Loader2 size={10} className="animate-spin" /> : <RefreshCcw size={10} />}
+                    Resend
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Invite Modal */}
       {showModal && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex',
@@ -189,48 +277,67 @@ export default function AdminAgenciesPage() {
         }}>
           <div style={{
             background: '#16162a', border: '1px solid rgba(239,68,68,0.2)',
-            borderRadius: 16, padding: '28px 28px 24px', width: 440, boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+            borderRadius: 16, padding: '28px 28px 24px', width: 400, boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
           }}>
-            <h2 style={{ fontWeight: 800, color: '#f3f4f6', margin: '0 0 20px', fontSize: 18 }}>Create New Agency</h2>
-            {formError && (
+            <h2 style={{ fontWeight: 800, color: '#f3f4f6', margin: '0 0 10px', fontSize: 18 }}>Invite Agency</h2>
+            <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 20 }}>
+              Send an onboarding link to the agency owner via phone number.
+            </p>
+
+            {inviteError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
-                {formError}
+                {inviteError}
               </div>
             )}
-            {[
-              { id: 'f-name', key: 'name', label: 'Agency Name *', type: 'text', placeholder: 'Gujarat State Buses' },
-              { id: 'f-oname', key: 'ownerName', label: 'Owner Name *', type: 'text', placeholder: 'Rajesh Shah' },
-              { id: 'f-ophone', key: 'ownerPhone', label: 'Owner Phone * (E.164)', type: 'text', placeholder: '+91XXXXXXXXXX' },
-              { id: 'f-oemail', key: 'ownerEmail', label: 'Owner Email', type: 'email', placeholder: 'owner@example.com' },
-              { id: 'f-opwd', key: 'ownerPassword', label: 'Owner Password *', type: 'password', placeholder: '••••••••' },
-              { id: 'f-state', key: 'state', label: 'State', type: 'text', placeholder: 'Gujarat' },
-            ].map(({ id, key, label, type, placeholder }) => (
-              <div key={key} style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 12, color: '#9ca3af', marginBottom: 5, fontWeight: 600 }}>{label}</label>
+
+            {lastInviteLink ? (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#22c55e', marginBottom: 8, fontWeight: 600 }}>Invite Created Successfully!</label>
+                <div style={{ 
+                  display: 'flex', alignItems: 'center', gap: 8, 
+                  background: 'rgba(34,197,94,0.05)', padding: '10px', borderRadius: 8,
+                  border: '1px solid rgba(34,197,94,0.2)'
+                }}>
+                  <input readOnly value={lastInviteLink} style={{ 
+                    background: 'transparent', border: 'none', color: '#e5e7eb', fontSize: 12, flex: 1, outline: 'none'
+                  }} />
+                  <button onClick={() => { navigator.clipboard.writeText(lastInviteLink); alert('Copied!'); }} style={{
+                    background: '#22c55e', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 8px', fontSize: 10, cursor: 'pointer'
+                  }}>Copy</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#9ca3af', marginBottom: 5, fontWeight: 600 }}>Owner Phone Number (E.164)</label>
                 <input
-                  id={id} type={type}
-                  value={(form as any)[key]}
-                  onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-                  placeholder={placeholder}
+                  id="invite-phone" type="text"
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(e.target.value)}
+                  placeholder="+91XXXXXXXXXX"
                   style={{
                     width: '100%', boxSizing: 'border-box',
-                    padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.04)', color: '#e5e7eb', fontSize: 13, outline: 'none',
+                    padding: '11px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.04)', color: '#e5e7eb', fontSize: 14, outline: 'none',
                   }}
                 />
               </div>
-            ))}
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <button onClick={() => setShowModal(false)} style={{
                 flex: 1, padding: '10px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.1)',
                 background: 'transparent', color: '#9ca3af', fontSize: 13, cursor: 'pointer',
-              }}>Cancel</button>
-              <button id="submit-agency-btn" onClick={createAgency} disabled={creating} style={{
-                flex: 1, padding: '10px', borderRadius: 9, border: 'none',
-                background: creating ? '#7f1d1d' : '#ef4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              }}>
-                {creating ? 'Creating…' : 'Create Agency'}
-              </button>
+              }}>{lastInviteLink ? 'Close' : 'Cancel'}</button>
+              {!lastInviteLink && (
+                <button id="send-invite-btn" onClick={sendInvite} disabled={inviting} style={{
+                  flex: 1.5, padding: '10px', borderRadius: 9, border: 'none',
+                  background: inviting ? '#7f1d1d' : '#ef4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                }}>
+                  {inviting ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                  {inviting ? 'Sending…' : 'Send Invite'}
+                </button>
+              )}
             </div>
           </div>
         </div>

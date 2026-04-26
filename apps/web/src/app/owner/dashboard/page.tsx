@@ -18,14 +18,17 @@ interface OwnerSummary {
   total_passengers_today: number;
   alerts_sent_today:      number;
   failed_alerts_today:    number;
+  trips_remaining:        number;
+  trips_used_this_month:  number;
 }
 
 const STAT_CARDS = (s: OwnerSummary) => [
-  { label: 'Operators',         value: s.total_operators,        color: 'border-[#c4c0ff]', textColor: 'text-[#c4c0ff]', icon: 'manage_accounts' },
-  { label: 'Active Trips',      value: s.active_trips,           color: 'border-[#a3cbf2]', textColor: 'text-[#a3cbf2]', icon: 'directions_bus'  },
+  { label: 'Trip Credits',      value: s.trips_remaining,        color: 'border-[#c4c0ff]', textColor: 'text-[#c4c0ff]', icon: 'account_balance_wallet' },
+  { label: 'Trips Used (Mo)',   value: s.trips_used_this_month,  color: 'border-[#a3cbf2]', textColor: 'text-[#a3cbf2]', icon: 'history' },
+  { label: 'Active Trips',      value: s.active_trips,           color: 'border-[#7dffd4]', textColor: 'text-[#7dffd4]', icon: 'directions_bus'  },
   { label: 'Passengers Today',  value: s.total_passengers_today, color: 'border-[#ffb68b]', textColor: 'text-[#ffb68b]', icon: 'group'           },
   { label: 'Alerts Sent',       value: s.alerts_sent_today,      color: 'border-[#7dffd4]', textColor: 'text-[#7dffd4]', icon: 'notifications'   },
-  { label: 'Failed Alerts',     value: s.failed_alerts_today,    color: 'border-[#ffb4ab]', textColor: 'text-[#ffb4ab]', icon: 'warning'         },
+  { label: 'Operators',         value: s.total_operators,        color: 'border-[#c2c7ce]', textColor: 'text-[#c2c7ce]', icon: 'manage_accounts' },
 ];
 
 export default function OwnerDashboardPage() {
@@ -70,9 +73,9 @@ export default function OwnerDashboardPage() {
 
       <div className="p-8 space-y-8">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
           {sumLoading
-            ? Array(5).fill(0).map((_, i) => <CardSkeleton key={i} />)
+            ? Array(6).fill(0).map((_, i) => <CardSkeleton key={i} />)
             : summary && STAT_CARDS(summary).map((card) => (
               <div
                 key={card.label}
@@ -151,7 +154,7 @@ export default function OwnerDashboardPage() {
               { href: '/owner/trips',     icon: 'directions_bus',  label: 'All Trips',    sub: 'Monitor agency-wide trips' },
               { href: '/owner/logs',      icon: 'receipt_long',    label: 'Alert Logs',   sub: 'All delivery statuses' },
               { href: '/owner/settings',  icon: 'settings',        label: 'Agency Config',sub: 'Name, phone, email' },
-              { href: '/owner/billing',   icon: 'payments',        label: 'Billing',      sub: 'Usage & invoices' },
+              { href: '/owner/wallet',    icon: 'account_balance_wallet', label: 'Trip Wallet',   sub: 'Credits & usage' },
             ].map((item) => (
               <Link
                 key={item.href}

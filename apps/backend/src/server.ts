@@ -66,7 +66,7 @@ fastify.register(operatorRoutes, { prefix: '/api' });
 // Routes: /api/owner/summary, /api/owner/operators, /api/owner/trips, /api/owner/logs, /api/agency/profile
 fastify.register(ownerRoutes, { prefix: '/api' });
 // Admin dashboard API (sprint 9)
-// Routes: /api/admin/agencies, /api/admin/billing/*, /api/admin/health, /api/admin/audit-logs
+// Routes: /api/admin/agencies, /api/admin/wallet/*, /api/admin/health, /api/admin/audit-logs
 fastify.register(adminRoutes, { prefix: '/api' });
 
 // ─── Health check ─────────────────────────────────────────────────────────────

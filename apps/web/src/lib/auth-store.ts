@@ -6,7 +6,8 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import api from './api';
+import api, { setAuthActions } from './api';
+import axios from 'axios';
 
 export interface AuthUser {
   id:       string;
@@ -69,4 +70,34 @@ export const useAuthStore = create<AuthState>()(
       partialize: (s) => ({ user: s.user, token: s.token, refreshToken: s.refreshToken }),
     }
   )
+);
+
+// Inject actions into API to handle 401s without circular dependency
+setAuthActions(
+  () => useAuthStore.getState().logout(),
+  async (refreshToken) => {
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/auth/refresh`, {
+        refreshToken,
+      });
+
+      if (res.data.success) {
+        const { access_token, refresh_token, user } = res.data.data;
+        // Update store directly
+        useAuthStore.setState({ 
+          token: access_token, 
+          refreshToken: refresh_token, 
+          user 
+        });
+        // Sync with legacy localStorage keys
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        return { accessToken: access_token, refreshToken: refresh_token, user };
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
+  }
 );

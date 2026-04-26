@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
 import { useAuthStore } from '@/lib/auth-store';
@@ -19,7 +19,11 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
   const user   = useAuthStore((s) => s.user);
   const token  = useAuthStore((s) => s.token);
 
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
+
   useEffect(() => {
+    if (!isHydrated) return;
     if (!token || !user) {
       router.push('/login');
       return;
@@ -28,9 +32,11 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
     if (user.role !== 'operator') {
       router.push(ROLE_REDIRECTS[user.role] ?? '/login');
     }
-  }, [token, user, router]);
+  }, [isHydrated, token, user, router]);
 
-  if (!token || !user || user.role !== 'operator') return null;
+  if (!isHydrated || !token || !user || user.role !== 'operator') {
+    return <div className="min-h-screen bg-[#101418]" />;
+  }
 
   return (
     <div className="flex min-h-screen bg-[#101418]">

@@ -11,13 +11,14 @@
  * GET  /api/owner/logs                 — all alert logs across agency
  * GET  /api/agency/profile             — agency name/phone/email
  * PUT  /api/agency/profile             — update agency profile
+ * GET  /api/owner/wallet/transactions  — trip credit history
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/auth.middleware';
 import { db } from '../../db';
 import {
-  trips, tripPassengers, alertLogs, users, agencies,
+  trips, tripPassengers, alertLogs, users, agencies, agencyWallets, walletTransactions,
 } from '../../db/schema';
 import {
   eq, and, gte, sql, count, desc, or, inArray, ne,
@@ -64,7 +65,8 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
   // GET /api/owner/summary
   // Returns agency-wide KPIs:
   //   total_operators, active_trips, passengers_today,
-  //   alerts_sent_today, failed_alerts_today
+  //   alerts_sent_today, failed_alerts_today,
+  //   trips_remaining, trips_used_this_month
   // ⚠️ All queries scoped to agencyId — no cross-agency access.
   // ───────────────────────────────────────────────────────────────────────────
   fastify.get(
@@ -83,9 +85,18 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
           .where(
             and(
               eq(users.agency_id, agencyId),  // ← agency scope
-              eq(users.role, 'operator')
-            )
+              )
           );
+
+        // Wallet info
+        const [wallet] = await db
+          .select({
+            trips_remaining:       agencyWallets.trips_remaining,
+            trips_used_this_month: agencyWallets.trips_used_this_month,
+          })
+          .from(agencyWallets)
+          .where(eq(agencyWallets.agency_id, agencyId))
+          .limit(1);
 
         const operatorIds = await getAgencyOperatorIds(agencyId);
 
@@ -98,6 +109,8 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
               total_passengers_today: 0,
               alerts_sent_today:     0,
               failed_alerts_today:   0,
+              trips_remaining:       wallet?.trips_remaining ?? 0,
+              trips_used_this_month: wallet?.trips_used_this_month ?? 0,
             },
             meta: { timestamp: new Date().toISOString() },
           });
@@ -168,6 +181,8 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
             total_passengers_today: totalPassengersToday,
             alerts_sent_today:      alertsSentToday,
             failed_alerts_today:    failedAlertsToday,
+            trips_remaining:        wallet?.trips_remaining ?? 0,
+            trips_used_this_month:  wallet?.trips_used_this_month ?? 0,
           },
           meta: { timestamp: new Date().toISOString() },
         });
@@ -563,6 +578,50 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
           .returning({ id: users.id, name: users.name, phone: users.phone, role: users.role, is_active: users.is_active });
 
         return reply.status(201).send({ success: true, data: newOp });
+      } catch (err) { return handleError(reply, err); }
+    }
+  );
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // GET /api/owner/wallet/transactions
+  // Trip credit history for the authenticated owner's agency.
+  // ───────────────────────────────────────────────────────────────────────────
+  fastify.get(
+    '/owner/wallet/transactions',
+    { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const user: any = (req as any).user;
+        const agencyId  = user.agencyId as string;
+        const query: any = req.query ?? {};
+
+        const PAGE_SIZE = 50;
+        const page      = Math.max(1, parseInt(query.page ?? '1', 10));
+        const offset    = (page - 1) * PAGE_SIZE;
+
+        const [countRow] = await db
+          .select({ total: count() })
+          .from(walletTransactions)
+          .where(eq(walletTransactions.agency_id, agencyId));
+
+        const rows = await db
+          .select()
+          .from(walletTransactions)
+          .where(eq(walletTransactions.agency_id, agencyId))
+          .orderBy(desc(walletTransactions.created_at))
+          .limit(PAGE_SIZE)
+          .offset(offset);
+
+        return reply.send({
+          success: true,
+          data: rows,
+          meta: {
+            page,
+            page_size: PAGE_SIZE,
+            total: Number(countRow?.total ?? 0),
+            timestamp: new Date().toISOString(),
+          },
+        });
       } catch (err) { return handleError(reply, err); }
     }
   );

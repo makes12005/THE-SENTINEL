@@ -15,9 +15,10 @@
  */
 
 import { db }                 from '../db';
-import { trips, conductorLocations, auditLogs } from '../db/schema';
+import { trips, conductorLocations, auditLogs, agencyWallets } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { emitSocketEvent } from '../lib/socket';
+import cron from 'node-cron';
 
 const POLL_INTERVAL_MS    = 30_000;   // 30 seconds
 const OFFLINE_THRESHOLD_S = 120;      // 2 minutes in seconds
@@ -153,6 +154,30 @@ async function poll() {
 
 async function main() {
   console.log('Heartbeat worker started');
+
+  // ── Monthly Reset Cron ──────────────────────────────────────────────────
+  // Resets trips_used_this_month = 0 for all agencies on the 1st of every month
+  cron.schedule('0 0 1 * *', async () => {
+    console.log('[HeartbeatWorker] Starting monthly trip reset...');
+    try {
+      await db.update(agencyWallets).set({ trips_used_this_month: 0 });
+      console.log('[HeartbeatWorker] Monthly trip reset successful');
+      
+      // Audit log the reset
+      await db.insert(auditLogs).values({
+        action: 'MONTHLY_TRIP_RESET',
+        entity_type: 'system',
+        metadata: {
+          timestamp: new Date().toISOString(),
+          description: 'Reset trips_used_this_month for all agencies'
+        }
+      });
+    } catch (err: any) {
+      console.error('[HeartbeatWorker] Monthly reset failed:', err?.message);
+    }
+  }, {
+    timezone: 'Asia/Kolkata'
+  });
 
   while (!isShuttingDown) {
     await poll();

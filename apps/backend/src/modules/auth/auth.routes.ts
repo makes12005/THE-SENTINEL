@@ -1,11 +1,11 @@
-import { createHash } from 'crypto';
+wimport { createHash } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { and, eq, gt, or } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { db } from '../../db';
-import { auditLogs, refreshTokens, users, agencies } from '../../db/schema';
+import { auditLogs, refreshTokens, users, agencies, agencyInvites, agencyWallets } from '../../db/schema';
 import { PREFIX_BLACKLIST, redis } from '../../lib/redis';
 import { requireAuth } from './auth.middleware';
 import { OTPService } from './otp.service';
@@ -828,6 +828,138 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       success: true,
       data: { agencyId: resolvedAgencyId, message: 'Agency linked successfully' },
     });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // GET /api/auth/invite/:token
+  // Validate an invite token
+  // ───────────────────────────────────────────────────────────────────────────
+  fastify.get('/invite/:token', async (req, reply) => {
+    try {
+      const { token } = req.params as { token: string };
+
+      const [invite] = await db
+        .select()
+        .from(agencyInvites)
+        .where(eq(agencyInvites.invite_token, token));
+
+      if (!invite) {
+        return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Invite not found' } });
+      }
+
+      if (invite.status !== 'pending' || new Date() > new Date(invite.expires_at)) {
+        return reply.status(400).send({ success: false, error: { code: 'INVALID_INVITE', message: 'Invite is expired or already used' } });
+      }
+
+      return reply.send({ success: true, data: { phone: invite.phone, status: invite.status } });
+    } catch (err: any) {
+      req.log.error(err);
+      return reply.status(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: err.message } });
+    }
+  });
+
+  // POST /api/auth/onboard
+  // Accept invite, create agency, agency wallet, and owner user
+  // ───────────────────────────────────────────────────────────────────────────
+  fastify.post('/onboard', async (req, reply) => {
+    try {
+      const body = req.body as any;
+      const { token, agencyName, email, state, ownerName, password } = body;
+
+      if (!token || !agencyName || !email || !state || !ownerName || !password) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'MISSING_FIELDS', message: 'token, agencyName, email, state, ownerName, and password are required' },
+        });
+      }
+
+      const [invite] = await db
+        .select()
+        .from(agencyInvites)
+        .where(eq(agencyInvites.invite_token, token));
+
+      if (!invite || invite.status !== 'pending' || new Date() > new Date(invite.expires_at)) {
+        return reply.status(400).send({ success: false, error: { code: 'INVALID_INVITE', message: 'Invite is invalid, expired, or already used' } });
+      }
+
+      // Check if user already exists
+      const [existingUser] = await db.select().from(users).where(eq(users.phone, invite.phone));
+      if (existingUser) {
+        return reply.status(400).send({ success: false, error: { code: 'USER_EXISTS', message: 'An account with this phone already exists' } });
+      }
+
+      // Hash password
+      const password_hash = await bcrypt.hash(password, 12);
+
+      // Transaction to create agency, wallet, user, and update invite
+      const result = await db.transaction(async (tx) => {
+        // Create agency
+        const [agency] = await tx
+          .insert(agencies)
+          .values({
+            name: agencyName,
+            phone: invite.phone,
+            email: email.toLowerCase().trim(),
+            state: state,
+            onboarded_via_invite: true,
+            invite_id: invite.id,
+          })
+          .returning();
+
+        // Create agency wallet
+        await tx
+          .insert(agencyWallets)
+          .values({
+            agency_id: agency.id,
+            trips_remaining: 0,
+            trips_used_this_month: 0,
+          });
+
+        // Create owner user
+        const [ownerUser] = await tx
+          .insert(users)
+          .values({
+            name: ownerName,
+            phone: invite.phone,
+            email: email.toLowerCase().trim(),
+            password_hash,
+            role: 'owner',
+            agency_id: agency.id,
+            is_active: true,
+          })
+          .returning();
+
+        // Update invite
+        await tx
+          .update(agencyInvites)
+          .set({ status: 'accepted', accepted_at: new Date() })
+          .where(eq(agencyInvites.id, invite.id));
+
+        // Audit log
+        await tx.insert(auditLogs).values({
+          user_id: ownerUser.id,
+          action: 'ONBOARDED_AGENCY',
+          entity_type: 'agency',
+          entity_id: agency.id,
+          metadata: { agency_name: agencyName, owner_name: ownerName },
+          ip_address: req.ip,
+        });
+
+        return { agency, ownerUser };
+      });
+
+      return reply.status(201).send({ 
+        success: true, 
+        data: { 
+          message: 'Agency onboarded successfully',
+          agencyId: result.agency.id,
+          userId: result.ownerUser.id
+        } 
+      });
+    } catch (err: any) {
+      req.log.error(err);
+      return reply.status(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: err.message } });
+    }
   });
 };
 

@@ -9,11 +9,11 @@
  *   POST /api/admin/agencies             — create agency + owner in one transaction
  *   POST /api/admin/agencies/:id/toggle  — activate/deactivate entire agency
  *
- * Billing:
- *   GET  /api/admin/billing/summary      — platform-wide revenue + per-agency balances
- *   GET  /api/admin/billing/:agencyId    — agency billing detail + transactions
- *   POST /api/admin/billing/:agencyId/topup      — add balance to agency
- *   PUT  /api/admin/billing/:agencyId/config     — update per_alert_paise / threshold
+ * Wallet:
+ *   GET  /api/admin/wallet/summary       — platform-wide trip usage + per-agency balances
+ *   GET  /api/admin/wallet/:agencyId     — agency wallet detail + transactions
+ *   POST /api/admin/wallet/:agencyId/topup      — add trip credits to agency
+ *   PUT  /api/admin/wallet/:agencyId/config     — update low_trip_threshold
  *
  * System Health:
  *   GET  /api/admin/health               — platform metrics snapshot
@@ -28,7 +28,7 @@ import { requireAuth } from '../auth/auth.middleware';
 import { db } from '../../db';
 import {
   agencies, users, trips, tripPassengers, alertLogs,
-  agencyBillingConfig, billingTransactions, auditLogs,
+  agencyWallets, walletTransactions, auditLogs, agencyInvites,
 } from '../../db/schema';
 import {
   eq, and, sql, count, desc, sum, gte, inArray,
@@ -36,10 +36,10 @@ import {
 import bcrypt from 'bcryptjs';
 import { UserRole } from '../../lib/shared-types';
 import {
-  topUpBalance,
-  updateBillingConfig,
-  getOrCreateBillingConfig,
-} from '../billing/billing.service';
+  topUpTrips,
+  updateWalletConfig,
+  getOrCreateWallet,
+} from '../wallet/wallet.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           .from(agencies)
           .orderBy(desc(agencies.created_at));
 
-        // Enrich with owner user + trip count + balance in parallel
+        // Enrich with owner user + trip count + wallet balance in parallel
         const enriched = await Promise.all(rows.map(async (agency) => {
           const [ownerRow] = await db
             .select({ name: users.name, phone: users.phone, is_active: users.is_active })
@@ -124,7 +124,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
             .innerJoin(users, eq(trips.operator_id, users.id))
             .where(and(eq(users.agency_id, agency.id), gte(trips.created_at, monthAgo)));
 
-          const billing = await getOrCreateBillingConfig(agency.id);
+          const wallet = await getOrCreateWallet(agency.id);
 
           return {
             ...agency,
@@ -132,8 +132,8 @@ export default async function adminRoutes(fastify: FastifyInstance) {
             owner_phone: ownerRow?.phone ?? '—',
             is_active: ownerRow?.is_active ?? true,
             trips_this_month: Number(tripRow?.cnt ?? 0),
-            balance_paise: billing.balance_paise,
-            balance_rupees: billing.balance_paise / 100,
+            trips_remaining: wallet.trips_remaining,
+            low_trips: wallet.trips_remaining <= wallet.low_trip_threshold,
           };
         }));
 
@@ -206,12 +206,12 @@ export default async function adminRoutes(fastify: FastifyInstance) {
             })
             .returning({ id: users.id, name: users.name, phone: users.phone, role: users.role });
 
-          // Create default billing config for new agency
-          await tx.insert(agencyBillingConfig).values({
+          // Create default wallet for new agency (0 trip credits)
+          await tx.insert(agencyWallets).values({
             agency_id: agency.id,
-            balance_paise: 0,
-            per_alert_paise: 200,       // ₹2 per alert
-            low_balance_threshold_paise: 10000, // ₹100
+            trips_remaining: 0,
+            trips_used_this_month: 0,
+            low_trip_threshold: 10,
           });
 
           return { agency, owner };
@@ -264,68 +264,64 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   );
 
   // ───────────────────────────────────────────────────────────────────────────
-  // GET /api/admin/billing/summary
-  // Platform-wide: total_revenue_paise, total_topups_paise, active agency count,
-  // + per-agency balance summary list.
+  // GET /api/admin/wallet/summary
+  // Platform-wide: total trips used, total credits topped-up, per-agency balances.
   // ───────────────────────────────────────────────────────────────────────────
   fastify.get(
-    '/admin/billing/summary',
+    '/admin/wallet/summary',
     { preHandler: [requireAuth([UserRole.ADMIN])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        // Total revenue (sum of alert_deductions, which are negative amounts)
+        // Total trips consumed across all agencies
         const [deductionRow] = await db
-          .select({ total: sum(billingTransactions.amount_paise) })
-          .from(billingTransactions)
-          .where(eq(billingTransactions.type, 'alert_deduction'));
+          .select({ total: sum(walletTransactions.trips_amount) })
+          .from(walletTransactions)
+          .where(eq(walletTransactions.type, 'trip_deduction'));
 
-        // Total top-ups ever
+        // Total trips credited (top-ups)
         const [topupRow] = await db
-          .select({ total: sum(billingTransactions.amount_paise) })
-          .from(billingTransactions)
-          .where(eq(billingTransactions.type, 'topup'));
+          .select({ total: sum(walletTransactions.trips_amount) })
+          .from(walletTransactions)
+          .where(eq(walletTransactions.type, 'trip_topup'));
 
-        // Per-agency balance overview
-        const configs = await db
+        // Per-agency wallet overview
+        const wallets = await db
           .select({
-            agency_id: agencyBillingConfig.agency_id,
-            balance_paise: agencyBillingConfig.balance_paise,
-            per_alert_paise: agencyBillingConfig.per_alert_paise,
-            low_balance_threshold_paise: agencyBillingConfig.low_balance_threshold_paise,
-            updated_at: agencyBillingConfig.updated_at,
+            agency_id:           agencyWallets.agency_id,
+            trips_remaining:     agencyWallets.trips_remaining,
+            trips_used_this_month: agencyWallets.trips_used_this_month,
+            low_trip_threshold:  agencyWallets.low_trip_threshold,
+            updated_at:          agencyWallets.updated_at,
           })
-          .from(agencyBillingConfig)
-          .orderBy(agencyBillingConfig.balance_paise);
+          .from(agencyWallets)
+          .orderBy(agencyWallets.trips_remaining);
 
         // Attach agency names
-        const agencyIds = configs.map((c) => c.agency_id);
+        const agencyIds = wallets.map((w) => w.agency_id);
         const agencyRows = agencyIds.length > 0
           ? await db.select({ id: agencies.id, name: agencies.name }).from(agencies).where(inArray(agencies.id, agencyIds))
           : [];
         const agencyMap = Object.fromEntries(agencyRows.map((a) => [a.id, a.name]));
 
-        const agencyBalances = configs.map((c) => ({
-          agency_id: c.agency_id,
-          agency_name: agencyMap[c.agency_id] ?? '—',
-          balance_paise: c.balance_paise,
-          balance_rupees: c.balance_paise / 100,
-          per_alert_rupees: c.per_alert_paise / 100,
-          low_balance: c.balance_paise <= c.low_balance_threshold_paise,
+        const agencyWalletList = wallets.map((w) => ({
+          agency_id:             w.agency_id,
+          agency_name:           agencyMap[w.agency_id] ?? '—',
+          trips_remaining:       w.trips_remaining,
+          trips_used_this_month: w.trips_used_this_month,
+          low_trips:             w.trips_remaining <= w.low_trip_threshold,
         }));
 
-        const revenueRaw = Math.abs(Number(deductionRow?.total ?? 0));
-        const topupsRaw  = Number(topupRow?.total ?? 0);
+        const totalConsumed = Math.abs(Number(deductionRow?.total ?? 0));
+        const totalTopups   = Number(topupRow?.total ?? 0);
 
         return reply.send({
           success: true,
           data: {
-            total_revenue_paise:  revenueRaw,
-            total_revenue_rupees: revenueRaw / 100,
-            total_topups_paise:   topupsRaw,
-            total_topups_rupees:  topupsRaw / 100,
-            agency_count: agencyBalances.length,
-            low_balance_agencies: agencyBalances.filter((a) => a.low_balance).length,
-            agency_balances: agencyBalances,
+            total_trips_consumed:    totalConsumed,
+            total_trips_credited:    totalTopups,
+            agency_count:            agencyWalletList.length,
+            low_trips_agencies:      agencyWalletList.filter((a) => a.low_trips).length,
+            agency_wallets:          agencyWalletList,
           },
           meta: { timestamp: new Date().toISOString() },
         });
@@ -334,11 +330,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   );
 
   // ───────────────────────────────────────────────────────────────────────────
-  // GET /api/admin/billing/:agencyId
-  // Per-agency: config, recent transactions (last 100)
+  // GET /api/admin/wallet/:agencyId
+  // Per-agency: wallet state + recent transactions (last 100)
   // ───────────────────────────────────────────────────────────────────────────
   fastify.get(
-    '/admin/billing/:agencyId',
+    '/admin/wallet/:agencyId',
     { preHandler: [requireAuth([UserRole.ADMIN])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
@@ -348,33 +344,26 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         const [agency] = await db.select().from(agencies).where(eq(agencies.id, agencyId)).limit(1);
         if (!agency) return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Agency not found' } });
 
-        const config = await getOrCreateBillingConfig(agencyId);
+        const wallet = await getOrCreateWallet(agencyId);
 
         const transactions = await db
           .select()
-          .from(billingTransactions)
-          .where(eq(billingTransactions.agency_id, agencyId))
-          .orderBy(desc(billingTransactions.created_at))
+          .from(walletTransactions)
+          .where(eq(walletTransactions.agency_id, agencyId))
+          .orderBy(desc(walletTransactions.created_at))
           .limit(100);
 
         return reply.send({
           success: true,
           data: {
             agency: { id: agency.id, name: agency.name },
-            billing: {
-              balance_paise: config.balance_paise,
-              balance_rupees: config.balance_paise / 100,
-              per_alert_paise: config.per_alert_paise,
-              per_alert_rupees: config.per_alert_paise / 100,
-              low_balance_threshold_paise: config.low_balance_threshold_paise,
-              low_balance_threshold_rupees: config.low_balance_threshold_paise / 100,
-              low_balance: config.balance_paise <= config.low_balance_threshold_paise,
+            wallet: {
+              trips_remaining:       wallet.trips_remaining,
+              trips_used_this_month: wallet.trips_used_this_month,
+              low_trip_threshold:    wallet.low_trip_threshold,
+              low_trips:             wallet.trips_remaining <= wallet.low_trip_threshold,
             },
-            transactions: transactions.map((t) => ({
-              ...t,
-              amount_rupees: t.amount_paise / 100,
-              balance_after_rupees: t.balance_after_paise / 100,
-            })),
+            transactions,
           },
           meta: { timestamp: new Date().toISOString() },
         });
@@ -383,11 +372,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   );
 
   // ───────────────────────────────────────────────────────────────────────────
-  // POST /api/admin/billing/:agencyId/topup
-  // Body: { amount_rupees, description?, reference_id? }
+  // POST /api/admin/wallet/:agencyId/topup
+  // Body: { trips, description?, reference_id? }
   // ───────────────────────────────────────────────────────────────────────────
   fastify.post(
-    '/admin/billing/:agencyId/topup',
+    '/admin/wallet/:agencyId/topup',
     { preHandler: [requireAuth([UserRole.ADMIN])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
@@ -396,29 +385,28 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         const body: any   = req.body ?? {};
         const agencyId    = params.agencyId as string;
 
-        const amountRupees = Number(body.amount_rupees ?? 0);
-        if (!amountRupees || amountRupees <= 0) {
-          return reply.status(400).send({ success: false, error: { code: 'INVALID_AMOUNT', message: 'amount_rupees must be a positive number' } });
+        const tripsToAdd = Math.floor(Number(body.trips ?? 0));
+        if (!tripsToAdd || tripsToAdd <= 0) {
+          return reply.status(400).send({ success: false, error: { code: 'INVALID_AMOUNT', message: '`trips` must be a positive integer' } });
         }
 
         const [agency] = await db.select({ name: agencies.name }).from(agencies).where(eq(agencies.id, agencyId)).limit(1);
         if (!agency) return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Agency not found' } });
 
-        const amountPaise = Math.round(amountRupees * 100);
-        const { balancePaiseAfter } = await topUpBalance(
-          agencyId, amountPaise,
-          body.description ?? `Admin top-up ₹${amountRupees}`,
-          body.reference_id
+        const { tripsRemainingAfter } = await topUpTrips(
+          agencyId, tripsToAdd,
+          body.description ?? `Admin top-up of ${tripsToAdd} trip(s)`,
+          body.reference_id,
         );
 
-        await logAdminAction(admin.id, 'TOPUP_AGENCY', 'billing', agencyId, { amountRupees }, req.ip);
+        await logAdminAction(admin.id, 'TOPUP_AGENCY_WALLET', 'wallet', agencyId, { tripsToAdd }, req.ip);
 
         return reply.send({
           success: true,
           data: {
             agency_id: agencyId,
-            amount_rupees: amountRupees,
-            new_balance_rupees: balancePaiseAfter / 100,
+            trips_added: tripsToAdd,
+            trips_remaining: tripsRemainingAfter,
           },
         });
       } catch (err) { return handleError(reply, err); }
@@ -426,11 +414,11 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   );
 
   // ───────────────────────────────────────────────────────────────────────────
-  // PUT /api/admin/billing/:agencyId/config
-  // Body: { per_alert_rupees?, low_balance_threshold_rupees? }
+  // PUT /api/admin/wallet/:agencyId/config
+  // Body: { low_trip_threshold? }
   // ───────────────────────────────────────────────────────────────────────────
   fastify.put(
-    '/admin/billing/:agencyId/config',
+    '/admin/wallet/:agencyId/config',
     { preHandler: [requireAuth([UserRole.ADMIN])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
@@ -439,26 +427,23 @@ export default async function adminRoutes(fastify: FastifyInstance) {
         const body: any   = req.body ?? {};
         const agencyId    = params.agencyId as string;
 
-        const updates: { per_alert_paise?: number; low_balance_threshold_paise?: number } = {};
-        if (body.per_alert_rupees !== undefined)
-          updates.per_alert_paise = Math.round(Number(body.per_alert_rupees) * 100);
-        if (body.low_balance_threshold_rupees !== undefined)
-          updates.low_balance_threshold_paise = Math.round(Number(body.low_balance_threshold_rupees) * 100);
+        const updates: { low_trip_threshold?: number } = {};
+        if (body.low_trip_threshold !== undefined)
+          updates.low_trip_threshold = Math.floor(Number(body.low_trip_threshold));
 
         if (Object.keys(updates).length === 0) {
-          return reply.status(400).send({ success: false, error: { code: 'NO_FIELDS', message: 'Provide per_alert_rupees or low_balance_threshold_rupees' } });
+          return reply.status(400).send({ success: false, error: { code: 'NO_FIELDS', message: 'Provide low_trip_threshold' } });
         }
 
-        const updated = await updateBillingConfig(agencyId, updates);
+        const updated = await updateWalletConfig(agencyId, updates);
 
-        await logAdminAction(admin.id, 'UPDATE_BILLING_CONFIG', 'billing', agencyId, body, req.ip);
+        await logAdminAction(admin.id, 'UPDATE_WALLET_CONFIG', 'wallet', agencyId, body, req.ip);
 
         return reply.send({
           success: true,
           data: {
             agency_id: agencyId,
-            per_alert_rupees: updated.per_alert_paise / 100,
-            low_balance_threshold_rupees: updated.low_balance_threshold_paise / 100,
+            low_trip_threshold: updated.low_trip_threshold,
           },
         });
       } catch (err) { return handleError(reply, err); }
@@ -551,6 +536,143 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           success: true,
           data: logs.map((l) => ({ ...l, actor_name: userMap[l.user_id ?? ''] ?? 'System' })),
           meta: { count: logs.length, timestamp: new Date().toISOString() },
+        });
+      } catch (err) { return handleError(reply, err); }
+    }
+  );
+  // ───────────────────────────────────────────────────────────────────────────
+  // GET /api/admin/invites
+  // List all agency invites
+  // ───────────────────────────────────────────────────────────────────────────
+  // List all pending invites
+  fastify.get(
+    '/admin/agencies/invites',
+    { preHandler: [requireAuth([UserRole.ADMIN])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const rows = await db
+          .select({
+            id: agencyInvites.id,
+            phone: agencyInvites.phone,
+            invite_token: agencyInvites.invite_token,
+            status: agencyInvites.status,
+            expires_at: agencyInvites.expires_at,
+            created_at: agencyInvites.created_at,
+            accepted_at: agencyInvites.accepted_at,
+          })
+          .from(agencyInvites)
+          .orderBy(desc(agencyInvites.created_at));
+
+        return reply.send({
+          success: true,
+          data: rows,
+          meta: { count: rows.length, timestamp: new Date().toISOString() },
+        });
+      } catch (err) { return handleError(reply, err); }
+    }
+  );
+
+  // POST /api/admin/agencies/invite
+  // Create a new agency invite
+  fastify.post(
+    '/admin/agencies/invite',
+    { preHandler: [requireAuth([UserRole.ADMIN])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const admin: any = (req as any).user;
+        const body: any = req.body ?? {};
+
+        const { phone } = body;
+        if (!phone) {
+          return reply.status(400).send({
+            success: false,
+            error: { code: 'MISSING_FIELDS', message: 'phone is required' },
+          });
+        }
+        if (!/^(\+91\d{10}|\d{10})$/.test(phone)) {
+          return reply.status(400).send({
+            success: false,
+            error: { code: 'INVALID_PHONE', message: 'phone must be 10 digits or +91XXXXXXXXXX' },
+          });
+        }
+        
+        let normalizedPhone = phone;
+        if (phone.length === 10) {
+          normalizedPhone = `+91${phone}`;
+        } else if (!phone.startsWith('+')) {
+          normalizedPhone = `+${phone}`;
+        }
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days validity
+
+        const [invite] = await db
+          .insert(agencyInvites)
+          .values({
+            phone: normalizedPhone,
+            invited_by: admin.id,
+            expires_at: expiresAt,
+          })
+          .returning();
+
+        await logAdminAction(admin.id, 'CREATE_INVITE', 'agency_invite', invite.id, { phone: normalizedPhone }, req.ip);
+
+        // In a real app, send SMS/WhatsApp here. For now, we return the link.
+        const inviteLink = `${process.env.FRONTEND_URL}/onboard?token=${invite.invite_token}`;
+
+        return reply.status(201).send({ 
+          success: true, 
+          data: { 
+            ...invite,
+            invite_link: inviteLink 
+          } 
+        });
+      } catch (err) { return handleError(reply, err); }
+    }
+  );
+
+  // POST /api/admin/agencies/invite/:id/resend
+  fastify.post(
+    '/admin/agencies/invite/:id/resend',
+    { preHandler: [requireAuth([UserRole.ADMIN])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const admin: any = (req as any).user;
+        const { id } = req.params as { id: string };
+
+        const [invite] = await db
+          .select()
+          .from(agencyInvites)
+          .where(eq(agencyInvites.id, id))
+          .limit(1);
+
+        if (!invite) {
+          return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Invite not found' } });
+        }
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        const [updated] = await db
+          .update(agencyInvites)
+          .set({ 
+            status: 'pending', 
+            expires_at: expiresAt,
+            created_at: new Date() // Refresh created_at for sorting
+          })
+          .where(eq(agencyInvites.id, id))
+          .returning();
+
+        await logAdminAction(admin.id, 'RESEND_INVITE', 'agency_invite', id, { phone: invite.phone }, req.ip);
+
+        const inviteLink = `${process.env.FRONTEND_URL}/onboard?token=${updated.invite_token}`;
+
+        return reply.send({ 
+          success: true, 
+          data: { 
+            ...updated,
+            invite_link: inviteLink 
+          } 
         });
       } catch (err) { return handleError(reply, err); }
     }

@@ -2,6 +2,7 @@ import { db } from '../../db';
 import { conductorLocations, trips } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { LocationUpdateRequest } from '../../lib/shared-types';
+import { logForbiddenAccess } from './trip-auth.helper';
 
 /** Converts lat/lng to PostGIS EWKT. POINT takes (longitude latitude). */
 export function toEWKT(lat: number, lng: number): string {
@@ -57,7 +58,11 @@ export class LocationService {
       throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
     }
     if (trip.conductor_id !== conductorId) {
-      throw Object.assign(new Error('You are not assigned to this trip'), { statusCode: 403 });
+      await logForbiddenAccess(conductorId, tripId, 'UNAUTHORIZED_LOCATION_UPDATE_ATTEMPT', {
+        reason: 'Conductor not assigned to trip',
+        assigned_conductor_id: trip.conductor_id,
+      });
+      throw Object.assign(new Error('You are not assigned to this trip'), { statusCode: 403, code: 'FORBIDDEN' });
     }
     if (trip.status !== 'active') {
       throw Object.assign(new Error('Trip is not active'), { statusCode: 409 });

@@ -7,5 +7,5 @@ loadEnv();
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/busalert';
 
-const sql = postgres(connectionString, { max: 10 });
+export const sql = postgres(connectionString, { max: 10 });
 export const db = drizzle(sql, { schema });

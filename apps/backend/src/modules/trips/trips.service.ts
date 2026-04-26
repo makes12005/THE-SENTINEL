@@ -2,7 +2,8 @@ import { db } from '../../db';
 import { trips, routes, stops, tripPassengers, users, conductorLocations } from '../../db/schema';
 import { eq, and, sql, desc, count } from 'drizzle-orm';
 import { CreateTripRequest, AddPassengerRequest, TripStatus, TripStatusResponse } from '../../lib/shared-types';
-import { deductAlertCost } from '../billing/billing.service';
+import { deductTripCredit } from '../wallet/wallet.service';
+import { logForbiddenAccess } from './trip-auth.helper';
 
 
 
@@ -240,8 +241,13 @@ export class TripsService {
     const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
 
     if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
-    if (trip.conductor_id !== conductorId)
-      throw Object.assign(new Error('You are not assigned as conductor of this trip'), { statusCode: 403 });
+    if (trip.conductor_id !== conductorId) {
+      await logForbiddenAccess(conductorId, tripId, 'UNAUTHORIZED_TRIP_START_ATTEMPT', {
+        reason: 'Conductor not assigned to trip',
+        assigned_conductor_id: trip.conductor_id,
+      });
+      throw Object.assign(new Error('You are not assigned as conductor of this trip'), { statusCode: 403, code: 'FORBIDDEN' });
+    }
     if (trip.status !== 'scheduled')
       throw Object.assign(new Error(`Cannot start a trip with status: ${trip.status}`), { statusCode: 409 });
 
@@ -262,8 +268,13 @@ export class TripsService {
     const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
 
     if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
-    if (trip.conductor_id !== conductorId)
-      throw Object.assign(new Error('You are not assigned as conductor of this trip'), { statusCode: 403 });
+    if (trip.conductor_id !== conductorId) {
+      await logForbiddenAccess(conductorId, tripId, 'UNAUTHORIZED_TRIP_COMPLETE_ATTEMPT', {
+        reason: 'Conductor not assigned to trip',
+        assigned_conductor_id: trip.conductor_id,
+      });
+      throw Object.assign(new Error('You are not assigned as conductor of this trip'), { statusCode: 403, code: 'FORBIDDEN' });
+    }
     if (trip.status !== 'active')
       throw Object.assign(new Error(`Cannot complete a trip with status: ${trip.status}`), { statusCode: 409 });
 
@@ -273,22 +284,10 @@ export class TripsService {
       .where(eq(trips.id, tripId))
       .returning();
 
-    // ── Billing deduction (non-blocking — never fails the trip completion) ──
-    // Count passengers whose alerts were actually sent for this trip
+    // ── Wallet deduction (non-blocking — never fails the trip completion) ──
+    // 1 trip credit consumed per completed trip (not per alert)
     setImmediate(async () => {
       try {
-        const [sentRow] = await db
-          .select({ cnt: count() })
-          .from(tripPassengers)
-          .where(
-            and(
-              eq(tripPassengers.trip_id, tripId),
-              eq(tripPassengers.alert_status, 'sent')
-            )
-          );
-        const sentCount = Number(sentRow?.cnt ?? 0);
-        if (sentCount === 0) return;
-
         // Get agency_id via the trip's route
         const [routeRow] = await db
           .select({ agency_id: routes.agency_id })
@@ -298,10 +297,10 @@ export class TripsService {
 
         if (!routeRow?.agency_id) return;
 
-        await deductAlertCost(routeRow.agency_id, tripId, sentCount);
-      } catch (billingErr) {
+        await deductTripCredit(routeRow.agency_id, tripId);
+      } catch (walletErr) {
         // Log but never crash — trip is already completed
-        console.error('[Billing] Failed to deduct alert cost for trip', tripId, billingErr);
+        console.error('[Wallet] Failed to deduct trip credit for trip', tripId, walletErr);
       }
     });
 

@@ -24,6 +24,17 @@ export const alertLogStatusEnum = pgEnum('alert_log_status', ['success', 'failed
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth tables (unchanged from sprint 1)
 // ─────────────────────────────────────────────────────────────────────────────
+export const agencyInvites = pgTable('agency_invites', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  phone: varchar('phone', { length: 20 }).notNull(),
+  invite_token: uuid('invite_token').defaultRandom().notNull().unique(),
+  invited_by: uuid('invited_by').notNull(), // admin user id
+  status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending', 'accepted', 'expired'
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  accepted_at: timestamp('accepted_at', { withTimezone: true })
+});
+
 export const agencies = pgTable('agencies', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -31,6 +42,8 @@ export const agencies = pgTable('agencies', {
   email: varchar('email', { length: 255 }).notNull(),
   state: varchar('state', { length: 255 }).notNull(),
   invite_code: varchar('invite_code', { length: 20 }).unique(),
+  onboarded_via_invite: boolean('onboarded_via_invite').default(false).notNull(),
+  invite_id: uuid('invite_id').references(() => agencyInvites.id),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
 
@@ -75,7 +88,9 @@ export const routes = pgTable('routes', {
   from_city: varchar('from_city', { length: 255 }).notNull(),
   to_city: varchar('to_city', { length: 255 }).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-});
+}, (table) => ({
+  agencyIdx: index('routes_agency_idx').on(table.agency_id),
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stops
@@ -157,31 +172,30 @@ export const alertLogs = pgTable('alert_logs', {
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Billing — Admin-controlled per-agency prepaid wallet
-// Balance is stored in paise (1 paise = ₹0.01) to avoid float money issues
+// Trip Wallet — Agency prepaid trip balance
 // ─────────────────────────────────────────────────────────────────────────────
-export const agencyBillingConfig = pgTable('agency_billing_config', {
+export const agencyWallets = pgTable('agency_wallets', {
   id: uuid('id').defaultRandom().primaryKey(),
   agency_id: uuid('agency_id').references(() => agencies.id).notNull().unique(),
-  balance_paise: bigint('balance_paise', { mode: 'number' }).notNull().default(0),
-  per_alert_paise: integer('per_alert_paise').notNull().default(200),       // ₹2.00 per alert
-  low_balance_threshold_paise: bigint('low_balance_threshold_paise', { mode: 'number' }).notNull().default(10000), // ₹100
+  trips_remaining: integer('trips_remaining').notNull().default(0),
+  trips_used_this_month: integer('trips_used_this_month').notNull().default(0),
+  low_trip_threshold: integer('low_trip_threshold').notNull().default(10),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const billingTransactionTypeEnum = pgEnum('billing_tx_type', ['topup', 'alert_deduction']);
+export const walletTransactionTypeEnum = pgEnum('wallet_tx_type', ['trip_topup', 'trip_deduction']);
 
-export const billingTransactions = pgTable('billing_transactions', {
+export const walletTransactions = pgTable('wallet_transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
   agency_id: uuid('agency_id').references(() => agencies.id).notNull(),
-  amount_paise: bigint('amount_paise', { mode: 'number' }).notNull(),           // +credit / -debit
-  balance_after_paise: bigint('balance_after_paise', { mode: 'number' }).notNull(),
-  type: billingTransactionTypeEnum('type').notNull(),
+  trips_amount: integer('trips_amount').notNull(),           // +credit / -debit
+  trips_remaining_after: integer('trips_remaining_after').notNull(),
+  type: walletTransactionTypeEnum('type').notNull(),
   description: text('description'),
   reference_id: varchar('reference_id', { length: 255 }),                       // tripId or payment ref
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-  billingTxAgencyIdx: index('billing_tx_agency_idx').on(table.agency_id, table.created_at),
+  walletTxAgencyIdx: index('wallet_tx_agency_idx').on(table.agency_id, table.created_at),
 }));
 
