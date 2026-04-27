@@ -33,6 +33,17 @@ function handleError(reply: FastifyReply, err: any) {
 
 export default async function tripsRoutes(fastify: FastifyInstance) {
   const getTripId = (req: FastifyRequest) => (req.params as { id: string }).id;
+  const getAgencyIdOrReply = (req: FastifyRequest, reply: FastifyReply): string | null => {
+    const agencyId = req.user.agency_id ?? req.user.agencyId ?? null;
+    if (!agencyId) {
+      reply.status(400).send({
+        success: false,
+        error: { code: 'AGENCY_REQUIRED', message: 'User has no agency assigned' },
+      });
+      return null;
+    }
+    return agencyId;
+  };
 
   fastify.post('/', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     const parsed = CreateTripSchema.safeParse(req.body);
@@ -41,7 +52,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const trip = await TripsService.createTrip(req.user.id, req.user.agencyId as string, parsed.data);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const trip = await TripsService.createTrip(req.user.id, agencyId, parsed.data);
       return reply.status(201).send({ success: true, data: trip });
     } catch (err) {
       return handleError(reply, err);
@@ -55,7 +68,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const data = await TripsService.listTrips(req.user.agencyId as string, req.user.id, req.user.role, parsed.data);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const data = await TripsService.listTrips(agencyId, req.user.id, req.user.role, parsed.data);
       return reply.send({ success: true, data, meta: { count: data.length, timestamp: new Date().toISOString() } });
     } catch (err) {
       return handleError(reply, err);
@@ -64,7 +79,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.get('/:id', { preHandler: [requireAuth()] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const trip = await TripsService.getTrip(getTripId(req));
       return reply.send({ success: true, data: trip });
     } catch (err) {
@@ -74,7 +91,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.get('/:id/status', { preHandler: [requireAuth()] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const status = await TripsService.getTripStatus(getTripId(req));
       return reply.send({ success: true, data: status });
     } catch (err) {
@@ -84,7 +103,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.get('/:id/passengers', { preHandler: [requireAuth()] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const passengers = await TripsService.listPassengers(getTripId(req));
       return reply.send({ success: true, data: passengers, meta: { count: passengers.length, timestamp: new Date().toISOString() } });
     } catch (err) {
@@ -94,7 +115,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.put('/:id/start', { preHandler: [requireAuth([UserRole.CONDUCTOR])] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const trip = await TripsService.startTrip(getTripId(req), req.user.id);
       return reply.send({ success: true, data: trip });
     } catch (err) {
@@ -104,7 +127,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.put('/:id/complete', { preHandler: [requireAuth([UserRole.CONDUCTOR])] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const trip = await TripsService.completeTrip(getTripId(req), req.user.id);
       return reply.send({ success: true, data: trip });
     } catch (err) {
@@ -120,7 +145,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
     try {
       const tripId = getTripId(req);
-      await verifyTripAgency(tripId, req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(tripId, agencyId, req.user.id, req.user.role);
       await LocationService.assertConductorOwnsActiveTrip(tripId, req.user.id);
       const locationId = await LocationService.save(tripId, req.user.id, parsed.data);
       GeoService.checkStopProximity(tripId, parsed.data.lat!, parsed.data.lng!).catch((error) => {
@@ -134,7 +161,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.get('/:id/location', { preHandler: [requireAuth()] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const location = await TripsService.getCurrentLocation(getTripId(req));
       if (!location) {
         return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'No location data for this trip yet' } });
@@ -152,7 +181,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const passenger = await TripsService.addPassenger(getTripId(req), parsed.data);
       return reply.status(201).send({ success: true, data: passenger });
     } catch (err) {
@@ -162,7 +193,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.post('/:id/passengers/upload', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const data = await (req as any).file();
       if (!data) {
         return reply.status(400).send({ success: false, error: { code: 'NO_FILE', message: 'No file uploaded. Use multipart/form-data with field name \"file\"' } });
@@ -171,7 +204,7 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
       const chunks: Buffer[] = [];
       for await (const chunk of data.file) chunks.push(chunk);
       const buffer = Buffer.concat(chunks);
-      const result = await uploadPassengers(getTripId(req), req.user.agencyId as string, buffer, data.mimetype, data.filename);
+      const result = await uploadPassengers(getTripId(req), agencyId, buffer, data.mimetype, data.filename);
       return reply.status(201).send({ success: true, data: result });
     } catch (err) {
       return handleError(reply, err);
@@ -180,7 +213,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
   fastify.put('/:id/takeover', { preHandler: [requireAuth([UserRole.DRIVER])] }, async (req, reply) => {
     try {
-      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const result = await TakeoverService.takeoverTrip(getTripId(req), req.user.id, fastify);
       return reply.send({ success: true, data: result });
     } catch (err) {
@@ -196,7 +231,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
 
     try {
       const tripId = getTripId(req);
-      await verifyTripAgency(tripId, req.user.agencyId as string, req.user.id, req.user.role);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(tripId, agencyId, req.user.id, req.user.role);
 
       const [trip] = await db
         .select({
@@ -224,7 +261,7 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
         .where(eq(users.id, parsed.data.assigned_operator_id))
         .limit(1);
 
-      if (!targetOperator || targetOperator.agency_id !== req.user.agencyId || targetOperator.role !== 'operator') {
+      if (!targetOperator || targetOperator.agency_id !== agencyId || targetOperator.role !== 'operator') {
         return reply.status(422).send({ success: false, error: { code: 'INVALID_OPERATOR', message: 'Selected operator does not belong to your agency' } });
       }
       if (!targetOperator.is_active) {

@@ -6,6 +6,7 @@ type AuthUser = {
   id: string;
   role: string;
   agencyId: string | null;
+  agency_id: string | null;
   name?: string;
 };
 
@@ -60,10 +61,12 @@ export function requireAuth(roles?: string[]) {
         });
       }
 
+      const agencyId = payload.agencyId ?? payload.agency_id ?? null;
       (request as any).user = {
         id: userId,
         role: payload.role,
-        agencyId: payload.agencyId ?? payload.agency_id ?? null,
+        agencyId,
+        agency_id: agencyId,
         name: payload.name
       } satisfies AuthUser;
     } catch (err: any) {

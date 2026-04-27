@@ -13,6 +13,18 @@ import { CreateRouteSchema, CreateStopSchema } from '../../lib/shared-types';
 import * as RoutesService from './routes.service';
 
 export default async function routesRoutes(fastify: FastifyInstance) {
+  const getAgencyIdOrReply = (req: FastifyRequest, reply: FastifyReply): string | null => {
+    const agencyId = req.user.agency_id ?? req.user.agencyId ?? null;
+    if (!agencyId) {
+      reply.status(400).send({
+        success: false,
+        error: { code: 'AGENCY_REQUIRED', message: 'User has no agency assigned' },
+      });
+      return null;
+    }
+    return agencyId;
+  };
+
   const getRouteId = (req: FastifyRequest): string =>
     (req.params as { routeId: string }).routeId;
 
@@ -31,7 +43,8 @@ export default async function routesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const { agencyId } = req.user as { agencyId: string };
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
         const route = await RoutesService.createRoute(agencyId, parsed.data);
 
         return reply.status(201).send({
@@ -54,7 +67,8 @@ export default async function routesRoutes(fastify: FastifyInstance) {
     { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { agencyId } = req.user as { agencyId: string };
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
         const routes = await RoutesService.listRoutes(agencyId);
 
         return reply.send({
@@ -89,7 +103,8 @@ export default async function routesRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const { agencyId } = req.user as { agencyId: string };
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
         const stop = await RoutesService.addStop(
           getRouteId(req),
           agencyId,
@@ -116,7 +131,8 @@ export default async function routesRoutes(fastify: FastifyInstance) {
     { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { agencyId } = req.user as { agencyId: string };
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
         const stopsData = await RoutesService.listStops(getRouteId(req), agencyId);
 
         return reply.send({

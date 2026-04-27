@@ -44,8 +44,8 @@ export class BusService {
 
     if (existing) {
       throw Object.assign(
-        new Error(`Bus with plate ${plate} already exists in your agency`),
-        { statusCode: 409, code: 'BUS_ALREADY_EXISTS' }
+        new Error(`Bus ${plate} already exists in your agency`),
+        { statusCode: 409, code: 'DUPLICATE_RESOURCE' }
       );
     }
 

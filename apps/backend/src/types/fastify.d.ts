@@ -6,6 +6,7 @@ declare module 'fastify' {
       id: string;
       role: string;
       agencyId: string | null;
+      agency_id: string | null;
       name?: string;
     };
   }

@@ -13,6 +13,21 @@ import {
 import { requireAuth } from '../auth/auth.middleware';
 import { BusService } from './bus.service';
 
+function getAgencyIdOrReply(req: FastifyRequest, reply: FastifyReply): string | null {
+  const agencyId = req.user.agency_id ?? req.user.agencyId ?? null;
+  if (!agencyId) {
+    reply.status(400).send({
+      success: false,
+      error: {
+        code: 'AGENCY_REQUIRED',
+        message: 'User has no agency assigned',
+      },
+    });
+    return null;
+  }
+  return agencyId;
+}
+
 function handleError(reply: FastifyReply, err: any) {
   return reply.status(err.statusCode ?? 500).send({
     success: false,
@@ -186,6 +201,8 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
 
   fastify.get('/agency/operators', { preHandler: [requireAuth(resourceRoles)] }, async (req, reply) => {
     try {
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
       const operators = await db
         .select({
           id: users.id,
@@ -195,7 +212,7 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
           created_at: users.created_at,
         })
         .from(users)
-        .where(and(eq(users.agency_id, req.user.agencyId as string), eq(users.role, 'operator')))
+        .where(and(eq(users.agency_id, agencyId), eq(users.role, 'operator')))
         .orderBy(desc(users.created_at));
 
       return reply.send({ success: true, data: operators, meta: { count: operators.length, timestamp: new Date().toISOString() } });
@@ -206,7 +223,9 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
 
   fastify.get('/agency/buses', { preHandler: [requireAuth(resourceRoles)] }, async (req, reply) => {
     try {
-      const busesList = await BusService.listBuses(req.user.agencyId as string);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const busesList = await BusService.listBuses(agencyId);
       return reply.send({ success: true, data: busesList, meta: { count: busesList.length, timestamp: new Date().toISOString() } });
     } catch (err) {
       return handleError(reply, err);
@@ -220,7 +239,9 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const bus = await BusService.createBus(req.user.agencyId as string, req.user.id, parsed.data);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const bus = await BusService.createBus(agencyId, req.user.id, parsed.data);
       return reply.status(201).send({ success: true, data: bus });
     } catch (err) {
       return handleError(reply, err);
@@ -234,7 +255,9 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const bus = await BusService.updateBus((req.params as { id: string }).id, req.user.agencyId as string, req.user.id, parsed.data);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const bus = await BusService.updateBus((req.params as { id: string }).id, agencyId, req.user.id, parsed.data);
       return reply.send({ success: true, data: bus });
     } catch (err) {
       return handleError(reply, err);
@@ -243,7 +266,9 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
 
   fastify.delete('/agency/buses/:id', { preHandler: [requireAuth(resourceRoles)] }, async (req, reply) => {
     try {
-      const bus = await BusService.deactivateBus((req.params as { id: string }).id, req.user.agencyId as string, req.user.id);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const bus = await BusService.deactivateBus((req.params as { id: string }).id, agencyId, req.user.id);
       return reply.send({ success: true, data: bus });
     } catch (err) {
       return handleError(reply, err);
@@ -252,8 +277,10 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
 
   const listMembersHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
       const query = (req.query as { role?: 'conductor' | 'driver' }) ?? {};
-      const members = await listAgencyMembers(req.user.agencyId as string, query.role);
+      const members = await listAgencyMembers(agencyId, query.role);
       return reply.send({ success: true, data: members, meta: { count: members.length, timestamp: new Date().toISOString() } });
     } catch (err) {
       return handleError(reply, err);
@@ -262,7 +289,9 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
 
   const createMembersHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-      const member = await createAgencyMember(req.user.agencyId as string, req.user.id, req.body);
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      const member = await createAgencyMember(agencyId, req.user.id, req.body);
       return reply.status(201).send({ success: true, data: member });
     } catch (err) {
       return handleError(reply, err);
@@ -276,8 +305,10 @@ export default async function agencyResourceRoutes(fastify: FastifyInstance) {
     }
 
     try {
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
       const member = await toggleAgencyMember(
-        req.user.agencyId as string,
+        agencyId,
         req.user.id,
         (req.params as { id: string }).id,
         parsed.data.is_active

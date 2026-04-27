@@ -15,30 +15,72 @@ export const CoordinatesSchema = z.object({
 });
 export type Coordinates = z.infer<typeof CoordinatesSchema>;
 
-export const CreateRouteSchema = z.object({
-  name: z.string().min(1).max(255),
-  from_city: z.string().min(1).max(255),
-  to_city: z.string().min(1).max(255),
-});
+export const CreateRouteSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    fromCity: z.string().min(1).max(255).optional(),
+    from_city: z.string().min(1).max(255).optional(),
+    toCity: z.string().min(1).max(255).optional(),
+    to_city: z.string().min(1).max(255).optional(),
+  })
+  .transform((data) => ({
+    name: data.name,
+    from_city: data.from_city ?? data.fromCity ?? '',
+    to_city: data.to_city ?? data.toCity ?? '',
+  }))
+  .refine((data) => Boolean(data.from_city && data.to_city), {
+    message: 'from_city/to_city (or fromCity/toCity) is required',
+  });
 export type CreateRouteRequest = z.infer<typeof CreateRouteSchema>;
 
-export const CreateStopSchema = z.object({
-  name: z.string().min(1).max(255),
-  sequence_number: z.number().int().positive(),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  trigger_radius_km: z.number().positive().default(10),
-});
+export const CreateStopSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    sequence_number: z.number().int().positive().optional(),
+    sequenceNumber: z.number().int().positive().optional(),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    trigger_radius_km: z.number().positive().optional(),
+    triggerRadiusKm: z.number().positive().optional(),
+  })
+  .transform((data) => ({
+    name: data.name,
+    sequence_number: data.sequence_number ?? data.sequenceNumber ?? 0,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    trigger_radius_km: data.trigger_radius_km ?? data.triggerRadiusKm ?? 10,
+  }))
+  .refine((data) => data.sequence_number > 0, {
+    message: 'sequence_number (or sequenceNumber) is required',
+  });
 export type CreateStopRequest = z.infer<typeof CreateStopSchema>;
 
-export const CreateTripSchema = z.object({
-  route_id: z.string().uuid(),
-  conductor_id: z.string().uuid(),
-  driver_id: z.string().uuid().optional(),
-  bus_id: z.string().uuid().optional(),
-  assigned_operator_id: z.string().uuid().nullable().optional(),
-  scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
-});
+export const CreateTripSchema = z
+  .object({
+    route_id: z.string().uuid().optional(),
+    routeId: z.string().uuid().optional(),
+    conductor_id: z.string().uuid().optional(),
+    conductorId: z.string().uuid().optional(),
+    driver_id: z.string().uuid().optional(),
+    driverId: z.string().uuid().optional(),
+    bus_id: z.string().uuid().optional(),
+    busId: z.string().uuid().optional(),
+    assigned_operator_id: z.string().uuid().nullable().optional(),
+    assignedOperatorId: z.string().uuid().nullable().optional(),
+    scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+    scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+  })
+  .transform((data) => ({
+    route_id: data.route_id ?? data.routeId ?? '',
+    conductor_id: data.conductor_id ?? data.conductorId ?? '',
+    driver_id: data.driver_id ?? data.driverId,
+    bus_id: data.bus_id ?? data.busId,
+    assigned_operator_id: data.assigned_operator_id ?? data.assignedOperatorId,
+    scheduled_date: data.scheduled_date ?? data.scheduledDate ?? '',
+  }))
+  .refine((data) => Boolean(data.route_id && data.conductor_id && data.scheduled_date), {
+    message: 'route_id/conductor_id/scheduled_date are required',
+  });
 export type CreateTripRequest = z.infer<typeof CreateTripSchema>;
 
 export const AddPassengerSchema = z.object({
