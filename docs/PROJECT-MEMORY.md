@@ -9,6 +9,7 @@ Last Updated: 2026-04-27 (IST)
 - Orphan trip handler implemented so operator deactivation clears active trip assignments, writes audit logs, and emits realtime notifications.
 - Uniqueness validation confirmed for buses `(agency_id, number_plate)`, staff `(agency_id, phone)`, and routes `(agency_id, name)`.
 - Local verification completed with full requested 10-test matrix passing.
+- Production verification completed on Railway `https://api-production-e13f.up.railway.app` and Vercel `https://bus-alert-iota.vercel.app` with commit `a4e7e0a830f5889d4242ef2bc764cb16f7e2b214` live.
 - Test report saved at `docs/test-reports/resources-assignment-report.md`.
 - Next action: operator testing
 

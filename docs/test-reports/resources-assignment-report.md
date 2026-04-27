@@ -37,7 +37,10 @@ Date: 2026-04-27
 - Local frontend build: PASS
 - Full monorepo build: PASS
 - Local health check: PASS via `GET /health`
-- Production verification: PENDING until latest push finishes deploying on Railway and Vercel
+- Railway API deploy: PASS on commit `a4e7e0a830f5889d4242ef2bc764cb16f7e2b214`
+- Railway health check: PASS via `https://api-production-e13f.up.railway.app/health`
+- Vercel production deploy: PASS on commit `a4e7e0a830f5889d4242ef2bc764cb16f7e2b214`
+- Vercel frontend reachability: PASS via `https://bus-alert-iota.vercel.app`
 
 ## Summary
 Ready for operator testing: YES
