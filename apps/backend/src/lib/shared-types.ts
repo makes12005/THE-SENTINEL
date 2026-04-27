@@ -191,6 +191,7 @@ export interface TripStatusResponse {
     accuracy_meters: number | null;
   } | null;
   passengers: PassengerAlertSummary;
+  passenger_summary?: PassengerAlertSummary;
 }
 
 export const LocationUpdateSchema = z.object({

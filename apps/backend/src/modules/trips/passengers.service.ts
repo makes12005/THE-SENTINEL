@@ -179,7 +179,7 @@ export async function uploadPassengers(
   if (rowErrors.length > 0) {
     const err = Object.assign(
       new Error(`Upload rejected: ${rowErrors.length} row(s) failed validation`),
-      { statusCode: 422, rowErrors }
+      { statusCode: 400, rowErrors }
     );
     throw err;
   }
@@ -198,5 +198,9 @@ export async function uploadPassengers(
     await tx.insert(tripPassengers).values(passengerInserts);
   });
 
-  return { uploaded: readyRows.length };
+  return {
+    uploaded: readyRows.length,
+    added: readyRows.length,
+    added_count: readyRows.length,
+  };
 }

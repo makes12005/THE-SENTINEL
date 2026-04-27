@@ -250,6 +250,12 @@ export class TripsService {
         sent: Number(summary.sent),
         failed: Number(summary.failed),
       },
+      passenger_summary: {
+        total: Number(summary.total),
+        pending: Number(summary.pending),
+        sent: Number(summary.sent),
+        failed: Number(summary.failed),
+      },
     };
   }
 
