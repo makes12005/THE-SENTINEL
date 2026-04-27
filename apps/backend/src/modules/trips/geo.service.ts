@@ -6,12 +6,12 @@ import { sql, and, eq } from 'drizzle-orm';
 export const ALERT_QUEUE_KEY = 'alert_queue';
 
 export interface AlertQueueItem {
-  passenger_id: string;
-  trip_id: string;
-  passenger_name: string;
-  passenger_phone: string;   // E.164 (+91XXXXXXXXXX)
-  stop_name: string;
-  triggered_at: string;      // ISO timestamp (IST)
+  tripId: string;
+  tripPassengerId: string;
+  passengerPhone: string;   // E.164 (+91XXXXXXXXXX)
+  passengerName: string;
+  stopName: string;
+  triggeredAt: string;      // ISO timestamp (IST)
 }
 
 export class GeoService {
@@ -37,25 +37,29 @@ export class GeoService {
       passenger_name: string;
       passenger_phone: string;
       stop_name: string;
+      trigger_radius_km: number;
+      distance_km: number;
     }>(sql`
       SELECT
         tp.id              AS passenger_id,
         tp.passenger_name,
         tp.passenger_phone,
-        s.name             AS stop_name
+        s.name             AS stop_name,
+        s.trigger_radius_km::float AS trigger_radius_km,
+        (
+          ST_Distance(
+            s.coordinates::geography,
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+          ) / 1000.0
+        )::float AS distance_km
       FROM trip_passengers tp
       JOIN stops s ON s.id = tp.stop_id
       WHERE
         tp.trip_id      = ${tripId}
         AND tp.alert_status = 'pending'
-        AND ST_DWithin(
-          s.coordinates::geography,
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
-          (s.trigger_radius_km::float * 1000)
-        )
     `);
 
-    const rows = Array.from(result);
+    const rows = Array.from(result).filter((row) => Number(row.distance_km) < Number(row.trigger_radius_km));
     if (rows.length === 0) return 0;
 
     const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -63,6 +67,8 @@ export class GeoService {
 
     for (const row of rows) {
       try {
+        console.log('[GeoService] Distance to stop:', Number(row.distance_km).toFixed(3), 'km', '| stop:', row.stop_name, '| radius:', Number(row.trigger_radius_km).toFixed(2), 'km');
+
         // Idempotent: only proceed if still 'pending' (race-condition safe)
         const updated = await db
           .update(tripPassengers)
@@ -78,12 +84,12 @@ export class GeoService {
         if (updated.length === 0) continue; // already triggered by concurrent ping
 
         const item: AlertQueueItem = {
-          passenger_id: row.passenger_id,
-          trip_id: tripId,
-          passenger_name: row.passenger_name,
-          passenger_phone: row.passenger_phone,
-          stop_name: row.stop_name,
-          triggered_at: now,
+          tripId: tripId,
+          tripPassengerId: row.passenger_id,
+          passengerPhone: row.passenger_phone,
+          passengerName: row.passenger_name,
+          stopName: row.stop_name,
+          triggeredAt: now,
         };
         await redis.rpush(ALERT_QUEUE_KEY, JSON.stringify(item));
         triggered++;

@@ -141,6 +141,18 @@ async function poll() {
         conductorId,
         recoveredAt: new Date().toISOString(),
       });
+
+      db.insert(auditLogs).values({
+        user_id:     conductorId,
+        action:      'CONDUCTOR_ONLINE',
+        entity_type: 'trip',
+        entity_id:   tripId,
+        metadata:    {
+          conductor_id: conductorId,
+          driver_id:    driverId,
+          recovered_at: new Date().toISOString(),
+        },
+      }).catch((e: any) => console.error('[HeartbeatWorker] Recovery audit log error:', e?.message));
     }
   }
 

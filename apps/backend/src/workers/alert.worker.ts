@@ -56,14 +56,28 @@ async function main() {
       let job: AlertJob;
 
       try {
-        job = JSON.parse(rawJob) as AlertJob;
+        const parsed = JSON.parse(rawJob) as any;
+        // Backward-compatible mapping for legacy queue payloads.
+        job = {
+          tripId: parsed.tripId ?? parsed.trip_id,
+          passengerId: parsed.passengerId ?? parsed.tripPassengerId ?? parsed.passenger_id,
+          passengerPhone: parsed.passengerPhone ?? parsed.passenger_phone,
+          passengerName: parsed.passengerName ?? parsed.passenger_name,
+          stopName: parsed.stopName ?? parsed.stop_name,
+        };
       } catch {
         console.error('[AlertWorker] Malformed job — skipping:', rawJob);
         consecutiveErrors = 0;
         continue;
       }
 
-      console.log(`[AlertWorker] Processing job for passenger ${job.passengerId} → stop "${job.stopName}"`);
+      if (!job.tripId || !job.passengerId || !job.passengerPhone || !job.passengerName || !job.stopName) {
+        console.error('[AlertWorker] Invalid job payload — required fields missing:', job);
+        consecutiveErrors = 0;
+        continue;
+      }
+
+      console.log(`[AlertWorker] Processing job for ${job.passengerName} (${job.passengerPhone}) → stop "${job.stopName}"`);
 
       await runAlertCascade(job);
 
