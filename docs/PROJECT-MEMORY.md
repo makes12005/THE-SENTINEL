@@ -2,6 +2,43 @@
 
 Last Updated: 2026-04-27 (IST)
 
+## 2026-04-28 - Alert Worker Payload Contract Fix Implemented
+
+- Implemented backend fix for Redis alert queue payload mismatch:
+  - `GeoService` now pushes canonical camelCase fields: `tripId`, `tripPassengerId`, `passengerPhone`, `passengerName`, `stopName`.
+  - `Alert worker` now parses both camelCase and legacy snake_case keys for backward compatibility and validates required fields before processing.
+- Added heartbeat recovery audit tracking:
+  - `heartbeat.worker.ts` now writes `CONDUCTOR_ONLINE` audit log on offline→online recovery transition.
+- Added strict distance comparison in `GeoService` (`distance_km < trigger_radius_km`) and distance debug logging for test analysis.
+- Commit pushed to `main`: `685028c`.
+- Focused GPS rerun report saved: `docs/test-reports/gps-alert-flow-report-v3.md`.
+- GPS flow status: `8/12` (focused rerun: tests 3 and 6 pass; 5 and 8 still fail in current deployed runtime).
+- Critical blocker: Railway runtime logs still show old alert-worker behavior (`passenger undefined`), indicating latest source changes were not fully active in worker runtime during this run.
+- Next action: complete source deployment of latest `main` to `api + alert-worker + heartbeat-worker`, then rerun tests `3/5/6/8` and finalize 12/12 validation.
+
+## 2026-04-27 - GPS Alert Flow Rerun After Agency Fix
+
+- Fixed production test-user setup by assigning agency to operator/conductor/driver test accounts:
+  - Operator `+919876543001` → `a89c0815-1665-4f85-8dd5-7099f129ae3e`
+  - Conductor `+919876543002` → `c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0`
+  - Driver `+919876543003` → `b191563e-abf0-4938-83df-49fab616c205`
+- Verified fresh operator JWT now contains non-null `agencyId` + `agency_id`.
+- Full GPS suite rerun completed; report saved at `docs/test-reports/gps-alert-flow-report-v2.md`.
+- Pass rate: `8/12` (4 failures remaining).
+- Critical issues:
+  - Alert worker payload mapping bug in production logs (`passenger undefined`, `stop undefined`) causing processing errors and zero `alert_logs` rows.
+  - Early-phase GPS run showed unexpected alert progression during far-ping stage.
+  - Heartbeat offline event confirmed, but online recovery event not observed in this run.
+- Next action: fix queue payload contract in alert worker + add validation guard, then rerun GPS flow and confirm `alert_logs` creation + heartbeat recovery emission.
+
+## 2026-04-27 - GPS Alert Flow Production Test Attempt (Blocked)
+
+- Executed end-to-end GPS + alert production test flow against `https://api-production-e13f.up.railway.app` with operator `+919876543001` and conductor `+919876543002`.
+- Report saved at `docs/test-reports/gps-alert-flow-report.md` with raw evidence in `docs/test-reports/gps-alert-flow-evidence.json`.
+- Pass rate: `1/12 passed`, `9/12 failed`, `2/12 unknown (observability-limited)`.
+- Critical issue: authenticated operator/conductor accounts have `agency_id: null`, causing setup endpoints (`/api/routes`, `/api/agency/members`, `/api/agency/buses`) to fail with `AGENCY_REQUIRED`, which blocks trip creation and all downstream GPS/alert validations.
+- Next action: assign these test users to a valid agency (or provide agency-scoped operator credentials), then re-run the same flow and verify worker/heartbeat outcomes with Railway log access.
+
 ## 2026-04-27 - Operator Critical Backend Fixes Completed
 
 - Fixed 3 operator-critical backend bugs from production dashboard testing:
