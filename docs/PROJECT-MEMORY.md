@@ -2,6 +2,31 @@
 
 Last Updated: 2026-04-27 (IST)
 
+## 2026-04-27 - Operator Critical Backend Fixes Completed
+
+- Fixed 3 operator-critical backend bugs from production dashboard testing:
+  - Route payload normalization now accepts both camelCase and snake_case (`fromCity/from_city`, `toCity/to_city`) and normalizes safely.
+  - Operator agency scoping hardened by carrying `agency_id` in JWT payload and enforcing agency presence in agency-scoped endpoints.
+  - Duplicate resource guard validated for buses and staff with reliable `409` duplicate responses.
+- Local verification completed: 7/7 operator fix tests passed.
+- Production verification completed after Railway redeploy: 7/7 operator fix tests passed on `https://api-production-e13f.up.railway.app`.
+- Fix report saved at `docs/test-reports/operator-fix-report.md`.
+- Next action: re-run the full 21-test operator dashboard suite and close remaining frontend validation gaps.
+
+## 2026-04-27 - Operator Production Test Run Completed
+
+- Operator dashboard production test run executed against Railway API `https://api-production-e13f.up.railway.app` and Vercel frontend `https://bus-alert-iota.vercel.app`.
+- Report saved at `docs/test-reports/operator-test-report.md` with backend raw logs in `docs/test-reports/operator-backend-results.json`.
+- Pass rate: `4/21` (tests 5, 6, 12, 15 passed; 17 failed).
+- Major issues found:
+  - Route create contract mismatch (`fromCity`/`toCity` vs backend expecting `from_city`/`to_city`).
+  - Operator bus create fails with `agency_id` null (HTTP 500).
+  - Duplicate staff phone check did not reject duplicate create.
+  - Trip/passenger chain blocked due to upstream route/bus failures.
+- Frontend route screenshots captured for operator pages, but full authenticated UI assertions were not completed in this run.
+- Conductor and driver test users were retained intentionally for Flutter testing as requested.
+- Next action: fix backend contract + operator agency scoping + duplicate staff guard, then re-run full operator API + authenticated frontend E2E suite.
+
 ## 2026-04-27 - Shared Resources And Trip Assignment Completed
 
 - Shared agency resources implemented for buses, conductors, and drivers across owner and operator views.
