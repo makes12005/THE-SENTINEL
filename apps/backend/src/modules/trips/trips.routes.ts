@@ -1,330 +1,265 @@
-/**
- * Trips Module HTTP Layer
- *
- * Existing routes (Sprint 2):
- *   POST   /api/trips                      — create trip (operator)
- *   GET    /api/trips/:id                  — trip details (any auth)
- *   PUT    /api/trips/:id/start            — start trip (conductor)
- *   PUT    /api/trips/:id/complete         — complete trip (conductor)
- *   POST   /api/trips/:id/location         — GPS ping (conductor)
- *   GET    /api/trips/:id/location         — current location (any auth)
- *   POST   /api/trips/:id/passengers       — add passenger (operator)
- *
- * New routes (Sprint 4):
- *   GET    /api/trips                      — list trips (operator | owner | driver)
- *   GET    /api/trips/:id/status           — status + location + summary (operator | owner | conductor | driver)
- *   GET    /api/trips/:id/passengers       — passenger list with alert_status (operator | conductor | driver)
- *   POST   /api/trips/:id/passengers/upload — CSV/xlsx bulk upload (operator)
- *
- * New routes (Sprint 6):
- *   PUT    /api/trips/:id/takeover         — driver takes over conductor role
- */
-
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { requireAuth } from '../auth/auth.middleware';
-import { TripsService } from './trips.service';
-import { LocationService } from './location.service';
-import { GeoService } from './geo.service';
-import { TakeoverService } from './takeover.service';
-import { uploadPassengers } from './passengers.service';
-import { verifyTripAgency } from './trip-auth.helper';
+import { and, eq } from 'drizzle-orm';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { db } from '../../db';
+import { auditLogs, routes, trips, users } from '../../db/schema';
+import { emitSocketEvent } from '../../lib/socket';
 import {
-  UserRole,
-  CreateTripSchema,
-  LocationUpdateSchema,
   AddPassengerSchema,
+  AssignTripSchema,
+  CreateTripSchema,
   ListTripsQuerySchema,
+  LocationUpdateSchema,
+  UserRole,
 } from '../../lib/shared-types';
+import { requireAuth } from '../auth/auth.middleware';
+import { verifyTripAgency } from './trip-auth.helper';
+import { GeoService } from './geo.service';
+import { LocationService } from './location.service';
+import { uploadPassengers } from './passengers.service';
+import { TakeoverService } from './takeover.service';
+import { TripsService } from './trips.service';
 
 function handleError(reply: FastifyReply, err: any) {
-  const status = (err as any).statusCode ?? 500;
   const body: Record<string, unknown> = {
     success: false,
     error: {
-      code: (err as any).code ?? 'REQUEST_FAILED',
+      code: err.code ?? 'REQUEST_FAILED',
       message: err.message ?? 'An error occurred',
     },
   };
-  // Attach row-by-row errors for upload failures
   if (err.rowErrors) body.row_errors = err.rowErrors;
-  return reply.status(status).send(body);
+  return reply.status(err.statusCode ?? 500).send(body);
 }
 
 export default async function tripsRoutes(fastify: FastifyInstance) {
-  const getTripId = (req: FastifyRequest): string =>
-    (req.params as { id: string }).id;
+  const getTripId = (req: FastifyRequest) => (req.params as { id: string }).id;
 
-  // ─────────────────────────────────────────────────────────────────
-  // Sprint 2 — existing routes
-  // ─────────────────────────────────────────────────────────────────
-
-  // POST /trips — create trip (operator | admin)
-  fastify.post(
-    '/',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const parsed = CreateTripSchema.safeParse(req.body);
-      if (!parsed.success)
-        return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: parsed.error.format() } });
-
-      try {
-        const user: any = (req as any).user;
-        const trip = await TripsService.createTrip(user.id, user.agencyId, parsed.data);
-        return reply.status(201).send({ success: true, data: trip });
-      } catch (err) { return handleError(reply, err); }
+  fastify.post('/', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    const parsed = CreateTripSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please provide valid trip details' } });
     }
-  );
 
-  // GET /trips/:id — trip details + passengers (any authenticated role)
-  fastify.get(
-    '/:id',
-    { preHandler: [requireAuth()] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const trip = await TripsService.getTrip(getTripId(req));
-        return reply.send({ success: true, data: trip });
-      } catch (err) { return handleError(reply, err); }
+    try {
+      const trip = await TripsService.createTrip(req.user.id, req.user.agencyId as string, parsed.data);
+      return reply.status(201).send({ success: true, data: trip });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // PUT /trips/:id/start — start trip (conductor only)
-  fastify.put(
-    '/:id/start',
-    { preHandler: [requireAuth([UserRole.CONDUCTOR])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const trip = await TripsService.startTrip(getTripId(req), user.id);
-        return reply.send({ success: true, data: trip });
-      } catch (err) { return handleError(reply, err); }
+  fastify.get('/', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.DRIVER, UserRole.ADMIN])] }, async (req, reply) => {
+    const parsed = ListTripsQuerySchema.safeParse(req.query ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid trip filters' } });
     }
-  );
 
-  // PUT /trips/:id/complete — complete trip (conductor only)
-  fastify.put(
-    '/:id/complete',
-    { preHandler: [requireAuth([UserRole.CONDUCTOR])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const trip = await TripsService.completeTrip(getTripId(req), user.id);
-        return reply.send({ success: true, data: trip });
-      } catch (err) { return handleError(reply, err); }
+    try {
+      const data = await TripsService.listTrips(req.user.agencyId as string, req.user.id, req.user.role, parsed.data);
+      return reply.send({ success: true, data, meta: { count: data.length, timestamp: new Date().toISOString() } });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // POST /trips/:id/location — conductor GPS ping (conductor only)
-  fastify.post(
-    '/:id/location',
-    { preHandler: [requireAuth([UserRole.CONDUCTOR])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const parsed = LocationUpdateSchema.safeParse(req.body);
-      if (!parsed.success)
-        return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: parsed.error.format() } });
-
-      try {
-        const user: any = (req as any).user;
-        const tripId = getTripId(req);
-        const lat = parsed.data.lat!;
-        const lng = parsed.data.lng!;
-
-        await verifyTripAgency(tripId, user.agencyId, user.id, user.role);
-        await LocationService.assertConductorOwnsActiveTrip(tripId, user.id);
-        const locationId = await LocationService.save(tripId, user.id, parsed.data);
-
-        // Fire-and-forget geo check — never blocks the 10s ping
-        GeoService.checkStopProximity(tripId, lat, lng)
-          .then((n) => { if (n > 0) fastify.log.info(`[Geo] Trip ${tripId}: ${n} alert(s) triggered`); })
-          .catch((e) => fastify.log.error(`[Geo] Proximity error for trip ${tripId}: ${e}`));
-
-        return reply.status(202).send({ success: true, data: { location_id: locationId } });
-      } catch (err) { return handleError(reply, err); }
+  fastify.get('/:id', { preHandler: [requireAuth()] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const trip = await TripsService.getTrip(getTripId(req));
+      return reply.send({ success: true, data: trip });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // GET /trips/:id/location — current bus location (any auth)
-  fastify.get(
-    '/:id/location',
-    { preHandler: [requireAuth()] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const location = await TripsService.getCurrentLocation(getTripId(req));
-        if (!location)
-          return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'No location data for this trip yet' } });
-        return reply.send({ success: true, data: location });
-      } catch (err) { return handleError(reply, err); }
+  fastify.get('/:id/status', { preHandler: [requireAuth()] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const status = await TripsService.getTripStatus(getTripId(req));
+      return reply.send({ success: true, data: status });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // POST /trips/:id/passengers — add single passenger (operator | admin)
-  fastify.post(
-    '/:id/passengers',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const parsed = AddPassengerSchema.safeParse(req.body);
-      if (!parsed.success)
-        return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid payload', details: parsed.error.format() } });
-
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const passenger = await TripsService.addPassenger(getTripId(req), parsed.data);
-        return reply.status(201).send({ success: true, data: passenger });
-      } catch (err) { return handleError(reply, err); }
+  fastify.get('/:id/passengers', { preHandler: [requireAuth()] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const passengers = await TripsService.listPassengers(getTripId(req));
+      return reply.send({ success: true, data: passengers, meta: { count: passengers.length, timestamp: new Date().toISOString() } });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // ─────────────────────────────────────────────────────────────────
-  // Sprint 4 — new routes
-  // ─────────────────────────────────────────────────────────────────
-
-  // GET /trips — list trips for agency, optional ?status filter (operator | owner | driver | admin)
-  fastify.get(
-    '/',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.DRIVER, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const queryParsed = ListTripsQuerySchema.safeParse(req.query);
-        if (!queryParsed.success)
-          return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid query', details: queryParsed.error.format() } });
-
-        const user: any = (req as any).user;
-        const tripsList = await TripsService.listTrips(user.agencyId, queryParsed.data.status);
-
-        return reply.send({
-          success: true,
-          data: tripsList,
-          meta: {
-            count: tripsList.length,
-            timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-          },
-        });
-      } catch (err) { return handleError(reply, err); }
+  fastify.put('/:id/start', { preHandler: [requireAuth([UserRole.CONDUCTOR])] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const trip = await TripsService.startTrip(getTripId(req), req.user.id);
+      return reply.send({ success: true, data: trip });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // GET /trips/:id/status — rich status response (includes driver role)
-  fastify.get(
-    '/:id/status',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.CONDUCTOR, UserRole.DRIVER, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const status = await TripsService.getTripStatus(getTripId(req));
-        return reply.send({
-          success: true,
-          data: status,
-          meta: { timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) },
-        });
-      } catch (err) { return handleError(reply, err); }
+  fastify.put('/:id/complete', { preHandler: [requireAuth([UserRole.CONDUCTOR])] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const trip = await TripsService.completeTrip(getTripId(req), req.user.id);
+      return reply.send({ success: true, data: trip });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // GET /trips/:id/passengers — passenger list with alert status (includes driver after takeover)
-  fastify.get(
-    '/:id/passengers',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.CONDUCTOR, UserRole.DRIVER, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const passengers = await TripsService.listPassengers(getTripId(req));
-        return reply.send({
-          success: true,
-          data: passengers,
-          meta: {
-            count: passengers.length,
-            timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-          },
-        });
-      } catch (err) { return handleError(reply, err); }
+  fastify.post('/:id/location', { preHandler: [requireAuth([UserRole.CONDUCTOR])] }, async (req, reply) => {
+    const parsed = LocationUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please provide a valid GPS update' } });
     }
-  );
 
-  // ─────────────────────────────────────────────────────────────────
-  // Sprint 6 — Takeover API
-  // ─────────────────────────────────────────────────────────────────
-
-  // PUT /trips/:id/takeover — driver takes over from offline conductor
-  fastify.put(
-    '/:id/takeover',
-    { preHandler: [requireAuth([UserRole.DRIVER])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-        
-        const result = await TakeoverService.takeoverTrip(getTripId(req), user.id, fastify);
-        return reply.send({
-          success: true,
-          data: result,
-          meta: { timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) },
-        });
-      } catch (err) { return handleError(reply, err); }
+    try {
+      const tripId = getTripId(req);
+      await verifyTripAgency(tripId, req.user.agencyId as string, req.user.id, req.user.role);
+      await LocationService.assertConductorOwnsActiveTrip(tripId, req.user.id);
+      const locationId = await LocationService.save(tripId, req.user.id, parsed.data);
+      GeoService.checkStopProximity(tripId, parsed.data.lat!, parsed.data.lng!).catch((error) => {
+        fastify.log.error({ error }, '[Geo] proximity check failed');
+      });
+      return reply.status(202).send({ success: true, data: { location_id: locationId } });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
 
-  // POST /trips/:id/passengers/upload — CSV / xlsx bulk upload
-  // Uses multipart/form-data; Fastify requires @fastify/multipart plugin
-  fastify.post(
-    '/:id/passengers/upload',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        await verifyTripAgency(getTripId(req), user.agencyId, user.id, user.role);
-
-        // @fastify/multipart calls req.file() — collect file parts
-        const data = await (req as any).file();
-        if (!data) {
-          return reply.status(400).send({
-            success: false,
-            error: { code: 'NO_FILE', message: 'No file uploaded. Use multipart/form-data with field name "file"' },
-          });
-        }
-
-        const { mimetype, filename } = data;
-        const ext = filename?.split('.').pop()?.toLowerCase();
-        if (!['csv', 'xlsx', 'xls'].includes(ext ?? '')) {
-          return reply.status(415).send({
-            success: false,
-            error: { code: 'UNSUPPORTED_FILE_TYPE', message: 'Only .csv, .xlsx and .xls files are accepted' },
-          });
-        }
-
-        // Buffer the stream
-        const chunks: Buffer[] = [];
-        for await (const chunk of data.file) chunks.push(chunk);
-        const buffer = Buffer.concat(chunks);
-
-        const result = await uploadPassengers(
-          getTripId(req),
-          user.agencyId,
-          buffer,
-          mimetype,
-          filename ?? `upload.${ext}`
-        );
-
-        return reply.status(201).send({
-          success: true,
-          data: result,
-          meta: { timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) },
-        });
-      } catch (err) { return handleError(reply, err); }
+  fastify.get('/:id/location', { preHandler: [requireAuth()] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const location = await TripsService.getCurrentLocation(getTripId(req));
+      if (!location) {
+        return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'No location data for this trip yet' } });
+      }
+      return reply.send({ success: true, data: location });
+    } catch (err) {
+      return handleError(reply, err);
     }
-  );
+  });
+
+  fastify.post('/:id/passengers', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    const parsed = AddPassengerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please provide valid passenger details' } });
+    }
+
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const passenger = await TripsService.addPassenger(getTripId(req), parsed.data);
+      return reply.status(201).send({ success: true, data: passenger });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
+  fastify.post('/:id/passengers/upload', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const data = await (req as any).file();
+      if (!data) {
+        return reply.status(400).send({ success: false, error: { code: 'NO_FILE', message: 'No file uploaded. Use multipart/form-data with field name \"file\"' } });
+      }
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of data.file) chunks.push(chunk);
+      const buffer = Buffer.concat(chunks);
+      const result = await uploadPassengers(getTripId(req), req.user.agencyId as string, buffer, data.mimetype, data.filename);
+      return reply.status(201).send({ success: true, data: result });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
+  fastify.put('/:id/takeover', { preHandler: [requireAuth([UserRole.DRIVER])] }, async (req, reply) => {
+    try {
+      await verifyTripAgency(getTripId(req), req.user.agencyId as string, req.user.id, req.user.role);
+      const result = await TakeoverService.takeoverTrip(getTripId(req), req.user.id, fastify);
+      return reply.send({ success: true, data: result });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
+  const reassignHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const parsed = AssignTripSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please select a valid operator to reassign this trip' } });
+    }
+
+    try {
+      const tripId = getTripId(req);
+      await verifyTripAgency(tripId, req.user.agencyId as string, req.user.id, req.user.role);
+
+      const [trip] = await db
+        .select({
+          id: trips.id,
+          status: trips.status,
+          owned_by_operator_id: trips.owned_by_operator_id,
+          route_name: routes.name,
+        })
+        .from(trips)
+        .innerJoin(routes, eq(routes.id, trips.route_id))
+        .where(eq(trips.id, tripId))
+        .limit(1);
+
+      if (!trip) {
+        return reply.status(404).send({ success: false, error: { code: 'TRIP_NOT_FOUND', message: 'Trip not found' } });
+      }
+
+      if (req.user.role === UserRole.OPERATOR && trip.owned_by_operator_id !== req.user.id) {
+        return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Only the trip owner can reassign this trip' } });
+      }
+
+      const [targetOperator] = await db
+        .select({ id: users.id, name: users.name, agency_id: users.agency_id, role: users.role, is_active: users.is_active })
+        .from(users)
+        .where(eq(users.id, parsed.data.assigned_operator_id))
+        .limit(1);
+
+      if (!targetOperator || targetOperator.agency_id !== req.user.agencyId || targetOperator.role !== 'operator') {
+        return reply.status(422).send({ success: false, error: { code: 'INVALID_OPERATOR', message: 'Selected operator does not belong to your agency' } });
+      }
+      if (!targetOperator.is_active) {
+        return reply.status(422).send({ success: false, error: { code: 'OPERATOR_INACTIVE', message: 'Selected operator is inactive' } });
+      }
+
+      const [updated] = await db
+        .update(trips)
+        .set({ assigned_operator_id: parsed.data.assigned_operator_id })
+        .where(eq(trips.id, tripId))
+        .returning();
+
+      await db.insert(auditLogs).values({
+        user_id: req.user.id,
+        action: 'TRIP_REASSIGNED',
+        entity_type: 'trip',
+        entity_id: tripId,
+        metadata: {
+          assigned_operator_id: parsed.data.assigned_operator_id,
+          assigned_by: req.user.name ?? req.user.id,
+        },
+      });
+
+      await emitSocketEvent(`user:${parsed.data.assigned_operator_id}`, 'trip_assigned', {
+        tripId,
+        tripName: trip.route_name,
+        assignedBy: req.user.name ?? 'Agency owner',
+      });
+
+      return reply.send({ success: true, data: updated });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  };
+
+  fastify.put('/:id/reassign', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, reassignHandler);
+  fastify.post('/:id/assign', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, reassignHandler);
 }

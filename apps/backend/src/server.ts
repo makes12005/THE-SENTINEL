@@ -8,6 +8,7 @@ import routesRoutes   from './modules/trips/routes.routes';
 import operatorRoutes from './modules/operator/operator.routes';
 import ownerRoutes    from './modules/owner/owner.routes';
 import adminRoutes    from './modules/admin/admin.routes';
+import agencyResourceRoutes from './modules/operator/resources.routes';
 import { initSocketIO } from './lib/socket';
 import { loadEnv } from './lib/load-env';
 import { db } from './db';
@@ -62,6 +63,8 @@ fastify.register(routesRoutes,   { prefix: '/api/routes' });
 // Operator dashboard API (sprint 7)
 // All routes live under /api: /api/operator/summary, /api/agency/members, /api/logs/alert-logs
 fastify.register(operatorRoutes, { prefix: '/api' });
+// Agency resources (sprint 10): /api/agency/buses, /api/agency/staff
+fastify.register(agencyResourceRoutes, { prefix: '/api' });
 // Owner dashboard API (sprint 8)
 // Routes: /api/owner/summary, /api/owner/operators, /api/owner/trips, /api/owner/logs, /api/agency/profile
 fastify.register(ownerRoutes, { prefix: '/api' });

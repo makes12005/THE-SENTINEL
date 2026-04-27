@@ -51,11 +51,11 @@ export class TakeoverService {
       throw Object.assign(new Error('Only users with driver role can take over a trip'), { statusCode: 403 });
     }
 
-    // 4. Verify driver belongs to same agency as the trip's operator
+    // 4. Verify driver belongs to same agency as the trip owner
     const [tripOperator] = await db
       .select({ agency_id: users.agency_id })
       .from(users)
-      .where(eq(users.id, trip.operator_id))
+      .where(eq(users.id, trip.owned_by_operator_id))
       .limit(1);
 
     if (tripOperator && tripOperator.agency_id !== driver.agency_id) {

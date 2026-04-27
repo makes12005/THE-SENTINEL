@@ -29,6 +29,20 @@
       "when": 1777204436564,
       "tag": "0003_silent_marvel_apes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1777230001889,
+      "tag": "0004_shared_resources",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1777281400000,
+      "tag": "0005_resources_member_metadata",
+      "breakpoints": true
     }
   ]
 }

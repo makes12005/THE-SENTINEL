@@ -24,6 +24,19 @@ export async function createRoute(
   const fromCity = payload.from_city!;
   const toCity = payload.to_city!;
 
+  const [existing] = await db
+    .select({ id: routes.id })
+    .from(routes)
+    .where(and(eq(routes.agency_id, agencyId), eq(routes.name, name)))
+    .limit(1);
+
+  if (existing) {
+    throw Object.assign(
+      new Error(`Route ${name} already exists in your agency`),
+      { statusCode: 409, code: 'ROUTE_ALREADY_EXISTS' }
+    );
+  }
+
   const routeInsert: typeof routes.$inferInsert = {
     agency_id: agencyId,
     name,

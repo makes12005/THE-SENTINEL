@@ -1,6 +1,6 @@
 import {
   pgTable, uuid, varchar, text, boolean, timestamp, jsonb,
-  pgEnum, integer, decimal, bigint, index, customType, date
+  pgEnum, integer, decimal, bigint, index, customType, date, unique
 } from 'drizzle-orm/pg-core';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ export const agencyInvites = pgTable('agency_invites', {
 export const agencies = pgTable('agencies', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
-  phone: varchar('phone', { length: 12 }).notNull(),
+  phone: varchar('phone', { length: 20 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   state: varchar('state', { length: 255 }).notNull(),
   invite_code: varchar('invite_code', { length: 20 }).unique(),
@@ -51,13 +51,19 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   agency_id: uuid('agency_id').references(() => agencies.id),
   name: varchar('name', { length: 255 }).notNull(),
-  phone: varchar('phone', { length: 20 }).unique(),        // nullable — email-only users have no phone
+  phone: varchar('phone', { length: 20 }),                 // nullable — email-only users have no phone
   email: varchar('email', { length: 255 }),
   password_hash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull(),
   is_active: boolean('is_active').default(true).notNull(),
+  added_by: uuid('added_by'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
-});
+}, (table) => ({
+  // Global uniqueness for admin/owner/operator who have email/phone globally unique
+  // Conductors & drivers are scoped per-agency — enforced in application layer with
+  // a compound check. DB-level partial unique index is in the migration SQL.
+  phoneGlobalIdx: index('users_phone_idx').on(table.phone),
+}));
 
 export const refreshTokens = pgTable('refresh_tokens', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -90,6 +96,7 @@ export const routes = pgTable('routes', {
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
   agencyIdx: index('routes_agency_idx').on(table.agency_id),
+  agencyNameUnique: unique('routes_agency_name_unique').on(table.agency_id, table.name),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,14 +114,34 @@ export const stops = pgTable('stops', {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Buses — shared agency resource
+// UNIQUE(agency_id, number_plate) — enforced via DB unique index in migration
+// ─────────────────────────────────────────────────────────────────────────────
+export const buses = pgTable('buses', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  agency_id: uuid('agency_id').references(() => agencies.id).notNull(),
+  number_plate: varchar('number_plate', { length: 20 }).notNull(),
+  model: varchar('model', { length: 255 }),
+  capacity: integer('capacity'),
+  is_active: boolean('is_active').default(true).notNull(),
+  added_by: uuid('added_by').references(() => users.id).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  agencyPlateUnique: unique('buses_agency_plate_unique').on(table.agency_id, table.number_plate),
+  agencyIdx: index('buses_agency_idx').on(table.agency_id),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Trips
 // ─────────────────────────────────────────────────────────────────────────────
 export const trips = pgTable('trips', {
   id: uuid('id').defaultRandom().primaryKey(),
   route_id: uuid('route_id').references(() => routes.id).notNull(),
-  operator_id: uuid('operator_id').references(() => users.id).notNull(),
+  owned_by_operator_id: uuid('operator_id').references(() => users.id).notNull(),
+  assigned_operator_id: uuid('assigned_to_operator_id').references(() => users.id),
   conductor_id: uuid('conductor_id').references(() => users.id).notNull(),
   driver_id: uuid('driver_id').references(() => users.id),
+  bus_id: uuid('bus_id').references(() => buses.id),  // optional assigned bus
   status: tripStatusEnum('status').default('scheduled').notNull(),
   scheduled_date: date('scheduled_date').notNull(),
   started_at: timestamp('started_at', { withTimezone: true }),
@@ -198,4 +225,3 @@ export const walletTransactions = pgTable('wallet_transactions', {
 }, (table) => ({
   walletTxAgencyIdx: index('wallet_tx_agency_idx').on(table.agency_id, table.created_at),
 }));
-

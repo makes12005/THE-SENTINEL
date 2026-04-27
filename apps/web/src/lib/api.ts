@@ -128,6 +128,16 @@ export async function put<T>(url: string, body?: unknown): Promise<T> {
   return res.data.data;
 }
 
+export async function patch<T>(url: string, body?: unknown): Promise<T> {
+  const res = await api.patch<ApiResponse<T>>(url, body);
+  return res.data.data;
+}
+
+export async function del<T>(url: string): Promise<T> {
+  const res = await api.delete<ApiResponse<T>>(url);
+  return res.data.data;
+}
+
 export async function postForm<T>(url: string, form: FormData): Promise<T> {
   const res = await api.post<ApiResponse<T>>(url, form, {
     headers: { 'Content-Type': 'multipart/form-data' },

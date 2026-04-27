@@ -1,8 +1,5 @@
 import { z } from 'zod';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Enums
-// ─────────────────────────────────────────────────────────────────────────────
 export const TripStatusEnum = z.enum(['scheduled', 'active', 'completed']);
 export type TripStatus = z.infer<typeof TripStatusEnum>;
 
@@ -12,18 +9,12 @@ export type AlertStatus = z.infer<typeof AlertStatusEnum>;
 export const AlertChannelEnum = z.enum(['call', 'sms', 'whatsapp', 'manual']);
 export type AlertChannel = z.infer<typeof AlertChannelEnum>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Coordinates
-// ─────────────────────────────────────────────────────────────────────────────
 export const CoordinatesSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
 });
 export type Coordinates = z.infer<typeof CoordinatesSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Route & Stop
-// ─────────────────────────────────────────────────────────────────────────────
 export const CreateRouteSchema = z.object({
   name: z.string().min(1).max(255),
   from_city: z.string().min(1).max(255),
@@ -40,20 +31,16 @@ export const CreateStopSchema = z.object({
 });
 export type CreateStopRequest = z.infer<typeof CreateStopSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Trip
-// ─────────────────────────────────────────────────────────────────────────────
 export const CreateTripSchema = z.object({
   route_id: z.string().uuid(),
   conductor_id: z.string().uuid(),
   driver_id: z.string().uuid().optional(),
+  bus_id: z.string().uuid().optional(),
+  assigned_operator_id: z.string().uuid().nullable().optional(),
   scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
 });
 export type CreateTripRequest = z.infer<typeof CreateTripSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Passenger — single add (by stop_id)
-// ─────────────────────────────────────────────────────────────────────────────
 export const AddPassengerSchema = z.object({
   passenger_name: z.string().min(1).max(255),
   passenger_phone: z.string().regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
@@ -61,10 +48,6 @@ export const AddPassengerSchema = z.object({
 });
 export type AddPassengerRequest = z.infer<typeof AddPassengerSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Passenger CSV upload
-// ─────────────────────────────────────────────────────────────────────────────
-/** One row parsed from the CSV/xlsx before DB lookup */
 export const PassengerRowSchema = z.object({
   name: z.string().min(1, 'name is required').max(255),
   phone: z.string().regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
@@ -72,7 +55,6 @@ export const PassengerRowSchema = z.object({
 });
 export type PassengerRow = z.infer<typeof PassengerRowSchema>;
 
-/** Per-row error returned when the upload is rejected */
 export interface PassengerRowError {
   row: number;
   data: Record<string, unknown>;
@@ -84,9 +66,6 @@ export interface UploadPassengersResponse {
   errors?: PassengerRowError[];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Trip status endpoint response
-// ─────────────────────────────────────────────────────────────────────────────
 export interface PassengerAlertSummary {
   total: number;
   pending: number;
@@ -110,9 +89,6 @@ export interface TripStatusResponse {
   passengers: PassengerAlertSummary;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Location update (conductor GPS ping)
-// ─────────────────────────────────────────────────────────────────────────────
 export const LocationUpdateSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
@@ -121,10 +97,11 @@ export const LocationUpdateSchema = z.object({
 });
 export type LocationUpdateRequest = z.infer<typeof LocationUpdateSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Query filters
-// ─────────────────────────────────────────────────────────────────────────────
 export const ListTripsQuerySchema = z.object({
   status: TripStatusEnum.optional(),
+  unassigned: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .optional()
+    .transform((value) => value === true || value === 'true'),
 });
 export type ListTripsQuery = z.infer<typeof ListTripsQuerySchema>;

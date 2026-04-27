@@ -1,128 +1,126 @@
 'use client';
-/**
- * Owner — Screen 3: All Trips
- * All trips across all operators in the agency.
- * Reuses TripTable shared component with showOperator=true.
- * Data: GET /api/owner/trips
- */
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { get } from '@/lib/api';
-import { TableSkeleton, PageHeader } from '@/components/ui';
-import { TripTable, type TripRow } from '@/components/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { PageHeader, StatusBadge, TableSkeleton } from '@/components/ui';
+import { get, put } from '@/lib/api';
 
-interface OwnerTripsResponse {
-  data: TripRow[];
-  meta: { page: number; page_size: number; total: number };
+interface Trip {
+  id: string;
+  status: string;
+  scheduled_date: string;
+  owner_name?: string | null;
+  assigned_operator_name?: string | null;
+  assigned_operator_id?: string | null;
+  route: { name: string; from_city: string; to_city: string };
+  passenger_count: number;
+}
+
+interface Operator { id: string; name: string; is_active: boolean }
+
+function ReassignTripModal({ trip, onClose }: { trip: Trip; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [assignedOperatorId, setAssignedOperatorId] = useState(trip.assigned_operator_id ?? '');
+  const operators = useQuery<Operator[]>({ queryKey: ['agency-operators'], queryFn: () => get('/api/agency/operators') });
+
+  const mutation = useMutation({
+    mutationFn: () => put(`/api/trips/${trip.id}/reassign`, { assigned_operator_id: assignedOperatorId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-trips'] });
+      queryClient.invalidateQueries({ queryKey: ['owner-summary'] });
+      toast.success('Trip reassigned');
+      onClose();
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.error?.message ?? 'Failed to reassign trip'),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          mutation.mutate();
+        }}
+        className="w-full max-w-md rounded-2xl border border-[#42474e]/40 bg-[#181c20] p-8"
+      >
+        <h2 className="mb-3 text-xl font-black text-[#c4c0ff]">Reassign Trip</h2>
+        <p className="mb-4 text-sm text-[#c2c7ce]">Current operator: {trip.assigned_operator_name || 'Unassigned'}</p>
+        <select required value={assignedOperatorId} onChange={(event) => setAssignedOperatorId(event.target.value)} className="w-full rounded-xl border border-[#42474e] bg-[#1c2024] px-4 py-3 text-[#e0e2e8]">
+          <option value="">Select operator</option>
+          {(operators.data ?? []).filter((operator) => operator.is_active).map((operator) => (
+            <option key={operator.id} value={operator.id}>{operator.name}</option>
+          ))}
+        </select>
+        <div className="mt-6 flex gap-3">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl bg-[#31353a] py-3 text-xs font-bold uppercase tracking-widest text-[#c2c7ce]">Cancel</button>
+          <button type="submit" disabled={mutation.isPending} className="flex-1 rounded-xl bg-[#c4c0ff] py-3 text-xs font-bold uppercase tracking-widest text-[#2000a4]">
+            {mutation.isPending ? 'Saving...' : 'Confirm Reassign'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 export default function OwnerTripsPage() {
-  const [status, setStatus] = useState('');
-  const [date, setDate]     = useState('');
-  const [page, setPage]     = useState(1);
+  const searchParams = useSearchParams();
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const unassigned = searchParams.get('unassigned') === 'true';
 
-  const { data: res, isLoading } = useQuery<OwnerTripsResponse>({
-    queryKey: ['owner-trips', status, date, page],
-    queryFn:  () => {
-      const params = new URLSearchParams();
-      if (status) params.set('status', status);
-      if (date)   params.set('date',   date);
-      params.set('page', String(page));
-      return get<OwnerTripsResponse>(`/api/owner/trips?${params}`);
-    },
-    refetchInterval: 30_000,
+  const trips = useQuery<Trip[]>({
+    queryKey: ['owner-trips', unassigned],
+    queryFn: () => get(`/api/owner/trips${unassigned ? '?unassigned=true' : ''}`),
+    refetchInterval: 30000,
   });
-
-  const trips = res?.data ?? [];
-  const meta  = res?.meta;
 
   return (
     <div>
-      {/* Header */}
-      <header className="sticky top-0 z-40 flex justify-between items-center px-8 h-16 bg-gradient-to-b from-[#181c20] to-transparent backdrop-blur-sm">
-        <PageHeader title="All Trips" subtitle="Agency-wide trip monitoring" />
-        <div className="flex items-center gap-2 text-sm text-[#8c9198]">
-          <span className="material-symbols-outlined text-[16px]">info</span>
-          Owner view — all operators
-        </div>
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-gradient-to-b from-[#181c20] to-transparent px-8 backdrop-blur-sm">
+        <PageHeader title="All Trips" subtitle={unassigned ? 'Unassigned trips' : 'Agency-wide trips'} />
       </header>
 
-      <div className="p-8 space-y-6">
-        {/* Filters */}
-        <div className="flex gap-3 flex-wrap">
-          {/* Status filter */}
-          <div className="flex bg-[#181c20] rounded-xl overflow-hidden border border-[#42474e]/40">
-            {(['', 'active', 'scheduled', 'completed'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => { setStatus(s); setPage(1); }}
-                className={`px-4 py-2.5 text-xs uppercase tracking-widest font-bold transition-colors ${
-                  status === s
-                    ? 'bg-[#c4c0ff] text-[#2000a4]'
-                    : 'text-[#8c9198] hover:text-[#e0e2e8]'
-                }`}
-              >
-                {s || 'All'}
-              </button>
-            ))}
-          </div>
-
-          {/* Date filter */}
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => { setDate(e.target.value); setPage(1); }}
-            className="bg-[#181c20] border border-[#42474e]/40 rounded-xl px-4 py-2.5 text-sm text-[#e0e2e8] outline-none focus:border-[#c4c0ff] transition-colors"
-          />
-          {date && (
-            <button
-              onClick={() => { setDate(''); setPage(1); }}
-              className="text-xs text-[#8c9198] hover:text-[#e0e2e8] flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[16px]">close</span>
-              Clear date
-            </button>
-          )}
-
-          {meta && (
-            <span className="ml-auto text-xs text-[#8c9198] self-center">
-              {meta.total} trip{meta.total !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-
-        {/* Table */}
-        {isLoading
-          ? <TableSkeleton rows={8} />
-          : <TripTable trips={trips} basePath="/owner/trips" showOperator={true} />
-        }
-
-        {/* Pagination */}
-        {meta && meta.total > meta.page_size && (
-          <div className="flex justify-between items-center">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="flex items-center gap-2 text-sm text-[#c4c0ff] disabled:opacity-30 hover:opacity-80"
-            >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              Prev
-            </button>
-            <span className="text-xs text-[#8c9198]">
-              Page {page} of {Math.ceil(meta.total / meta.page_size)}
-            </span>
-            <button
-              disabled={page >= Math.ceil(meta.total / meta.page_size)}
-              onClick={() => setPage((p) => p + 1)}
-              className="flex items-center gap-2 text-sm text-[#c4c0ff] disabled:opacity-30 hover:opacity-80"
-            >
-              Next
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </button>
+      <div className="p-8">
+        {trips.isLoading ? (
+          <TableSkeleton rows={8} />
+        ) : (
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full border-separate border-spacing-y-2">
+              <thead>
+                <tr className="text-left text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce]/60">
+                  <th className="px-6 pb-2">Route</th>
+                  <th className="px-6 pb-2">Owner</th>
+                  <th className="px-6 pb-2">Assigned To</th>
+                  <th className="px-6 pb-2">Passengers</th>
+                  <th className="px-6 pb-2">Date</th>
+                  <th className="px-6 pb-2">Status</th>
+                  <th className="px-6 pb-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(trips.data ?? []).map((trip) => (
+                  <tr key={trip.id} className="bg-[#181c20]">
+                    <td className="rounded-l-xl px-6 py-4 font-bold text-[#e0e2e8]">{trip.route.from_city} to {trip.route.to_city}</td>
+                    <td className="px-6 py-4 text-sm text-[#c2c7ce]">{trip.owner_name || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-[#c2c7ce]">{trip.assigned_operator_name || 'Unassigned'}</td>
+                    <td className="px-6 py-4 text-sm text-[#c2c7ce]">{trip.passenger_count ?? 0}</td>
+                    <td className="px-6 py-4 text-sm text-[#c2c7ce]">{trip.scheduled_date}</td>
+                    <td className="px-6 py-4"><StatusBadge status={trip.status} /></td>
+                    <td className="rounded-r-xl px-6 py-4 text-right">
+                      <button onClick={() => setSelectedTrip(trip)} className="text-xs uppercase tracking-wider text-[#c4c0ff]">
+                        Reassign
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      {selectedTrip && <ReassignTripModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} />}
     </div>
   );
 }

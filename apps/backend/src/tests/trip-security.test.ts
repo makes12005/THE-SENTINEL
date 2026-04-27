@@ -101,7 +101,8 @@ test('Trip Security - Agency Isolation', async (t) => {
 
     const [t1] = await db.insert(trips).values({
       route_id: routeA,
-      operator_id: operatorA,
+      owned_by_operator_id: operatorA,
+      assigned_operator_id: operatorA,
       conductor_id: conductorA,
       scheduled_date: new Date().toISOString().split('T')[0]
     }).returning({ id: trips.id });

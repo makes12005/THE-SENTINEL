@@ -121,7 +121,7 @@ export default async function adminRoutes(fastify: FastifyInstance) {
           const [tripRow] = await db
             .select({ cnt: count() })
             .from(trips)
-            .innerJoin(users, eq(trips.operator_id, users.id))
+            .innerJoin(users, eq(trips.owned_by_operator_id, users.id))
             .where(and(eq(users.agency_id, agency.id), gte(trips.created_at, monthAgo)));
 
           const wallet = await getOrCreateWallet(agency.id);

@@ -17,6 +17,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/owner/dashboard',  icon: 'dashboard',       label: 'Dashboard'  },
   { href: '/owner/operators',  icon: 'manage_accounts', label: 'Operators'  },
+  { href: '/owner/resources',  icon: 'group',           label: 'Resources'  },
   { href: '/owner/trips',      icon: 'directions_bus',  label: 'All Trips'  },
   { href: '/owner/logs',       icon: 'receipt_long',    label: 'Alert Logs' },
   { href: '/owner/settings',   icon: 'settings',        label: 'Settings'   },

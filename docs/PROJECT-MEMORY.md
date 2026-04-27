@@ -1,6 +1,16 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-04-24 (IST)
+Last Updated: 2026-04-27 (IST)
+
+## 2026-04-27 - Shared Resources And Trip Assignment Completed
+
+- Shared agency resources implemented for buses, conductors, and drivers across owner and operator views.
+- Trip assignment implemented with creator ownership, reassignment flow, optional bus assignment, and unassigned-trip owner alerting.
+- Orphan trip handler implemented so operator deactivation clears active trip assignments, writes audit logs, and emits realtime notifications.
+- Uniqueness validation confirmed for buses `(agency_id, number_plate)`, staff `(agency_id, phone)`, and routes `(agency_id, name)`.
+- Local verification completed with full requested 10-test matrix passing.
+- Test report saved at `docs/test-reports/resources-assignment-report.md`.
+- Next action: operator testing
 
 ## 2026-04-25 - Full Codebase Audit Completed
 

@@ -59,7 +59,7 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
               eq(trips.status, 'active'),
               // trips belong to agency via operator_id
               inArray(
-                trips.operator_id,
+                trips.owned_by_operator_id,
                 db.select({ id: users.id }).from(users).where(eq(users.agency_id, agencyId))
               )
             )
@@ -73,7 +73,7 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
             and(
               gte(trips.created_at, dayStart),
               inArray(
-                trips.operator_id,
+                trips.owned_by_operator_id,
                 db.select({ id: users.id }).from(users).where(eq(users.agency_id, agencyId))
               )
             )
@@ -144,7 +144,7 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
 
         const conditions: any[] = [
           inArray(
-            trips.operator_id,
+            trips.owned_by_operator_id,
             db.select({ id: users.id }).from(users).where(eq(users.agency_id, agencyId))
           ),
         ];
@@ -156,7 +156,7 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
           .select({
             id: trips.id,
             route_id: trips.route_id,
-            operator_id: trips.operator_id,
+            operator_id: trips.owned_by_operator_id,
             conductor_id: trips.conductor_id,
             driver_id: trips.driver_id,
             status: trips.status,
@@ -173,108 +173,6 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
           success: true,
           data: rows,
           meta: { count: rows.length, timestamp: new Date().toISOString() },
-        });
-      } catch (err) { return handleError(reply, err); }
-    }
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // POST /api/agency/members
-  // Body: { name, phone, password, role: 'conductor' | 'driver' }
-  // Creates a new user attached to the operator's agency
-  // ─────────────────────────────────────────────────────────────────────────
-  fastify.post(
-    '/agency/members',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any  = (req as any).user;
-        const agencyId   = user.agencyId as string;
-        const body: any  = req.body;
-
-        const { name, phone, password, role } = body ?? {};
-
-        // Validate fields
-        if (!name || !phone || !password || !role) {
-          return reply.status(400).send({ success: false, error: { code: 'MISSING_FIELDS', message: 'name, phone, password, and role are required' } });
-        }
-        if (!['conductor', 'driver'].includes(role)) {
-          return reply.status(400).send({ success: false, error: { code: 'INVALID_ROLE', message: 'role must be conductor or driver' } });
-        }
-        if (!/^\+91\d{10}$/.test(phone)) {
-          return reply.status(400).send({ success: false, error: { code: 'INVALID_PHONE', message: 'phone must be in E.164 format: +91XXXXXXXXXX' } });
-        }
-
-        // Check duplicate phone
-        const [existing] = await db
-          .select({ id: users.id })
-          .from(users)
-          .where(eq(users.phone, phone))
-          .limit(1);
-        if (existing) {
-          return reply.status(409).send({ success: false, error: { code: 'PHONE_TAKEN', message: 'A user with this phone already exists' } });
-        }
-
-        const hash = await bcrypt.hash(password, 12);
-
-        const [newUser] = await db
-          .insert(users)
-          .values({
-            agency_id:     agencyId,
-            name:          name.trim(),
-            phone:         phone.trim(),
-            password_hash: hash,
-            role:          role as 'conductor' | 'driver',
-            is_active:     true,
-          })
-          .returning({
-            id:        users.id,
-            name:      users.name,
-            phone:     users.phone,
-            role:      users.role,
-            is_active: users.is_active,
-          });
-
-        return reply.status(201).send({ success: true, data: newUser });
-      } catch (err) { return handleError(reply, err); }
-    }
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // GET /api/agency/members
-  // Returns all conductors + drivers for this agency
-  // ─────────────────────────────────────────────────────────────────────────
-  fastify.get(
-    '/agency/members',
-    { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const user: any = (req as any).user;
-        const agencyId  = user.agencyId as string;
-
-        const members = await db
-          .select({
-            id:         users.id,
-            name:       users.name,
-            phone:      users.phone,
-            role:       users.role,
-            is_active:  users.is_active,
-            created_at: users.created_at,
-          })
-          .from(users)
-          .where(
-            and(
-              eq(users.agency_id, agencyId),
-              // Only conductors and drivers (operators/owners view their staff)
-              sql`${users.role} IN ('conductor', 'driver')`
-            )
-          )
-          .orderBy(desc(users.created_at));
-
-        return reply.send({
-          success: true,
-          data: members,
-          meta: { count: members.length, timestamp: new Date().toISOString() },
         });
       } catch (err) { return handleError(reply, err); }
     }
@@ -306,7 +204,7 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
           .from(trips)
           .where(
             inArray(
-              trips.operator_id,
+              trips.owned_by_operator_id,
               db.select({ id: users.id }).from(users).where(eq(users.agency_id, agencyId))
             )
           );
