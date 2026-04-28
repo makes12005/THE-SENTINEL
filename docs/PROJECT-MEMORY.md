@@ -1,6 +1,82 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-04-27 (IST)
+Last Updated: 2026-04-28 (IST)
+
+## 2026-04-28 - Forced Recompile + Redeploy Verification
+
+- Verified local compiled worker artifact after clean rebuild:
+  - `apps/backend/dist/workers/alert.worker.js` maps both camelCase + snake_case and logs `Processing job for ${job.passengerName} (${job.passengerPhone})`.
+  - Confirmed this is NEW contract-aware code (`passengerName`, not only `passenger_name`).
+- Build pipeline hardening applied:
+  - `apps/backend/package.json` build script set to `tsc --project tsconfig.json`.
+  - `apps/backend/tsconfig.json` already includes `src/**/*` (workers included).
+  - `apps/backend/railway.json` updated to:
+    - builder `nixpacks`
+    - build command `pnpm install && pnpm build`
+    - deploy start command `node dist/server.js` (API service default).
+- Clean local compile completed (`dist` rebuilt) and compiled `dist/` committed to `main` for immediate rollout.
+- Pushed commit: `bd39ae7`.
+- Redeployed Railway services (`api`, `alert-worker`, `heartbeat-worker`) after push.
+- Post-redeploy Redis + worker verification still fails:
+  - Fresh queue job (camelCase) consumed immediately, but worker logs still show old runtime string:
+    - `Processing job for passenger undefined -> stop "Nadiad"`
+    - `Cannot read properties of undefined (reading 'slice')`
+  - This indicates Railway alert-worker runtime is still not executing the newly built worker binary.
+- Final focused rerun (requested tests 3 + 5):
+  - Test 3 (GPS near Nadiad trigger): `PASS`
+    - Fresh trip `e6ed4ff7-a92c-4151-a440-7cd62f866686`
+    - Passenger moved to `alert_status: sent`.
+  - Test 5 (worker processed + alert_logs row): `FAIL`
+    - No new `alert_logs` row for fresh passenger `+919877660809`.
+- Current overall score remains: `9/12`.
+
+## 2026-04-28 - Redis Queue Purge + Fresh Job Verification
+
+- Cleared production Upstash `alert_queue` to remove old poisoned jobs:
+  - `DEL alert_queue`
+  - `LLEN alert_queue` confirmed `0`.
+- Pushed fresh camelCase queue job payload and validated behavior:
+  - Job pushed: `{"tripId":"test-123","tripPassengerId":"test-456","passengerPhone":"+919876540001","passengerName":"Test Passenger","stopName":"Nadiad"}`
+  - Worker still logs `Processing job for passenger undefined -> stop "Nadiad"` (not fixed yet).
+- Since undefined behavior persisted, captured exact Redis queue payload snapshot before worker processing:
+  - `{"tripId":"test-123","tripPassengerId":"test-456","passengerPhone":"+919876540001","passengerName":"Test Passenger","stopName":"Nadiad"}`
+  - `{"tripId":"test-789","tripPassengerId":"test-999","passengerPhone":"+919876540002","passengerName":"Test Passenger 2","stopName":"Nadiad"}`
+- Triggered real GPS flow again with fresh trip + Nadiad ping:
+  - Trip: `770c187f-33cf-4aac-a000-a76e909454d2`
+  - Ping accepted (`202`), but no new `alert_logs` row was created for the new test passenger in this run.
+- Alert worker runtime currently continues with repeated errors:
+  - `Cannot read properties of undefined (reading 'slice')`
+- Status update for requested reporting:
+  - Test 5 (worker processed): `FAIL`
+  - Test 8 (online recovery): `PASS` (heartbeat `conductor RECOVERED` observed)
+  - Final GPS score: `9/12` (from prior `8/12` baseline + Test 8 now treated as pass)
+
+## 2026-04-28 - Railway Force Redeploy + Live Verification Rerun
+
+- Force redeployed all three Railway services from latest `main`:
+  - `api`
+  - `alert-worker`
+  - `heartbeat-worker`
+- Latest referenced commits in this rerun context:
+  - `685028c`
+  - `3dcc351`
+- Verified alert-worker startup banner is live:
+  - `Alert worker started`
+  - `Waiting for jobs...`
+- Ran focused production validation flow after redeploy:
+  - Created fresh trip, uploaded Nadiad passenger, started trip, sent one Nadiad GPS ping.
+  - Waited for processing and checked `/api/logs/alert-logs`.
+  - Waited 3+ minutes without pings, then sent one resume ping.
+  - Checked heartbeat logs and `/api/admin/audit-logs?action=CONDUCTOR_ONLINE`.
+- Final status:
+  - Test 5 (worker processed): `FAIL`
+    - alert-worker still logs `Processing job for passenger undefined`, with `Cannot read properties of undefined (reading 'slice')`.
+    - no matching fresh `alert_logs` row created for the new test passenger in this run.
+  - Test 8 (online recovery): `FAIL`
+    - heartbeat logs show both `conductor OFFLINE` and `conductor RECOVERED` for the test trip.
+    - admin audit endpoint still returned zero `CONDUCTOR_ONLINE` entries.
+- GPS flow final status: still blocked on production runtime behavior mismatch (`worker payload mapping`) and missing audit visibility for online recovery.
+- Next action: real device test.
 
 ## 2026-04-28 - Alert Worker Payload Contract Fix Implemented
 
