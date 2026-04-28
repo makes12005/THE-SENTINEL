@@ -1,0 +1,150 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OTPService = void 0;
+const redis_1 = require("../../lib/redis");
+// Ensure these exist in environment
+const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
+const MSG91_SENDER_ID = process.env.MSG91_SENDER_ID;
+const MSG91_OTP_TEMPLATE_ID = process.env.MSG91_OTP_TEMPLATE_ID; // Provide a template ID for OTPs
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const OTP_TTL = 300; // 5 minutes
+const MAX_ATTEMPTS = 3;
+/** Returns true when the string looks like an e-mail address */
+function isEmail(id) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id.trim());
+}
+class OTPService {
+    /**
+     * Generates a 6-digit random OTP.
+     */
+    static generateOTP() {
+        return String(Math.floor(100000 + Math.random() * 900000));
+    }
+    /**
+     * Stores the OTP and initializes attempt count in Redis.
+     */
+    static async storeOTP(contact, otp) {
+        const key = `otp:${contact}`;
+        const payload = JSON.stringify({ otp, attempts: 0 });
+        await redis_1.redis.set(key, payload, 'EX', OTP_TTL);
+    }
+    /**
+     * Dispatches the OTP either via Email or SMS.
+     */
+    static async sendOTP(contact, otp) {
+        if (isEmail(contact)) {
+            return this.sendViaEmail(contact, otp);
+        }
+        else {
+            return this.sendViaSMS(contact, otp);
+        }
+    }
+    /**
+     * Verifies the provided OTP against Redis.
+     * Returns a structured result so handlers can show attempts remaining.
+     */
+    static async verifyOTP(contact, inputOtp) {
+        const key = `otp:${contact}`;
+        const storedStr = await redis_1.redis.get(key);
+        if (!storedStr) {
+            return { ok: false, attemptsRemaining: 0, expired: true };
+        }
+        try {
+            const data = JSON.parse(storedStr);
+            if (data.attempts >= MAX_ATTEMPTS) {
+                await redis_1.redis.del(key);
+                return { ok: false, attemptsRemaining: 0, expired: true };
+            }
+            if (data.otp === inputOtp) {
+                await redis_1.redis.del(key);
+                return {
+                    ok: true,
+                    attemptsRemaining: Math.max(MAX_ATTEMPTS - data.attempts, 0),
+                    expired: false,
+                };
+            }
+            data.attempts += 1;
+            const attemptsRemaining = Math.max(MAX_ATTEMPTS - data.attempts, 0);
+            if (attemptsRemaining === 0) {
+                await redis_1.redis.del(key);
+            }
+            else {
+                await redis_1.redis.set(key, JSON.stringify(data), 'KEEPTTL');
+            }
+            return { ok: false, attemptsRemaining, expired: false };
+        }
+        catch {
+            return { ok: false, attemptsRemaining: 0, expired: true };
+        }
+    }
+    static async sendViaEmail(email, otp) {
+        const BREVO_API_KEY = process.env.BRAVO_API_KEY || process.env.BREVO_API_KEY || process.env.RESEND_API_KEY; // Accept all for fallback
+        if (!BREVO_API_KEY) {
+            console.warn('BREVO_API_KEY not configured. Falling back to dev-mode delivery.');
+            return { ok: true };
+        }
+        try {
+            // For now, if someone provides RESEND_API_KEY by accident instead of BREVO, 
+            // let's try calling Brevo API anyway (which will likely fail with 401, but the code structure handles it)
+            const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'api-key': BREVO_API_KEY,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: { email: 'noreply@busalert.in', name: 'Bus Alert' },
+                    to: [{ email: email }],
+                    subject: 'Your Bus Alert verification code',
+                    htmlContent: `<p>Your OTP is: <strong>${otp}</strong>. Valid for 5 minutes.</p>`,
+                }),
+            });
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Failed to send email via Brevo:', errorText);
+                return { ok: false, errorMessage: 'Failed to send email OTP', statusCode: res.status };
+            }
+            return { ok: true };
+        }
+        catch (err) {
+            console.error('Email delivery error:', err);
+            return { ok: false, errorMessage: err?.message || 'Network error' };
+        }
+    }
+    static async sendViaSMS(phone, otp) {
+        if (!MSG91_AUTH_KEY || !MSG91_OTP_TEMPLATE_ID) {
+            console.warn('MSG91 keys missing. Falling back to dev-mode delivery.');
+            return { ok: true };
+        }
+        // MSG91 expects 10-digit number for India; strip the +91 prefix
+        const mobile = phone.replace(/^\+91/, '');
+        const payload = {
+            flow_id: MSG91_OTP_TEMPLATE_ID,
+            sender: MSG91_SENDER_ID,
+            mobiles: `91${mobile}`,
+            otp: otp, // Assuming the template expects {{otp}}
+        };
+        try {
+            const res = await fetch('https://api.msg91.com/api/v5/flow/', {
+                method: 'POST',
+                headers: {
+                    authkey: MSG91_AUTH_KEY,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && json?.type === 'success') {
+                return { ok: true };
+            }
+            console.error('Failed to send SMS:', json);
+            return { ok: false, errorMessage: json?.message || 'Failed to send SMS OTP', statusCode: res.status };
+        }
+        catch (err) {
+            console.error('SMS delivery error:', err);
+            return { ok: false, errorMessage: err?.message || 'Network error' };
+        }
+    }
+}
+exports.OTPService = OTPService;

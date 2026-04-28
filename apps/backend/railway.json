@@ -1,6 +1,9 @@
 {
   "build": {
-    "builder": "railpack",
-    "buildCommand": "npm install --include=dev && npm run build"
+    "builder": "nixpacks",
+    "buildCommand": "pnpm install && pnpm build"
+  },
+  "deploy": {
+    "startCommand": "node dist/server.js"
   }
 }

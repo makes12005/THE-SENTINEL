@@ -200,7 +200,5 @@ export async function uploadPassengers(
 
   return {
     uploaded: readyRows.length,
-    added: readyRows.length,
-    added_count: readyRows.length,
   };
 }
