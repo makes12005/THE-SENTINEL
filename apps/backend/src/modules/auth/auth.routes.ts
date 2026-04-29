@@ -517,6 +517,15 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.log.info({ identifier: key, otp }, 'OTP generated');
 
     const result = await OTPService.sendOTP(key, otp);
+    if (!result.ok) {
+      return reply.status(result.statusCode ?? 502).send({
+        success: false,
+        error: {
+          code: 'OTP_DELIVERY_FAILED',
+          message: result.errorMessage ?? 'Failed to deliver OTP',
+        },
+      });
+    }
     const isDev = process.env.NODE_ENV !== 'production';
 
     return reply.send({
@@ -566,6 +575,26 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
+    // Check if user already exists
+    const existingUser = await findUserByIdentifier(key);
+    const isNewUser = !existingUser;
+
+    // If user exists and is active, return tokens directly
+    if (existingUser && existingUser.is_active) {
+      await db.delete(refreshTokens).where(eq(refreshTokens.user_id, existingUser.id));
+      const tokens = await issueTokens(existingUser);
+
+      return reply.send({
+        success: true,
+        data: {
+          is_new_user: false,
+          access_token: tokens.accessToken,
+          refresh_token: tokens.refreshToken,
+          user: serializeUser(existingUser),
+        },
+      });
+    }
+
     // If user doesn't exist, issue a temporary token for signup
     const tempToken = jwt.sign(
       { contact: key, identifier: key, type: 'signup_temp' },
@@ -576,6 +605,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({
       success: true,
       data: {
+        is_new_user: true,
         temp_token: tempToken,
         message: 'Proceed to signup'
       },
@@ -793,17 +823,31 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       }
       resolvedAgencyId = ag.id;
     } else if (inviteCode) {
-      const all = await db.select().from(agencies);
-      const match = all.find(
-        (ag) => ag.id.replace(/-/g, '').toUpperCase().startsWith(inviteCode.replace(/-/g, '').toUpperCase())
-      );
-      if (!match) {
+      const normalizedInvite = inviteCode.trim().toUpperCase();
+      const [exactMatch] = await db
+        .select()
+        .from(agencies)
+        .where(eq(agencies.invite_code, normalizedInvite))
+        .limit(1);
+
+      if (exactMatch) {
+        resolvedAgencyId = exactMatch.id;
+      } else {
+        const all = await db.select().from(agencies);
+        const prefixMatch = all.find(
+          (ag) => ag.id.replace(/-/g, '').toUpperCase().startsWith(normalizedInvite.replace(/-/g, '').toUpperCase())
+        );
+        if (prefixMatch) {
+          resolvedAgencyId = prefixMatch.id;
+        }
+      }
+
+      if (!resolvedAgencyId) {
         return reply.status(404).send({
           success: false,
           error: { code: 'INVALID_INVITE_CODE', message: 'No agency found for this invite code' },
         });
       }
-      resolvedAgencyId = match.id;
     }
 
     if (!resolvedAgencyId) {
@@ -813,20 +857,48 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    await db.update(users).set({ agency_id: resolvedAgencyId }).where(eq(users.id, authUser.id));
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, authUser.id))
+      .limit(1);
+
+    if (!existingUser) {
+      return reply.status(404).send({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'User not found' },
+      });
+    }
+
+    const nextRole = existingUser.role === 'passenger' ? 'conductor' : existingUser.role;
+    const [updatedUser] = await db
+      .update(users)
+      .set({ agency_id: resolvedAgencyId, role: nextRole })
+      .where(eq(users.id, authUser.id))
+      .returning();
+
+    const tokens = await issueTokens(updatedUser);
 
     await db.insert(auditLogs).values({
       user_id:     authUser.id,
       action:      'JOINED_AGENCY',
       entity_type: 'agency',
       entity_id:   resolvedAgencyId,
-      metadata:    { inviteCode },
+      metadata:    { inviteCode, previous_role: existingUser.role, new_role: nextRole },
       ip_address:  request.ip,
     });
 
     return reply.send({
       success: true,
-      data: { agencyId: resolvedAgencyId, message: 'Agency linked successfully' },
+      data: {
+        agencyId: resolvedAgencyId,
+        message: 'Agency linked successfully',
+        access_token: tokens.accessToken,
+        accessToken: tokens.accessToken,
+        refresh_token: tokens.refreshToken,
+        refreshToken: tokens.refreshToken,
+        user: serializeUser(updatedUser),
+      },
     });
   });
 

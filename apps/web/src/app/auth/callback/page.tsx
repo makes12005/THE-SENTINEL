@@ -4,15 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { type AuthUser, useAuthStore } from '@/lib/auth-store';
-
-const ROLE_REDIRECTS: Record<string, string> = {
-  admin:     '/admin/dashboard',
-  owner:     '/owner/dashboard',
-  operator:  '/operator/dashboard',
-  driver:    '/operator/dashboard',
-  conductor: '/operator/dashboard',
-  passenger: '/login',
-};
+import { redirectPathForRole } from '@/lib/auth-redirect';
 
 function OAuthCallbackInner() {
   const router        = useRouter();
@@ -72,7 +64,7 @@ function OAuthCallbackInner() {
     });
 
     // ── Navigate to role-specific dashboard
-    const dest = ROLE_REDIRECTS[normalizedUser.role] ?? '/login';
+    const dest = redirectPathForRole(normalizedUser.role);
     router.replace(dest);
   }, [params, setSession, router]);
 

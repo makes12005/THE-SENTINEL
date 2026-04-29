@@ -1,6 +1,37 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-04-28 (IST)
+Last Updated: 2026-04-29 (IST)
+
+## 2026-04-29 - Web Auth Flow Rebuild (Signup + OTP + Redirects)
+
+- Rebuilt web signup into required 6-step flow:
+  - `/signup` (welcome + Google + phone/email)
+  - `/signup/password` (password + send OTP)
+  - `/verify-otp?flow=signup` (OTP verify for signup via `/api/auth/verify-otp`)
+  - `/signup/promo` (optional promo/agency code with visible skip)
+  - `/signup/details` (optional details with visible skip + complete)
+  - Auto-login after `/api/auth/signup` with immediate role redirect (never redirects to `/login`).
+- Login flow corrected and separated:
+  - Password login remains direct `/api/auth/login` → tokens → role dashboard (no OTP step).
+  - OTP login path uses `/api/auth/send-otp` then `/api/auth/login-otp`.
+  - Google button now triggers backend Google auth endpoint.
+- Added shared role redirect helper:
+  - `apps/web/src/lib/auth-redirect.ts`
+  - used by login, OTP verify, and OAuth callback.
+- Backend OTP reliability hardening:
+  - `otp.service.ts` now logs contact/channel and provider responses.
+  - normalized to `BREVO_API_KEY` usage.
+  - `/api/auth/send-otp` now returns error if provider delivery fails (no false success response).
+- Production checks run:
+  - Admin password login: pass.
+  - Wrong password: pass.
+  - Operator password login: pass.
+  - Owner password login with provided credentials: failed (`No account found`).
+  - OTP send endpoint for tested phones: pass.
+- Report added:
+  - `docs/test-reports/auth-flow-fix-report.md`
+- Next action:
+  - Deploy latest commit to Railway + Vercel, then rerun full UI E2E (including OTP code entry and owner credential verification).
 
 ## 2026-04-28 - Forced Recompile + Redeploy Verification
 
