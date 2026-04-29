@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 const NAV = [
   { href: '/admin/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
   { href: '/admin/agencies',  label: 'Agencies',    icon: Building2 },
-  { href: '/admin/billing',   label: 'Billing',     icon: CreditCard },
+  { href: '/admin/wallet',    label: 'Billing',     icon: CreditCard },
   { href: '/admin/health',    label: 'System Health', icon: Activity },
   { href: '/admin/audit',     label: 'Audit Logs',  icon: ScrollText },
 ];

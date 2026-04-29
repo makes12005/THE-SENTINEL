@@ -20,15 +20,16 @@ interface HealthData {
 }
 
 interface BillingSummary {
-  total_revenue_rupees: number;
-  total_topups_rupees: number;
+  total_trips_consumed: number;
+  total_trips_credited: number;
   agency_count: number;
-  low_balance_agencies: number;
-  agency_balances: {
+  low_trips_agencies: number;
+  agency_wallets: {
     agency_id: string;
     agency_name: string;
-    balance_rupees: number;
-    low_balance: boolean;
+    trips_remaining: number;
+    trips_used_this_month: number;
+    low_trips: boolean;
   }[];
 }
 
@@ -73,7 +74,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     Promise.all([
       get<HealthData>('/api/admin/health'),
-      get<BillingSummary>('/api/admin/billing/summary'),
+      get<BillingSummary>('/api/admin/wallet/summary'),
     ]).then(([h, b]) => {
       setHealth(h);
       setBilling(b);
@@ -102,8 +103,8 @@ export default function AdminDashboard() {
             <KpiCard icon={Users}     label="Total Users"          value={health?.total_users ?? 0}        sub="all roles" />
             <KpiCard icon={Bus}       label="Active Trips"         value={health?.active_trips ?? 0}       sub="right now" accent="#22c55e" />
             <KpiCard icon={Bell}      label="Alerts Sent Today"    value={health?.alerts_sent_today ?? 0}  sub="via all channels" accent="#f59e0b" />
-            <KpiCard icon={TrendingUp} label="Platform Revenue"   value={`₹${billing?.total_revenue_rupees.toLocaleString('en-IN') ?? 0}`} sub="all time" />
-            <KpiCard icon={AlertTriangle} label="Low Balance"      value={billing?.low_balance_agencies ?? 0} sub="agencies at risk" warn={(billing?.low_balance_agencies ?? 0) > 0} />
+            <KpiCard icon={TrendingUp} label="Trips Credited" value={billing?.total_trips_credited ?? 0} sub="all agencies" />
+            <KpiCard icon={AlertTriangle} label="Low Balance" value={billing?.low_trips_agencies ?? 0} sub="agencies at risk" warn={(billing?.low_trips_agencies ?? 0) > 0} />
           </div>
 
           {/* Two-column: System Health + Agency Balances */}
@@ -152,14 +153,14 @@ export default function AdminDashboard() {
                 <CreditCard size={16} color="#ef4444" />
                 <span style={{ fontWeight: 700, color: '#f3f4f6', fontSize: 15 }}>Agency Balances</span>
                 <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>
-                  Total top-ups: ₹{billing?.total_topups_rupees.toLocaleString('en-IN')}
+                  Total top-ups: {billing?.total_trips_credited ?? 0} trips
                 </span>
               </div>
               <div style={{ overflowY: 'auto', maxHeight: 320 }}>
-                {billing?.agency_balances.length === 0 && (
+                {billing?.agency_wallets.length === 0 && (
                   <div style={{ textAlign: 'center', color: '#4b5563', padding: 32 }}>No agencies yet</div>
                 )}
-                {billing?.agency_balances.map((a) => (
+                {billing?.agency_wallets.map((a) => (
                   <div key={a.agency_id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
@@ -170,11 +171,11 @@ export default function AdminDashboard() {
                     <div style={{ textAlign: 'right' }}>
                       <div style={{
                         fontSize: 14, fontWeight: 700,
-                        color: a.low_balance ? '#ef4444' : '#22c55e',
+                        color: a.low_trips ? '#ef4444' : '#22c55e',
                       }}>
-                        ₹{a.balance_rupees.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {a.trips_remaining} trips
                       </div>
-                      {a.low_balance && (
+                      {a.low_trips && (
                         <div style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>LOW BALANCE</div>
                       )}
                     </div>

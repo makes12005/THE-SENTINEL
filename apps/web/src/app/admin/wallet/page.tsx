@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { get, post, put } from '@/lib/api';
 import { CreditCard, TrendingUp, AlertTriangle, Search, Plus, Settings, Loader2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface AgencyWallet {
   agency_id: string;
@@ -40,6 +41,7 @@ const TH: React.CSSProperties = {
 };
 
 export default function AdminWalletPage() {
+  const params = useSearchParams();
   const [summary, setSummary]     = useState<WalletSummary | null>(null);
   const [search, setSearch]       = useState('');
   const [loading, setLoading]     = useState(true);
@@ -59,14 +61,26 @@ export default function AdminWalletPage() {
   const [configThreshold, setConfigThreshold] = useState('');
   const [saving, setSaving]           = useState(false);
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    get<WalletSummary>('/api/admin/wallet/summary')
-      .then((r) => setSummary(r))
-      .finally(() => setLoading(false));
+    try {
+      const r = await get<WalletSummary>('/api/admin/wallet/summary');
+      setSummary(r);
+      const targetAgencyId = params.get('agencyId');
+      if (targetAgencyId) {
+        const target = r.agency_wallets.find((a) => a.agency_id === targetAgencyId);
+        if (target) {
+          await selectAgency(target);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    void load();
+  }, [params]);
 
   const selectAgency = async (a: AgencyWallet) => {
     setSelected(a);

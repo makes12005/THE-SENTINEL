@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { get, post } from '@/lib/api';
 import { Plus, Search, Building2, CheckCircle2, XCircle, Loader2, Mail, Phone, RefreshCcw, ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Agency {
   id: string;
@@ -35,6 +36,7 @@ const TH: React.CSSProperties = {
 };
 
 export default function AdminAgenciesPage() {
+  const router = useRouter();
   const [agencies, setAgencies]   = useState<Agency[]>([]);
   const [invites, setInvites]     = useState<Invite[]>([]);
   const [filtered, setFiltered]   = useState<Agency[]>([]);
@@ -197,6 +199,18 @@ export default function AdminAgenciesPage() {
                   </span>
                 </td>
                 <td style={CELL}>
+                  <button
+                    onClick={() => router.push(`/admin/wallet?agencyId=${a.id}`)}
+                    style={{
+                      padding: '5px 10px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#e5e7eb',
+                      marginRight: 8,
+                    }}
+                  >
+                    Enter
+                  </button>
                   <button
                     id={`toggle-agency-${a.id}`}
                     onClick={() => toggle(a.id)}
