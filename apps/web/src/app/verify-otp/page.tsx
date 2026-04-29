@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { redirectPathForRole } from '@/lib/auth-redirect';
+import { redirectPathForRole, redirectPathForUser } from '@/lib/auth-redirect';
 
 function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: string): void; disabled?: boolean }) {
   const digits = value.padEnd(6, '').split('');
@@ -174,7 +174,7 @@ function VerifyOtpPageInner() {
         if (existingUser && accessToken && refreshToken) {
           setSession({ accessToken, refreshToken, user: existingUser });
           ['auth_identifier', 'auth_source', 'signup_phone', 'otp_phone'].forEach((k) => sessionStorage.removeItem(k));
-          router.replace(redirectPathForRole(existingUser.role));
+          router.replace(redirectPathForUser(existingUser));
           return;
         }
 
@@ -190,7 +190,7 @@ function VerifyOtpPageInner() {
       setSession({ accessToken, refreshToken, user });
       ['auth_identifier', 'auth_source', 'signup_phone', 'otp_phone'].forEach((k) => sessionStorage.removeItem(k));
       const nextParam = params.get('next');
-      const destination = nextParam ? `/${nextParam.replace(/^\//, '')}` : redirectPathForRole(user?.role);
+      const destination = nextParam ? `/${nextParam.replace(/^\//, '')}` : redirectPathForUser(user);
       toast.success(`Welcome, ${user?.name ?? 'User'}!`);
       setTimeout(() => router.push(destination), 600);
     } catch (err: any) {

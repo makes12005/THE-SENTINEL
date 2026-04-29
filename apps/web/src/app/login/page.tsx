@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { redirectPathForRole } from '@/lib/auth-redirect';
+import { redirectPathForRole, redirectPathForUser } from '@/lib/auth-redirect';
 
 // ——————————————————————————————————————————————————————————————————————————————————————
 // Helpers
@@ -129,7 +129,7 @@ function LoginPageInner() {
 
   useEffect(() => {
     if (user) {
-      const redirect = redirectPathForRole(user.role);
+      const redirect = redirectPathForUser(user);
       router.replace(redirect);
     }
   }, [user, router]);
@@ -149,7 +149,7 @@ function LoginPageInner() {
       const { accessToken, refreshToken, user } = res.data.data;
       setSession({ accessToken, refreshToken, user });
       toast.success(`Access granted. Welcome, ${user?.name ?? 'Operator'}.`);
-      router.push(user?.redirect ?? redirectPathForRole(user?.role));
+      router.push(user?.redirect ?? redirectPathForUser(user));
     } catch (err: any) {
       toast.error(err?.response?.data?.error?.message ?? 'Authentication failed.');
     } finally {
@@ -228,7 +228,7 @@ function LoginPageInner() {
       const { accessToken, refreshToken, user } = res.data.data;
       setSession({ accessToken, refreshToken, user });
       toast.success(`Verification successful. Welcome, ${user?.name}.`);
-      router.push(user?.redirect ?? redirectPathForRole(user?.role));
+      router.push(user?.redirect ?? redirectPathForUser(user));
     } catch (err: any) {
       toast.error(err?.response?.data?.error?.message ?? 'Verification failed.');
       setOtp('');

@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { type AuthUser, useAuthStore } from '@/lib/auth-store';
-import { redirectPathForRole } from '@/lib/auth-redirect';
+import { redirectPathForUser } from '@/lib/auth-redirect';
 
 function OAuthCallbackInner() {
   const router        = useRouter();
@@ -64,7 +64,7 @@ function OAuthCallbackInner() {
     });
 
     // ── Navigate to role-specific dashboard
-    const dest = redirectPathForRole(normalizedUser.role);
+    const dest = redirectPathForUser(normalizedUser);
     router.replace(dest);
   }, [params, setSession, router]);
 
