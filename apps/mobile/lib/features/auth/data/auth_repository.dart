@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import '../../core/network/api_client.dart';
-import '../../core/network/endpoints.dart';
-import '../../core/storage/secure_storage.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/endpoints.dart';
+import '../../../core/storage/secure_storage.dart';
 
 class AuthResult {
   final String accessToken;
@@ -34,11 +34,37 @@ class VerifyOtpResult {
 class AuthRepository {
   final _dio = ApiClient.instance;
 
+  AuthResult _parseAuthResult(Map<String, dynamic> data) {
+    final user = (data['user'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+    return AuthResult(
+      accessToken: (data['accessToken'] ?? data['access_token'] ?? '') as String,
+      refreshToken: (data['refreshToken'] ?? data['refresh_token'] ?? '') as String,
+      role: (user['role'] ?? data['role'] ?? '') as String,
+      userId: (user['id'] ?? data['user_id'] ?? '') as String,
+      userName: (user['name'] ?? data['user_name'] ?? '') as String,
+    );
+  }
+
   Future<void> sendOtp(String contact) async {
     await _dio.post(
       Endpoints.sendOtp,
       data: {'contact': contact},
     );
+  }
+
+  Future<AuthResult> login({
+    required String contact,
+    required String password,
+  }) async {
+    final response = await _dio.post(
+      Endpoints.login,
+      data: {
+        'contact': contact,
+        'password': password,
+      },
+    );
+    final data = response.data['data'] as Map<String, dynamic>;
+    return _parseAuthResult(data);
   }
 
   Future<VerifyOtpResult> verifyOtp(String contact, String otp) async {
@@ -48,10 +74,14 @@ class AuthRepository {
     );
 
     final data = response.data['data'] as Map<String, dynamic>;
+    final isNewUser = data['is_new_user'] as bool? ?? false;
 
     return VerifyOtpResult(
-      isNewUser: true,
-      tempToken: data['temp_token'] as String,
+      isNewUser: isNewUser,
+      tempToken: data['temp_token'] as String?,
+      authResult: isNewUser == false
+          ? _parseAuthResult(data)
+          : null,
     );
   }
 
@@ -74,13 +104,11 @@ class AuthRepository {
     final data = response.data['data'] as Map<String, dynamic>;
     final user = data['user'] as Map<String, dynamic>;
 
-    return AuthResult(
-      accessToken: data['access_token'] as String,
-      refreshToken: data['refresh_token'] as String,
-      role: user['role'] as String,
-      userId: user['id'] as String,
-      userName: user['name'] as String,
-    );
+    return _parseAuthResult({
+      'access_token': data['access_token'],
+      'refresh_token': data['refresh_token'],
+      'user': user,
+    });
   }
 
   Future<void> logout() async {

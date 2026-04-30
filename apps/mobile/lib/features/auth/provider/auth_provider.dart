@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
-import '../../core/auth/session_notifier.dart';
-import '../../core/storage/secure_storage.dart';
-import '../../core/network/api_client.dart';
+import '../../../core/auth/session_notifier.dart';
+import '../../../core/storage/secure_storage.dart';
+import '../../../core/network/api_client.dart';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -57,16 +57,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._repo) : super(const AuthState());
 
+  String _normalizeContact(String value) {
+    final raw = value.trim();
+    final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(raw);
+    if (isEmail) return raw.toLowerCase();
+
+    var digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('91') && digits.length == 12) {
+      digits = digits.substring(2);
+    }
+    if (digits.length == 10) {
+      return '+91$digits';
+    }
+    if (!raw.startsWith('+91') && raw.startsWith('+')) {
+      return raw;
+    }
+    if (!raw.startsWith('+91') && digits.isNotEmpty) {
+      return '+91$digits';
+    }
+    return raw;
+  }
+
   void setIdentifier(String identifier) {
     state = state.copyWith(identifier: identifier, error: null);
   }
 
   Future<bool> sendOtp(String identifier) async {
-    state = state.copyWith(isLoading: true, error: null, identifier: identifier);
+    final normalized = _normalizeContact(identifier);
+    state = state.copyWith(isLoading: true, error: null, identifier: normalized);
     try {
-      await _repo.sendOtp(identifier);
+      await _repo.sendOtp(normalized);
       state = state.copyWith(isLoading: false);
       return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
+      return false;
+    }
+  }
+
+  Future<bool> loginWithPassword({
+    required String contact,
+    required String password,
+  }) async {
+    final normalized = _normalizeContact(contact);
+    state = state.copyWith(isLoading: true, error: null, identifier: normalized);
+    try {
+      final result = await _repo.login(contact: normalized, password: password);
+      return await _handleAuthSuccess(result);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
       return false;

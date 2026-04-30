@@ -16,18 +16,43 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _contactCon = TextEditingController();
+  final _passCon = TextEditingController();
+  int _authTab = 0;
 
   @override
   void dispose() {
     _contactCon.dispose();
+    _passCon.dispose();
     super.dispose();
+  }
+
+  Future<void> _onPasswordLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final contact = _contactCon.text.trim();
+    final password = _passCon.text;
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Password is required'),
+        backgroundColor: AppColors.errorContainer,
+      ));
+      return;
+    }
+
+    final success = await ref.read(authProvider.notifier).loginWithPassword(
+      contact: contact,
+      password: password,
+    );
+    if (success && mounted) {
+      context.go(AppRoutes.dashboard);
+    }
   }
 
   Future<void> _onSendOtp() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final contact = _contactCon.text.trim();
-    
+
     final success = await ref.read(authProvider.notifier).sendOtp(contact);
     if (success && mounted) {
       context.push(AppRoutes.otp);
@@ -94,7 +119,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Enter your phone number or email to continue.',
+                            'Access your transit control terminal.',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               color: AppColors.onSurfaceVariant,
@@ -105,8 +130,76 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 48),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _authTab = 0),
+                              child: Container(
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: _authTab == 0 ? AppColors.surfaceContainerHigh : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Center(
+                                  child: Text('LOGIN', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, letterSpacing: 1.2, color: _authTab == 0 ? AppColors.primary : AppColors.onSurfaceVariant)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _authTab = 1),
+                              child: Container(
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: _authTab == 1 ? AppColors.surfaceContainerHigh : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Center(
+                                  child: Text('SIGN UP', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, letterSpacing: 1.2, color: _authTab == 1 ? AppColors.primary : AppColors.onSurfaceVariant)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
+                        label: Text('Continue with Google', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.surfaceContainerHigh,
+                          foregroundColor: AppColors.onSurface,
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: AppColors.surfaceContainerHighest)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('OR', style: GoogleFonts.manrope(fontSize: 11, letterSpacing: 1.4, color: AppColors.outline)),
+                        ),
+                        const Expanded(child: Divider(color: AppColors.surfaceContainerHighest)),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
                     Text(
-                      'PHONE OR EMAIL',
+                      'PHONE NUMBER / EMAIL',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -136,12 +229,32 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'PASSWORD',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurfaceVariant,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _passCon,
+                      obscureText: true,
+                      style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
+                      decoration: const InputDecoration(
+                        hintText: '••••••••',
+                        prefixIcon: Icon(Icons.lock_outline, color: AppColors.onSurfaceVariant),
+                      ),
+                    ),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       height: 60,
                       child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _onSendOtp,
+                        onPressed: auth.isLoading ? null : _onPasswordLogin,
                         child: auth.isLoading
                             ? const SizedBox(
                                 width: 24, height: 24,
@@ -151,13 +264,25 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                 ),
                               )
                             : Text(
-                                'SEND OTP',
+                                'LOGIN',
                                 style: GoogleFonts.manrope(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
                                   letterSpacing: 3,
                                 ),
                               ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: auth.isLoading ? null : _onSendOtp,
+                      child: Text(
+                        'LOGIN WITH OTP',
+                        style: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.3,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ],
