@@ -1,6 +1,19 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-04-29 (IST)
+Last Updated: 2026-05-02 (IST)
+
+## 2026-05-02 - Admin Web Audit (routes, APIs, wallet rewrite)
+
+- Mapped all admin routes under `apps/web/src/app/admin/`; billing path `/admin/billing` redirects client-side to `/admin/wallet` (aligned with sidebar).
+- **Critical fix:** Reimplemented `apps/web/src/app/admin/wallet/page.tsx` (previous version referenced undefined symbols — would crash at runtime). Added React Query, `react-hot-toast`, `Suspense` for `useSearchParams`, validation, and cache invalidation after top-up/threshold updates.
+- **Agency detail page:** Added missing imports (`useParams`, `useRouter`, `useState`, `get`, `post`).
+- **Agencies modal:** Fixed edit mode incorrectly rendering invite UI (`mode !== 'invite'` for agency form); added deactivate confirmation and success toasts.
+- **Dashboard / health:** Improved API failure handling (retry, messages, clear health data on error).
+- **Audit logs:** Date range filters, CSV export of filtered rows, expandable metadata on row click.
+- **Quality:** `pnpm --filter web build` passes.
+- Report: `docs/test-reports/admin-audit-report.md`
+- **Production ready status (admin):** Ready pending post-deploy smoke test on Vercel.
+- **Next action:** Operator audit.
 
 ## 2026-04-29 - Web Auth Flow Rebuild (Signup + OTP + Redirects)
 
