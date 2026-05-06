@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { get, post } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -35,6 +35,16 @@ interface Operator {
   is_active: boolean;
 }
 
+interface Template {
+  id: string;
+  name: string;
+  route_id: string;
+  bus_id: string | null;
+  conductor_id: string | null;
+  driver_id: string | null;
+  departure_time: string | null;
+}
+
 interface Stop {
   id: string;
   name: string;
@@ -53,15 +63,21 @@ export default function CreateTripPage() {
   const { user: currentUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState({
-    route_id: '',
-    conductor_id: '',
-    driver_id: '',
-    bus_id: '',
-    scheduled_date: new Date().toISOString().split('T')[0],
-    scheduled_time: '08:00',
-    assigned_operator_id: '',
-    template_id: '',
+  const [form, setForm] = useState(() => {
+    // Read ?templateId from URL (set by templates page "Use" button)
+    const params = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
+    return {
+      route_id: '',
+      conductor_id: '',
+      driver_id: '',
+      bus_id: '',
+      scheduled_date: new Date().toISOString().split('T')[0],
+      scheduled_time: '08:00',
+      assigned_operator_id: '',
+      template_id: params.get('templateId') ?? '',
+    };
   });
 
   const [manifest, setManifest] = useState<ManifestPassenger[]>([]);
@@ -105,6 +121,27 @@ export default function CreateTripPage() {
     queryKey: ['operator-summary'],
     queryFn: () => get<{ trips_remaining: number }>('/api/operator/summary'),
   });
+
+  const templates = useQuery<Template[]>({
+    queryKey: ['templates'],
+    queryFn: () => get<Template[]>('/api/templates'),
+  });
+
+  // Auto-populate form fields when a template is selected
+  useEffect(() => {
+    if (!form.template_id || !templates.data) return;
+    const tpl = templates.data.find(t => t.id === form.template_id);
+    if (!tpl) return;
+    setForm(f => ({
+      ...f,
+      route_id:     tpl.route_id      || f.route_id,
+      conductor_id: tpl.conductor_id  || f.conductor_id,
+      driver_id:    tpl.driver_id     || f.driver_id,
+      bus_id:       tpl.bus_id        || f.bus_id,
+      scheduled_time: tpl.departure_time ? tpl.departure_time.slice(0, 5) : f.scheduled_time,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.template_id, templates.data]);
 
   const conductors = (members.data ?? []).filter(m => m.role === 'conductor' && m.is_active);
   const drivers = (members.data ?? []).filter(m => m.role === 'driver' && m.is_active);
@@ -278,6 +315,9 @@ export default function CreateTripPage() {
                       className="w-full bg-[#0b0f12] border border-[#42474e]/60 rounded-xl px-6 py-4 text-[#e0e3e8] appearance-none focus:ring-2 focus:ring-[#a3cbf2]/30 transition-all cursor-pointer outline-none shadow-sm"
                     >
                       <option value="">None — Manual Entry</option>
+                      {(templates.data ?? []).map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
                     </select>
                     <span className="material-symbols-outlined absolute right-6 top-1/2 -translate-y-1/2 text-[#8c9198] pointer-events-none">expand_more</span>
                   </div>
