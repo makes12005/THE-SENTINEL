@@ -51,11 +51,13 @@ apps/backend/run-migration.cjs
 Thumbs.db
 desktop.ini
 
-# 7. IDE files
+# 7. IDE / AI tool files (CRITICAL - contain API keys)
 .vscode/settings.json
 .idea/
 *.suo
 *.user
+.opencoderc.json
+.cursor*
 
 # 8. Logs
 /logs/
