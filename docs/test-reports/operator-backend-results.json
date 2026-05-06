@@ -1,0 +1,122 @@
+{
+  "generatedAt": "2026-04-27T12:29:17.399Z",
+  "state": {
+    "operatorToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU3OWQ1NTczLTE4ZmMtNGRmMy05MjUzLWM5YTVjMWZkNDQ3YyIsInJvbGUiOiJvcGVyYXRvciIsImFnZW5jeUlkIjoiYTVmMTI3ODctZmY2Zi00YmY0LWI5MDMtNDk3M2VkOGE3MGU0IiwiYWdlbmN5X2lkIjoiYTVmMTI3ODctZmY2Zi00YmY0LWI5MDMtNDk3M2VkOGE3MGU0IiwibmFtZSI6IkZpeCBUZXN0IE9wZXJhdG9yIiwiaWF0IjoxNzc3MjkyOTMyLCJleHAiOjE3NzcyOTM4MzIsInN1YiI6ImU3OWQ1NTczLTE4ZmMtNGRmMy05MjUzLWM5YTVjMWZkNDQ3YyJ9.NWJ_0dF3VE5n9Y-yypc8W_3vKHs0O_A08TPMRgBoJZM",
+    "routeId": "02f991cd-2430-482c-91b0-90222e9667a3",
+    "busId": "61ea38a3-b594-4493-810e-58c369cc67c6",
+    "conductorId": "2a98d6c2-15ee-431e-84bd-228f9fc052a4",
+    "driverId": "042d92ba-2b8a-4611-8c14-9f025506d8d7",
+    "tripId": "5de07dbb-78f5-46e9-ba94-429f0a66a67d",
+    "cleanup": [
+      {
+        "entity": "bus",
+        "id": "61ea38a3-b594-4493-810e-58c369cc67c6",
+        "status": 200
+      }
+    ]
+  },
+  "results": [
+    {
+      "no": "S1",
+      "test": "Operator login (setup)",
+      "status": "PASS",
+      "notes": "status=200"
+    },
+    {
+      "no": 1,
+      "test": "Create Route",
+      "status": "PASS",
+      "notes": "status=201; routeId=02f991cd-2430-482c-91b0-90222e9667a3"
+    },
+    {
+      "no": "1b",
+      "test": "Create Route snake_case",
+      "status": "PASS",
+      "notes": "status=201"
+    },
+    {
+      "no": 2,
+      "test": "Add Stops to Route",
+      "status": "PASS",
+      "notes": "created=5/5"
+    },
+    {
+      "no": 3,
+      "test": "Add Bus",
+      "status": "PASS",
+      "notes": "status=201; busId=61ea38a3-b594-4493-810e-58c369cc67c6"
+    },
+    {
+      "no": 4,
+      "test": "Duplicate Bus Check",
+      "status": "PASS",
+      "notes": "status=409"
+    },
+    {
+      "no": 5,
+      "test": "Add Conductor",
+      "status": "PASS",
+      "notes": "status=201; conductorId=2a98d6c2-15ee-431e-84bd-228f9fc052a4"
+    },
+    {
+      "no": 6,
+      "test": "Add Driver",
+      "status": "PASS",
+      "notes": "status=201; driverId=042d92ba-2b8a-4611-8c14-9f025506d8d7"
+    },
+    {
+      "no": 7,
+      "test": "Duplicate Staff Check",
+      "status": "PASS",
+      "notes": "status=409"
+    },
+    {
+      "no": 8,
+      "test": "Create Trip",
+      "status": "PASS",
+      "notes": "status=201; tripId=5de07dbb-78f5-46e9-ba94-429f0a66a67d"
+    },
+    {
+      "no": 9,
+      "test": "Upload Passenger CSV",
+      "status": "FAIL",
+      "notes": "status=201; added=0"
+    },
+    {
+      "no": 10,
+      "test": "Invalid CSV Row",
+      "status": "FAIL",
+      "notes": "status=422"
+    },
+    {
+      "no": 11,
+      "test": "Get Trip Status",
+      "status": "FAIL",
+      "notes": "status=200"
+    },
+    {
+      "no": 12,
+      "test": "Operator Summary",
+      "status": "PASS",
+      "notes": "status=200"
+    },
+    {
+      "no": 13,
+      "test": "List Buses",
+      "status": "PASS",
+      "notes": "status=200"
+    },
+    {
+      "no": 14,
+      "test": "List Staff",
+      "status": "PASS",
+      "notes": "status=200"
+    },
+    {
+      "no": 15,
+      "test": "Alert Logs",
+      "status": "PASS",
+      "notes": "status=200"
+    }
+  ]
+}

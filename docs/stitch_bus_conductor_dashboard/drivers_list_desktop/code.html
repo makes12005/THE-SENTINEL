@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Velox Fleet Noir - Drivers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800;900&amp;family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#7a4523",
+                    "primary-container": "#a3cbf2",
+                    "surface-container-lowest": "#0b0f12",
+                    "surface-bright": "#363a3e",
+                    "secondary-fixed": "#e3dfff",
+                    "tertiary-container": "#ffb78d",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "on-surface": "#e0e3e8",
+                    "on-background": "#e0e3e8",
+                    "surface-variant": "#31353a",
+                    "error-container": "#93000a",
+                    "surface": "#101418",
+                    "outline-variant": "#42474e",
+                    "on-secondary-container": "#b3afed",
+                    "on-primary": "#003352",
+                    "surface-container": "#1c2024",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "on-secondary-fixed-variant": "#434076",
+                    "surface-container-highest": "#31353a",
+                    "on-primary-fixed-variant": "#1f4a6b",
+                    "on-tertiary-fixed-variant": "#6c3a19",
+                    "background": "#101418",
+                    "surface-container-low": "#181c20",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "on-surface-variant": "#c2c7ce",
+                    "on-primary-fixed": "#001d32",
+                    "on-primary-container": "#2d5678",
+                    "on-tertiary": "#502405",
+                    "inverse-on-surface": "#2d3135",
+                    "primary": "#cee5ff",
+                    "on-error": "#690005",
+                    "on-secondary": "#2d2a5e",
+                    "outline": "#8c9198",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed": "#ffdbc9",
+                    "surface-tint": "#a3cbf2",
+                    "primary-fixed": "#cde5ff",
+                    "secondary-container": "#434076",
+                    "tertiary": "#ffdcca",
+                    "inverse-surface": "#e0e3e8",
+                    "inverse-primary": "#396284",
+                    "secondary": "#c4c0ff",
+                    "surface-container-high": "#262a2f",
+                    "on-tertiary-fixed": "#321200",
+                    "on-secondary-fixed": "#171348",
+                    "surface-dim": "#101418"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "page-padding": "1rem",
+                    "card-gap": "1rem",
+                    "element-tight": "0.5rem",
+                    "unit-base": "4px",
+                    "section-internal": "1.25rem"
+            },
+            "fontFamily": {
+                    "metadata-label": ["Inter"],
+                    "header-title": ["Manrope"],
+                    "display-time": ["Manrope"],
+                    "body-standard": ["Inter"],
+                    "button-text": ["Inter"]
+            },
+            "fontSize": {
+                    "metadata-label": ["10px", {"letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "header-title": ["1.125rem", {"letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "display-time": ["1.5rem", {"lineHeight": "1.2", "fontWeight": "900"}],
+                    "body-standard": ["0.875rem", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "button-text": ["11px", {"letterSpacing": "0.1em", "fontWeight": "900"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .bg-grain {
+            position: relative;
+        }
+        .bg-grain::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-standard text-body-standard min-h-screen bg-grain flex flex-col md:flex-row">
+<!-- Mobile TopNavBar (hidden on desktop) -->
+<header class="md:hidden bg-neutral-900/80 backdrop-blur-md text-sky-200 dark:text-sky-300 font-metadata-label text-metadata-label fixed top-0 w-full h-14 z-50 border-b border-neutral-800 flex justify-between items-center px-4 max-w-7xl mx-auto">
+<div class="text-lg font-black tracking-tighter text-neutral-50">Velox Fleet Noir</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined hover:bg-neutral-800 transition-colors active:scale-95 duration-100 cursor-pointer p-1">notifications</span>
+<span class="material-symbols-outlined hover:bg-neutral-800 transition-colors active:scale-95 duration-100 cursor-pointer p-1">account_circle</span>
+<button class="bg-primary-container text-on-primary-container px-3 py-1.5 rounded font-button-text text-button-text ml-2">Add Driver</button>
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex flex-col bg-neutral-950 text-sky-200 font-metadata-label text-metadata-label h-screen w-64 border-r border-neutral-800 fixed left-0 top-0 bg-grain z-40">
+<div class="p-6 border-b border-neutral-800">
+<h1 class="text-sky-200 font-black font-header-title text-header-title">Fleet Ops</h1>
+<p class="text-neutral-500 mt-1">Terminal A-12</p>
+</div>
+<div class="flex-1 py-6 flex flex-col gap-2">
+<a class="bg-neutral-800 text-sky-200 border-l-4 border-sky-400 py-3 px-4 flex items-center gap-3 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">group</span>
+                Drivers
+            </a>
+<a class="text-neutral-500 py-3 px-4 flex items-center gap-3 hover:text-neutral-200 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+                Vehicles
+            </a>
+<a class="text-neutral-500 py-3 px-4 flex items-center gap-3 hover:text-neutral-200 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">map</span>
+                Routes
+            </a>
+<a class="text-neutral-500 py-3 px-4 flex items-center gap-3 hover:text-neutral-200 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+                Schedules
+            </a>
+<a class="text-neutral-500 py-3 px-4 flex items-center gap-3 hover:text-neutral-200 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Reports
+            </a>
+</div>
+<div class="p-4 border-t border-neutral-800 flex flex-col gap-2">
+<a class="text-neutral-500 py-3 px-4 flex items-center gap-3 hover:text-neutral-200 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="text-neutral-500 py-3 px-4 flex items-center gap-3 hover:text-neutral-200 transition-all duration-200 ease-in-out hover:bg-neutral-900" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+</div>
+<!-- Desktop Header Actions (mirrored from mobile TopNav) -->
+<div class="p-4 flex flex-col gap-3 mt-auto">
+<button class="bg-primary-container text-on-primary-container py-3 rounded font-button-text text-button-text w-full flex items-center justify-center gap-2 hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+                 Add Driver
+             </button>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-1 md:ml-64 pt-16 md:pt-0 p-page-padding md:p-8 max-w-7xl mx-auto w-full">
+<!-- Header Section -->
+<header class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div>
+<p class="font-metadata-label text-metadata-label text-primary uppercase mb-1">PERSONNEL MANAGEMENT</p>
+<h2 class="font-header-title text-header-title text-on-surface text-3xl">Drivers</h2>
+</div>
+<div class="flex gap-4 items-center w-full md:w-auto">
+<div class="relative flex-1 md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-high border border-outline-variant/50 rounded-lg py-2 pl-10 pr-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-standard placeholder-outline-variant transition-colors" placeholder="Search drivers..." type="text"/>
+</div>
+<button class="hidden md:flex bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg font-button-text text-button-text items-center gap-2 hover:bg-primary-fixed transition-colors whitespace-nowrap">
+<span class="material-symbols-outlined text-sm">add</span>
+                    ADD NEW
+                </button>
+</div>
+</header>
+<!-- Driver Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
+<!-- Driver Card 1 -->
+<div class="bg-surface-container-low border border-outline-variant/20 rounded-lg p-section-internal flex flex-col gap-4 relative overflow-hidden group hover:border-primary-container/30 transition-colors">
+<!-- Status Bar Indicator -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-container"></div>
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden shrink-0">
+<img alt="Marcus Chen" class="w-full h-full object-cover" data-alt="A professional headshot of a male logistics driver with short dark hair, wearing a dark industrial uniform jacket. The lighting is moody and high-contrast, fitting a tech-noir aesthetic with deep shadows. The background is a blurred dark gradient. The color palette emphasizes cool blues and deep blacks." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXLDcFCqSe31ukn89jtC7jrsvATDi4BuaViSz2Jt41Uo7yHQx11Z15Nj-KB8nVi_-FZij33jBjXcCf21c56KIUE-Ey9xkm--zoWiaYbuxaHAg0cBJ4ymRejjU4MCRBTYvUUV3Rz3734upkKYHgtkLEVJRiMiXpDXlldYqJSLY_iwxhrEXYQB6m2VAnCwSWEJ-9V-nZDdL2WIAhv30LS3VZm9ofyJzrSGgxlnTKRpiIGyqVpXlJ-Yw5hJ6saSODynR-Jp9zDNQn-ALs"/>
+</div>
+<div>
+<h3 class="font-body-standard text-body-standard text-on-surface font-bold">Marcus Chen</h3>
+<p class="font-metadata-label text-metadata-label text-outline mt-1">+1 (555) 012-4859</p>
+</div>
+</div>
+<span class="bg-secondary-container/20 text-secondary-fixed border border-secondary-container rounded px-2 py-1 font-metadata-label text-[9px] uppercase">ACTIVE</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2 border-t border-outline-variant/20">
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">VEHICLE</p>
+<p class="font-body-standard text-on-surface text-sm">Unit 402-B</p>
+</div>
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">ROUTE</p>
+<p class="font-body-standard text-on-surface text-sm">Downtown Loop</p>
+</div>
+</div>
+<div class="pt-2 flex justify-end">
+<button class="text-primary hover:text-primary-fixed flex items-center gap-1 font-button-text text-button-text">
+                        VIEW PROFILE
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Driver Card 2 -->
+<div class="bg-surface-container-low border border-outline-variant/20 rounded-lg p-section-internal flex flex-col gap-4 relative overflow-hidden group hover:border-primary-container/30 transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-container"></div>
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden shrink-0">
+<img alt="Sarah Jenkins" class="w-full h-full object-cover" data-alt="A professional headshot of a female fleet manager with tied-back hair, wearing a sleek black polo shirt. The lighting is dramatic and directional, creating strong highlights and deep shadows typical of a modern industrial look. The background is a solid charcoal gray. The overall mood is authoritative and precise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLF57s1CjhYzZa7vGkhEEYp-x8ae-nMIa_Zsru08nf96Z8D5ZQmqB-0qPtzG7j1DqiyN7PfYTgsk2SpBq7F92QEWEwyy_J4Y__JrXxHHHISuThUABHtpzegbq8b6eLSIL4TC0TAtRaGy9VY1ShkTlj6f3NFoHB3YakFnV17M7UgmpzuRtuKiXs0W5RSmF23gf-em34wB3hwsA2sTXn3W5JPDMoYJzkD3QZpc74csNMfY_Qgffw5UYRJxtobfwqIzhQXcAH97Bq7G-I"/>
+</div>
+<div>
+<h3 class="font-body-standard text-body-standard text-on-surface font-bold">Sarah Jenkins</h3>
+<p class="font-metadata-label text-metadata-label text-outline mt-1">+1 (555) 012-9932</p>
+</div>
+</div>
+<span class="bg-secondary-container/20 text-secondary-fixed border border-secondary-container rounded px-2 py-1 font-metadata-label text-[9px] uppercase">ACTIVE</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2 border-t border-outline-variant/20">
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">VEHICLE</p>
+<p class="font-body-standard text-on-surface text-sm">Unit 115-A</p>
+</div>
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">ROUTE</p>
+<p class="font-body-standard text-on-surface text-sm">North Corridor</p>
+</div>
+</div>
+<div class="pt-2 flex justify-end">
+<button class="text-primary hover:text-primary-fixed flex items-center gap-1 font-button-text text-button-text">
+                        VIEW PROFILE
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Driver Card 3 (Inactive) -->
+<div class="bg-surface-container-highest border border-outline-variant/20 rounded-lg p-section-internal flex flex-col gap-4 relative overflow-hidden group opacity-80">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-outline-variant"></div>
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden shrink-0 grayscale">
+<img alt="Elena Rodriguez" class="w-full h-full object-cover" data-alt="A portrait of a male transit operator wearing a heavy dark jacket. The image is rendered in grayscale to indicate an inactive status. The lighting is soft but moody, with a dark industrial background. The aesthetic is gritty, technical, and professional, relying heavily on stark contrasts." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALXaHqlGZhi2kvLKoeHxV-26Pq2g3N2nEF8C-8K_Nf4HEh-0NZ7zVIdeYX91VKQQQ-PqMsfaodpxr_acIuAdkT-LOVkGvrUfITBueGV-IhsR2A4W7Inmv6s8Gz-K51qT-4HMekh9LgDTL7Di11s4yCq9eglervlEqETQyvA2bFp_9GhQPVVDa8mfaY0hQ6tthdYdL2k9CpNzAHeMqU5nOMySnOA96q81BKIcgrXyH8Z1Hgh9SI2aW11xlguHptlzsz_3ss5Lhwqu1N"/>
+</div>
+<div>
+<h3 class="font-body-standard text-body-standard text-on-surface font-bold">David Kim</h3>
+<p class="font-metadata-label text-metadata-label text-outline mt-1">+1 (555) 012-7741</p>
+</div>
+</div>
+<span class="bg-surface-variant text-outline border border-outline-variant rounded px-2 py-1 font-metadata-label text-[9px] uppercase">OFF DUTY</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2 border-t border-outline-variant/20">
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">LAST VEHICLE</p>
+<p class="font-body-standard text-on-surface text-sm">Unit 308-C</p>
+</div>
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">NEXT SHIFT</p>
+<p class="font-body-standard text-on-surface text-sm">08:00 AM</p>
+</div>
+</div>
+<div class="pt-2 flex justify-end">
+<button class="text-outline hover:text-on-surface flex items-center gap-1 font-button-text text-button-text">
+                        VIEW PROFILE
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Driver Card 4 (Alert) -->
+<div class="bg-surface-container-high border border-outline-variant/20 rounded-lg p-section-internal flex flex-col gap-4 relative overflow-hidden group border-l-4 border-l-error">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden shrink-0">
+<img alt="Elena Rodriguez" class="w-full h-full object-cover" data-alt="A portrait of a female driver looking slightly stressed or alert, wearing a dark utility vest over a long-sleeve shirt. The lighting features a subtle red/orange rim light to suggest an active alert state. The background is a dark, out-of-focus transit terminal. The style is cinematic tech-noir." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgrnCIoLDF-StfowT-vf5qOp1p7usKJqcZGzX4ZY4LCFhzxsVJqzmSCa6hV16ltJwztW28XlpEjp13oGQcBcDV6cBzQP0Y3zjUP3lxdjGgU93BPRVO98TPQA6iz9YcTK-kQrOqRiPF0XlJ-mc68jntqr501gVLiB68F59DJEZsJ7vZIzT_dlWT0xism40tXrAF6imuplOyfsyXD7CXPMG4R3nh-jP1bziS8yQiORoDI8YULHzZ56GBLQkzmtTZvJSDlhJ8Ab5oTfPI"/>
+</div>
+<div>
+<h3 class="font-body-standard text-body-standard text-on-surface font-bold">Elena Rodriguez</h3>
+<p class="font-metadata-label text-metadata-label text-outline mt-1">+1 (555) 012-5522</p>
+</div>
+</div>
+<span class="bg-error-container/30 text-error border border-error/50 rounded px-2 py-1 font-metadata-label text-[9px] uppercase">DELAYED</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2 border-t border-outline-variant/20">
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">VEHICLE</p>
+<p class="font-body-standard text-error text-sm font-bold">Unit 912-X</p>
+</div>
+<div>
+<p class="font-metadata-label text-metadata-label text-outline mb-1">ROUTE</p>
+<p class="font-body-standard text-on-surface text-sm">West Industrial</p>
+</div>
+</div>
+<div class="pt-2 flex justify-between items-center mt-auto">
+<span class="text-error font-metadata-label text-metadata-label flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">warning</span>
+                        Traffic Incident
+                    </span>
+<button class="bg-tertiary-container text-on-tertiary-container px-3 py-1.5 rounded font-button-text text-button-text">
+                        RESOLVE
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

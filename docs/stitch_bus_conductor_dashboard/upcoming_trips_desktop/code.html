@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transit Command - Upcoming Trips</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#ffdcca",
+                    "inverse-surface": "#e0e3e8",
+                    "tertiary-container": "#ffb78d",
+                    "secondary": "#c4c0ff",
+                    "surface-bright": "#363a3e",
+                    "on-background": "#e0e3e8",
+                    "primary": "#cee5ff",
+                    "on-secondary-fixed-variant": "#434076",
+                    "tertiary-fixed": "#ffdbc9",
+                    "on-surface": "#e0e3e8",
+                    "inverse-primary": "#396284",
+                    "primary-fixed": "#cde5ff",
+                    "on-primary": "#003352",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-fixed": "#001d32",
+                    "secondary-fixed": "#e3dfff",
+                    "outline": "#8c9198",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "surface-tint": "#a3cbf2",
+                    "inverse-on-surface": "#2d3135",
+                    "on-primary-fixed-variant": "#1f4a6b",
+                    "on-secondary-fixed": "#171348",
+                    "surface-dim": "#101418",
+                    "on-error": "#690005",
+                    "surface-container": "#1c2024",
+                    "surface": "#101418",
+                    "surface-container-high": "#262a2f",
+                    "on-secondary-container": "#b3afed",
+                    "on-primary-container": "#2d5678",
+                    "secondary-container": "#434076",
+                    "on-tertiary": "#502405",
+                    "error-container": "#93000a",
+                    "error": "#ffb4ab",
+                    "background": "#101418",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "surface-container-low": "#181c20",
+                    "surface-container-highest": "#31353a",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "on-tertiary-fixed-variant": "#6c3a19",
+                    "outline-variant": "#42474e",
+                    "primary-container": "#a3cbf2",
+                    "surface-variant": "#31353a",
+                    "on-tertiary-container": "#7a4523",
+                    "on-tertiary-fixed": "#321200",
+                    "on-surface-variant": "#c2c7ce",
+                    "surface-container-lowest": "#0b0f12",
+                    "on-secondary": "#2d2a5e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "384px",
+                    "unit": "4px",
+                    "stack-lg": "48px",
+                    "stack-sm": "8px",
+                    "stack-md": "32px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Manrope"
+                    ],
+                    "code-input": [
+                            "Monospace"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "button-text": [
+                            "Manrope"
+                    ],
+                    "display-xl": [
+                            "Manrope"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "code-input": [
+                            "32px",
+                            {
+                                    "letterSpacing": "0.2em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "10px",
+                            {
+                                    "lineHeight": "1.0",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "button-text": [
+                            "18px",
+                            {
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "display-xl": [
+                            "36px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "800"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .rugged-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+        }
+        .sentinel-asymmetry {
+            position: fixed;
+            top: -20vh;
+            right: -10vw;
+            width: 70vw;
+            height: 70vw;
+            background: radial-gradient(circle, rgba(163, 203, 242, 0.08) 0%, rgba(16, 20, 24, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            filter: blur(80px);
+        }
+        .grid-blueprint {
+            position: fixed;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            pointer-events: none;
+            z-index: -2;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-lg text-body-lg overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Atmospheric Backgrounds -->
+<div class="rugged-overlay"></div>
+<div class="sentinel-asymmetry"></div>
+<div class="grid-blueprint"></div>
+<!-- SideNavBar Component -->
+<nav class="fixed left-0 top-0 h-screen w-64 flex flex-col z-40 bg-zinc-950 border-r border-zinc-800/50 shadow-[inset_-10px_0_20px_rgba(0,0,0,0.4)]">
+<!-- Header / Brand -->
+<div class="p-6 border-b border-zinc-800/50 flex flex-col items-center justify-center gap-4">
+<div class="w-16 h-16 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden relative">
+<img alt="Agent tactical profile" class="w-full h-full object-cover opacity-80 mix-blend-luminosity" data-alt="A tactical profile portrait of a field agent. High contrast lighting, desaturated colors, technical overlay aesthetic. Serious expression, modern rugged attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGU-1wuKWPgfv7pRwid7JF45pj6igeCTfUXJRrFxeWMRLQvrBWk8Z12nAxYAxGj6rLMZcCNfbJ6WhJwJk9TD3sPgCmz3vtiBP2Rsx639cN9xwiO5453J0U9Ysuh-H7xBw-S-3bSRRmTCFlh0_UediARAehUJ1lmdFiAW4hSt4OT4i0u2MKk2G-6M0pVZBgi9ujt5w04MRLdNiXdmFSnA73YHxTNAJuxi_PbF_ufD4mkHkXzpB1k8AuD5OTBE8Tue-dvWnxjZo7z3NY"/>
+<div class="absolute inset-0 bg-primary/10 mix-blend-overlay"></div>
+</div>
+<div class="text-center">
+<h1 class="font-['Manrope'] tracking-[0.15em] font-bold text-xs text-sky-300">TRANSIT OPS</h1>
+<p class="font-label-caps text-label-caps text-outline mt-1 uppercase">SENTINEL-TRK-04</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto py-6 flex flex-col gap-2">
+<a class="text-zinc-500 pl-5 py-4 flex items-center gap-3 hover:text-zinc-300 hover:bg-zinc-900/50 transition-all duration-200 cursor-crosshair" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-label-caps text-label-caps uppercase">DASHBOARD</span>
+</a>
+<a class="text-sky-300 bg-sky-400/10 border-l-4 border-sky-400 pl-4 py-4 flex items-center gap-3 cursor-crosshair" href="#">
+<span class="material-symbols-outlined text-[20px] font-variation-settings-'FILL'-1">directions_bus</span>
+<span class="font-label-caps text-label-caps uppercase">FIELD MISSIONS</span>
+</a>
+<a class="text-zinc-500 pl-5 py-4 flex items-center gap-3 hover:text-zinc-300 hover:bg-zinc-900/50 transition-all duration-200 cursor-crosshair" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span class="font-label-caps text-label-caps uppercase">ASSET LOGS</span>
+</a>
+<a class="text-zinc-500 pl-5 py-4 flex items-center gap-3 hover:text-zinc-300 hover:bg-zinc-900/50 transition-all duration-200 cursor-crosshair" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-caps text-label-caps uppercase">SYSTEM CFG</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="p-6 border-t border-zinc-800/50">
+<button class="w-full h-16 bg-primary-container text-on-primary-container font-button-text text-button-text uppercase flex items-center justify-center gap-2 rounded shadow-xl hover:bg-primary-fixed transition-colors active:scale-[0.98] cursor-crosshair">
+<span>NEW MISSION</span>
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen relative flex flex-col">
+<!-- TopAppBar Component -->
+<header class="fixed top-0 right-0 left-64 flex justify-between items-center px-8 h-20 z-30 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/60 flat no-shadows">
+<div class="flex items-center gap-4">
+<span class="text-lg font-black text-sky-400 tracking-[0.25em] font-['Manrope'] uppercase">TRANSIT COMMAND</span>
+</div>
+<div class="flex items-center gap-6">
+<!-- Search Bar -->
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[20px]">search</span>
+<input class="w-full h-10 bg-surface-container-low border border-outline-variant/30 rounded pl-10 pr-4 font-label-caps text-label-caps text-on-surface focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-outline/50 uppercase" placeholder="QUERY IDENTIFIER..." type="text"/>
+</div>
+<div class="h-6 w-px bg-zinc-800"></div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center text-zinc-400 hover:text-sky-200 hover:bg-zinc-800/40 focus:ring-2 focus:ring-sky-400/20 transition-all">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+</button>
+<button class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center text-zinc-400 hover:text-sky-200 hover:bg-zinc-800/40 focus:ring-2 focus:ring-sky-400/20 transition-all">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="pt-32 px-8 pb-12 flex-1 flex flex-col">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-stack-md border-b border-outline-variant/20 pb-6">
+<div>
+<h2 class="font-display-xl text-display-xl text-on-background uppercase tracking-tight">Upcoming Trips</h2>
+<p class="font-label-caps text-label-caps text-primary mt-2 uppercase flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                        14 ACTIVE ROUTES DETECTED
+                    </p>
+</div>
+<button class="h-12 px-6 border border-tertiary-container/30 bg-tertiary-container/10 text-tertiary-container font-label-caps text-label-caps uppercase flex items-center gap-2 rounded hover:bg-tertiary-container/20 transition-colors shadow-[0_0_15px_rgba(255,183,141,0.1)] focus:ring-2 focus:ring-tertiary-container/20">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+                    LIVE SYNC
+                </button>
+</div>
+<!-- Data Table Container -->
+<div class="bg-surface-container-low rounded-lg border border-outline-variant/20 overflow-hidden shadow-2xl relative">
+<!-- Subtle internal glow -->
+<div class="absolute inset-0 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] pointer-events-none"></div>
+<table class="w-full text-left border-collapse relative z-10">
+<thead>
+<tr class="bg-surface-container border-b border-outline-variant/30 font-label-caps text-label-caps text-outline uppercase tracking-wider">
+<th class="py-4 px-6 w-32">Status</th>
+<th class="py-4 px-6 w-48">Asset ID</th>
+<th class="py-4 px-6">Vector / Route</th>
+<th class="py-4 px-6 w-48">Departure (T-Minus)</th>
+<th class="py-4 px-6 w-24 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-lg text-body-lg divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container/50 transition-colors group">
+<td class="py-5 px-6">
+<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 text-primary font-label-caps text-[10px] uppercase border border-primary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                    BOARDING
+                                </span>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-on-surface">GJ-18-BZ-4521</td>
+<td class="py-5 px-6">
+<div class="flex items-center gap-3">
+<span class="font-bold text-on-background">Ahmedabad</span>
+<span class="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+<span class="text-on-surface-variant">Una</span>
+</div>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-tertiary-container">20:30 HRS</td>
+<td class="py-5 px-6 text-right">
+<button class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center text-outline hover:text-primary transition-colors ml-auto opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container/50 transition-colors group">
+<td class="py-5 px-6">
+<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-bright text-outline font-label-caps text-[10px] uppercase border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                    SCHEDULED
+                                </span>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-on-surface">GJ-01-XX-9012</td>
+<td class="py-5 px-6">
+<div class="flex items-center gap-3">
+<span class="font-bold text-on-background">Surat</span>
+<span class="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+<span class="text-on-surface-variant">Rajkot</span>
+</div>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-on-surface-variant">22:15 HRS</td>
+<td class="py-5 px-6 text-right">
+<button class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center text-outline hover:text-primary transition-colors ml-auto opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container/50 transition-colors group">
+<td class="py-5 px-6">
+<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-bright text-outline font-label-caps text-[10px] uppercase border border-outline-variant/30">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                    SCHEDULED
+                                </span>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-on-surface">GJ-03-AB-3344</td>
+<td class="py-5 px-6">
+<div class="flex items-center gap-3">
+<span class="font-bold text-on-background">Vadodara</span>
+<span class="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+<span class="text-on-surface-variant">Bhuj</span>
+</div>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-on-surface-variant">23:00 HRS</td>
+<td class="py-5 px-6 text-right">
+<button class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center text-outline hover:text-primary transition-colors ml-auto opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container/50 transition-colors group">
+<td class="py-5 px-6">
+<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-error/10 text-error font-label-caps text-[10px] uppercase border border-error/20">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                                    DELAYED
+                                </span>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-on-surface">GJ-11-KL-8877</td>
+<td class="py-5 px-6">
+<div class="flex items-center gap-3">
+<span class="font-bold text-on-background">Bhavnagar</span>
+<span class="material-symbols-outlined text-outline text-[16px]">arrow_forward</span>
+<span class="text-on-surface-variant">Mumbai</span>
+</div>
+</td>
+<td class="py-5 px-6 font-code-input text-[16px] text-error">01:45 HRS</td>
+<td class="py-5 px-6 text-right">
+<button class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center text-outline hover:text-primary transition-colors ml-auto opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination / Footer of Table -->
+<div class="bg-surface-container p-4 border-t border-outline-variant/30 flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-outline uppercase">SHOWING 1-4 OF 14 RECORDS</span>
+<div class="flex gap-2">
+<button class="w-8 h-8 rounded bg-surface-bright border border-outline-variant/30 flex items-center justify-center text-outline hover:text-on-surface disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-surface-bright border border-outline-variant/30 flex items-center justify-center text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

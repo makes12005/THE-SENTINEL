@@ -20,6 +20,9 @@
  *   GET  /api/admin/health               — platform metrics snapshot
  *   GET  /api/admin/audit-logs           — audit log tail (last 200 rows)
  *
+ * Trips:
+ *   GET  /api/admin/trips                — list all trips across all agencies
+ *
  * Audit:
  *   Every mutating admin action is logged to the audit_logs table.
  */
@@ -119,6 +122,113 @@ async function adminRoutes(fastify) {
         }
     });
     // ───────────────────────────────────────────────────────────────────────────
+    // GET /api/admin/agencies/invites  ← MUST be before /:id to avoid route clash
+    // List all pending agency invites
+    // ───────────────────────────────────────────────────────────────────────────
+    fastify.get('/admin/agencies/invites', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        try {
+            const rows = await db_1.db
+                .select({
+                id: schema_1.agencyInvites.id,
+                phone: schema_1.agencyInvites.phone,
+                invite_token: schema_1.agencyInvites.invite_token,
+                status: schema_1.agencyInvites.status,
+                expires_at: schema_1.agencyInvites.expires_at,
+                created_at: schema_1.agencyInvites.created_at,
+                accepted_at: schema_1.agencyInvites.accepted_at,
+            })
+                .from(schema_1.agencyInvites)
+                .orderBy((0, drizzle_orm_1.desc)(schema_1.agencyInvites.created_at));
+            return reply.send({
+                success: true,
+                data: rows,
+                meta: { count: rows.length, timestamp: new Date().toISOString() },
+            });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
+    // ───────────────────────────────────────────────────────────────────────────
+    // GET /api/admin/agencies/:id
+    // Agency details for Admin: wallet, stats, recent transactions
+    // ───────────────────────────────────────────────────────────────────────────
+    fastify.get('/admin/agencies/:id', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        try {
+            const params = req.params;
+            const agencyId = params.id;
+            // UUID format guard — prevents 'invites' or other static segments slipping through
+            const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!UUID_RE.test(agencyId)) {
+                return reply.status(400).send({ success: false, error: { code: 'INVALID_ID', message: 'agencyId must be a valid UUID' } });
+            }
+            const [agency] = await db_1.db
+                .select({
+                id: schema_1.agencies.id,
+                name: schema_1.agencies.name,
+                state: schema_1.agencies.state,
+                created_at: schema_1.agencies.created_at,
+            })
+                .from(schema_1.agencies)
+                .where((0, drizzle_orm_1.eq)(schema_1.agencies.id, agencyId))
+                .limit(1);
+            if (!agency) {
+                return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Agency not found' } });
+            }
+            const [ownerRow] = await db_1.db
+                .select({ name: schema_1.users.name, phone: schema_1.users.phone, is_active: schema_1.users.is_active })
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.agency_id, agencyId), (0, drizzle_orm_1.eq)(schema_1.users.role, 'owner')))
+                .limit(1);
+            const wallet = await (0, wallet_service_1.getOrCreateWallet)(agencyId);
+            const transactions = await db_1.db
+                .select()
+                .from(schema_1.walletTransactions)
+                .where((0, drizzle_orm_1.eq)(schema_1.walletTransactions.agency_id, agencyId))
+                .orderBy((0, drizzle_orm_1.desc)(schema_1.walletTransactions.created_at))
+                .limit(5);
+            const [busesRow] = await db_1.db
+                .select({ cnt: (0, drizzle_orm_1.count)() })
+                .from(schema_1.buses)
+                .where((0, drizzle_orm_1.eq)(schema_1.buses.agency_id, agencyId));
+            const [staffRow] = await db_1.db
+                .select({ cnt: (0, drizzle_orm_1.count)() })
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.agency_id, agencyId));
+            const [tripsRow] = await db_1.db
+                .select({ cnt: (0, drizzle_orm_1.count)() })
+                .from(schema_1.trips)
+                .innerJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.trips.owned_by_operator_id, schema_1.users.id))
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.users.agency_id, agencyId), (0, drizzle_orm_1.eq)(schema_1.trips.status, 'active')));
+            return reply.send({
+                success: true,
+                data: {
+                    id: agency.id,
+                    name: agency.name,
+                    owner_name: ownerRow?.name ?? '—',
+                    owner_phone: ownerRow?.phone ?? '—',
+                    is_active: ownerRow?.is_active ?? true,
+                    state: agency.state,
+                    created_at: agency.created_at,
+                    wallet: {
+                        trips_remaining: wallet.trips_remaining,
+                        trips_used_this_month: wallet.trips_used_this_month,
+                        low_trip_threshold: wallet.low_trip_threshold,
+                    },
+                    stats: {
+                        total_buses: Number(busesRow?.cnt ?? 0),
+                        total_staff: Number(staffRow?.cnt ?? 0),
+                        active_trips: Number(tripsRow?.cnt ?? 0),
+                    },
+                    recent_transactions: transactions,
+                },
+            });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
+    // ───────────────────────────────────────────────────────────────────────────
     // POST /api/admin/agencies
     // Creates an agency AND its owner user in a single DB transaction.
     // Body: { name, ownerName, ownerPhone, ownerEmail, ownerPassword, state }
@@ -186,6 +296,35 @@ async function adminRoutes(fastify) {
         }
     });
     // ───────────────────────────────────────────────────────────────────────────
+    // PUT /api/admin/agencies/:id
+    // Update agency basic info
+    // ───────────────────────────────────────────────────────────────────────────
+    fastify.put('/admin/agencies/:id', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        try {
+            const admin = req.user;
+            const params = req.params;
+            const body = req.body ?? {};
+            const agencyId = params.id;
+            const updates = {};
+            if (body.name)
+                updates.name = body.name.trim();
+            if (body.state)
+                updates.state = body.state.trim();
+            if (Object.keys(updates).length === 0) {
+                return reply.status(400).send({ success: false, error: { code: 'NO_FIELDS', message: 'No fields to update' } });
+            }
+            const [existing] = await db_1.db.select().from(schema_1.agencies).where((0, drizzle_orm_1.eq)(schema_1.agencies.id, agencyId)).limit(1);
+            if (!existing)
+                return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Agency not found' } });
+            await db_1.db.update(schema_1.agencies).set(updates).where((0, drizzle_orm_1.eq)(schema_1.agencies.id, agencyId));
+            await logAdminAction(admin.id, 'UPDATE_AGENCY', 'agencies', agencyId, updates, req.ip);
+            return reply.send({ success: true, data: { id: agencyId, ...updates } });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
+    // ───────────────────────────────────────────────────────────────────────────
     // POST /api/admin/agencies/:id/toggle
     // Activates or deactivates ALL users in the agency (blocks logins).
     // ───────────────────────────────────────────────────────────────────────────
@@ -222,40 +361,50 @@ async function adminRoutes(fastify) {
     // ───────────────────────────────────────────────────────────────────────────
     fastify.get('/admin/wallet/summary', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
         try {
-            // Total trips consumed across all agencies
+            // Platform-wide: wallet totals in one query
             const [deductionRow] = await db_1.db
                 .select({ total: (0, drizzle_orm_1.sum)(schema_1.walletTransactions.trips_amount) })
                 .from(schema_1.walletTransactions)
                 .where((0, drizzle_orm_1.eq)(schema_1.walletTransactions.type, 'trip_deduction'));
-            // Total trips credited (top-ups)
             const [topupRow] = await db_1.db
                 .select({ total: (0, drizzle_orm_1.sum)(schema_1.walletTransactions.trips_amount) })
                 .from(schema_1.walletTransactions)
                 .where((0, drizzle_orm_1.eq)(schema_1.walletTransactions.type, 'trip_topup'));
-            // Per-agency wallet overview
-            const wallets = await db_1.db
+            // Get all wallets in one query
+            const allWallets = await db_1.db
                 .select({
                 agency_id: schema_1.agencyWallets.agency_id,
                 trips_remaining: schema_1.agencyWallets.trips_remaining,
                 trips_used_this_month: schema_1.agencyWallets.trips_used_this_month,
                 low_trip_threshold: schema_1.agencyWallets.low_trip_threshold,
-                updated_at: schema_1.agencyWallets.updated_at,
             })
-                .from(schema_1.agencyWallets)
-                .orderBy(schema_1.agencyWallets.trips_remaining);
-            // Attach agency names
-            const agencyIds = wallets.map((w) => w.agency_id);
-            const agencyRows = agencyIds.length > 0
-                ? await db_1.db.select({ id: schema_1.agencies.id, name: schema_1.agencies.name }).from(schema_1.agencies).where((0, drizzle_orm_1.inArray)(schema_1.agencies.id, agencyIds))
-                : [];
-            const agencyMap = Object.fromEntries(agencyRows.map((a) => [a.id, a.name]));
-            const agencyWalletList = wallets.map((w) => ({
-                agency_id: w.agency_id,
-                agency_name: agencyMap[w.agency_id] ?? '—',
-                trips_remaining: w.trips_remaining,
-                trips_used_this_month: w.trips_used_this_month,
-                low_trips: w.trips_remaining <= w.low_trip_threshold,
-            }));
+                .from(schema_1.agencyWallets);
+            const walletMap = Object.fromEntries(allWallets.map(w => [w.agency_id, w]));
+            // Get all active trip counts per agency in one query
+            const activeTripCounts = await db_1.db
+                .select({
+                agency_id: schema_1.users.agency_id,
+                cnt: (0, drizzle_orm_1.count)(),
+            })
+                .from(schema_1.trips)
+                .innerJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.trips.owned_by_operator_id, schema_1.users.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.trips.status, 'active'))
+                .groupBy(schema_1.users.agency_id);
+            const activeTripMap = Object.fromEntries(activeTripCounts.map(r => [r.agency_id, Number(r.cnt)]));
+            const allAgencies = await db_1.db.select({ id: schema_1.agencies.id, name: schema_1.agencies.name }).from(schema_1.agencies);
+            const agencyWalletList = allAgencies.map(a => {
+                const w = walletMap[a.id];
+                const remaining = w?.trips_remaining ?? 0;
+                const threshold = w?.low_trip_threshold ?? 10;
+                return {
+                    agency_id: a.id,
+                    agency_name: a.name,
+                    trips_remaining: remaining,
+                    trips_used_this_month: w?.trips_used_this_month ?? 0,
+                    active_trips: activeTripMap[a.id] ?? 0,
+                    low_trips: remaining <= threshold,
+                };
+            }).sort((a, b) => a.trips_remaining - b.trips_remaining);
             const totalConsumed = Math.abs(Number(deductionRow?.total ?? 0));
             const totalTopups = Number(topupRow?.total ?? 0);
             return reply.send({
@@ -380,14 +529,16 @@ async function adminRoutes(fastify) {
     fastify.get('/admin/health', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
         try {
             const dayStart = todayStart();
-            const [[agencyRow], [userRow], [tripRow], [alertRow], [activeRow]] = await Promise.all([
+            // All platform counts in one round trip
+            const [[agencyRow], [userRow], [tripRow], [alertRow], [activeRow], [upcomingRow], [completedTodayRow]] = await Promise.all([
                 db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.agencies),
                 db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.users),
-                db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.trips),
+                db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.trips).where((0, drizzle_orm_1.eq)(schema_1.trips.scheduled_date, (0, drizzle_orm_1.sql) `CURRENT_DATE`)),
                 db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.tripPassengers).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.tripPassengers.alert_status, 'sent'), (0, drizzle_orm_1.gte)(schema_1.tripPassengers.alert_sent_at, dayStart))),
                 db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.trips).where((0, drizzle_orm_1.eq)(schema_1.trips.status, 'active')),
+                db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.trips).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.trips.scheduled_date, (0, drizzle_orm_1.sql) `CURRENT_DATE`), (0, drizzle_orm_1.eq)(schema_1.trips.status, 'scheduled'))),
+                db_1.db.select({ cnt: (0, drizzle_orm_1.count)() }).from(schema_1.trips).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.trips.scheduled_date, (0, drizzle_orm_1.sql) `CURRENT_DATE`), (0, drizzle_orm_1.eq)(schema_1.trips.status, 'completed'))),
             ]);
-            // DB connectivity check via raw query
             let dbStatus = 'ok';
             try {
                 await db_1.db.execute((0, drizzle_orm_1.sql) `SELECT 1`);
@@ -395,6 +546,44 @@ async function adminRoutes(fastify) {
             catch {
                 dbStatus = 'error';
             }
+            // Get active trip counts per agency in ONE query
+            const activeTripsByAgency = await db_1.db
+                .select({ agency_id: schema_1.users.agency_id, cnt: (0, drizzle_orm_1.count)() })
+                .from(schema_1.trips)
+                .innerJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.trips.owned_by_operator_id, schema_1.users.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.trips.status, 'active'))
+                .groupBy(schema_1.users.agency_id);
+            const activeTripMap = Object.fromEntries(activeTripsByAgency.map(r => [r.agency_id, Number(r.cnt)]));
+            // Get all wallets in ONE query
+            const allWalletsForHealth = await db_1.db
+                .select({
+                agency_id: schema_1.agencyWallets.agency_id,
+                trips_remaining: schema_1.agencyWallets.trips_remaining,
+                low_trip_threshold: schema_1.agencyWallets.low_trip_threshold,
+            })
+                .from(schema_1.agencyWallets);
+            const walletMapHealth = Object.fromEntries(allWalletsForHealth.map(w => [w.agency_id, w]));
+            // Get all owners in ONE query
+            const allOwners = await db_1.db
+                .select({ agency_id: schema_1.users.agency_id, is_active: schema_1.users.is_active })
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.role, shared_types_1.UserRole.OWNER));
+            const ownerMap = Object.fromEntries(allOwners.map(o => [o.agency_id, o]));
+            const allAgencies = await db_1.db.select({ id: schema_1.agencies.id, name: schema_1.agencies.name }).from(schema_1.agencies);
+            const agenciesOverview = allAgencies.map(a => {
+                const w = walletMapHealth[a.id];
+                const remaining = w?.trips_remaining ?? 0;
+                const threshold = w?.low_trip_threshold ?? 10;
+                return {
+                    id: a.id,
+                    name: a.name,
+                    active_trips: activeTripMap[a.id] ?? 0,
+                    is_active: ownerMap[a.id]?.is_active ?? true,
+                    status: remaining <= threshold ? 'alert' : 'optimal',
+                };
+            })
+                .sort((a, b) => b.active_trips - a.active_trips || a.name.localeCompare(b.name))
+                .slice(0, 10);
             return reply.send({
                 success: true,
                 data: {
@@ -403,12 +592,60 @@ async function adminRoutes(fastify) {
                     total_users: Number(userRow?.cnt ?? 0),
                     total_trips: Number(tripRow?.cnt ?? 0),
                     active_trips: Number(activeRow?.cnt ?? 0),
+                    upcoming_trips: Number(upcomingRow?.cnt ?? 0),
+                    completed_today: Number(completedTodayRow?.cnt ?? 0),
                     alerts_sent_today: Number(alertRow?.cnt ?? 0),
                     uptime_seconds: Math.floor(process.uptime()),
                     memory_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
                     node_version: process.version,
+                    agencies_overview: agenciesOverview,
                 },
                 meta: { timestamp: new Date().toISOString() },
+            });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
+    // ───────────────────────────────────────────────────────────────────────────
+    // GET /api/admin/trips
+    // Returns all trips across all agencies.
+    // Query params: status (active, scheduled, completed)
+    // ───────────────────────────────────────────────────────────────────────────
+    fastify.get('/admin/trips', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        try {
+            const query = req.query;
+            const statusFilter = query.status;
+            const whereClauses = [];
+            if (statusFilter) {
+                whereClauses.push((0, drizzle_orm_1.eq)(schema_1.trips.status, statusFilter));
+            }
+            const rows = await db_1.db
+                .select({
+                id: schema_1.trips.id,
+                status: schema_1.trips.status,
+                scheduled_date: schema_1.trips.scheduled_date,
+                started_at: schema_1.trips.started_at,
+                completed_at: schema_1.trips.completed_at,
+                created_at: schema_1.trips.created_at,
+                route_name: schema_1.routes.name,
+                from_city: schema_1.routes.from_city,
+                to_city: schema_1.routes.to_city,
+                agency_id: schema_1.agencies.id,
+                agency_name: schema_1.agencies.name,
+                operator_name: schema_1.users.name,
+            })
+                .from(schema_1.trips)
+                .innerJoin(schema_1.routes, (0, drizzle_orm_1.eq)(schema_1.trips.route_id, schema_1.routes.id))
+                .innerJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.trips.owned_by_operator_id, schema_1.users.id))
+                .innerJoin(schema_1.agencies, (0, drizzle_orm_1.eq)(schema_1.users.agency_id, schema_1.agencies.id))
+                .where(whereClauses.length > 0 ? (0, drizzle_orm_1.and)(...whereClauses) : undefined)
+                .orderBy((0, drizzle_orm_1.desc)(schema_1.trips.created_at))
+                .limit(200);
+            return reply.send({
+                success: true,
+                data: rows,
+                meta: { count: rows.length, timestamp: new Date().toISOString() },
             });
         }
         catch (err) {
@@ -458,36 +695,7 @@ async function adminRoutes(fastify) {
             return handleError(reply, err);
         }
     });
-    // ───────────────────────────────────────────────────────────────────────────
-    // GET /api/admin/invites
-    // List all agency invites
-    // ───────────────────────────────────────────────────────────────────────────
-    // List all pending invites
-    fastify.get('/admin/agencies/invites', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
-        try {
-            const rows = await db_1.db
-                .select({
-                id: schema_1.agencyInvites.id,
-                phone: schema_1.agencyInvites.phone,
-                invite_token: schema_1.agencyInvites.invite_token,
-                status: schema_1.agencyInvites.status,
-                expires_at: schema_1.agencyInvites.expires_at,
-                created_at: schema_1.agencyInvites.created_at,
-                accepted_at: schema_1.agencyInvites.accepted_at,
-            })
-                .from(schema_1.agencyInvites)
-                .orderBy((0, drizzle_orm_1.desc)(schema_1.agencyInvites.created_at));
-            return reply.send({
-                success: true,
-                data: rows,
-                meta: { count: rows.length, timestamp: new Date().toISOString() },
-            });
-        }
-        catch (err) {
-            return handleError(reply, err);
-        }
-    });
-    // POST /api/admin/agencies/invite
+    // POST /api/admin/agencies/invite  ← kept here; invites GET was moved above /:id
     // Create a new agency invite
     fastify.post('/admin/agencies/invite', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
         try {

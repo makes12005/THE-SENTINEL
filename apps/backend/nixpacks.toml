@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm install -g pnpm@10.5.2", "pnpm install --no-frozen-lockfile"]
+cmds = ["npm install --include=dev"]
 
 [phases.build]
-cmds = ["pnpm build"]
+cmds = ["npm run build"]
 
 [start]
-cmd = "pnpm start"
+cmd = "node dist/server.js"

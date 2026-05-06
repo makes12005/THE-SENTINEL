@@ -1,11 +1,12 @@
 import bcrypt from 'bcryptjs';
-import { and, count, desc, eq, gte, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../../db';
 import {
   agencies,
   agencyWallets,
   alertLogs,
+  buses,
   conductorLocations,
   routes,
   tripPassengers,
@@ -27,10 +28,23 @@ function handleError(reply: FastifyReply, err: any) {
   });
 }
 
-function todayStart(): Date {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
+/** Today's date YYYY-MM-DD in Asia/Kolkata */
+function istYYYYMMDD(d = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
+function istDayStart(d = new Date()): Date {
+  const ymd = istYYYYMMDD(d);
+  return new Date(`${ymd}T00:00:00+05:30`);
+}
+
+function istNextDayStart(d = new Date()): Date {
+  return new Date(istDayStart(d).getTime() + 24 * 60 * 60 * 1000);
 }
 
 async function getAgencyOperatorIds(agencyId: string) {
@@ -47,7 +61,8 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
     try {
       const agencyId = req.user.agencyId as string;
       const operatorIds = await getAgencyOperatorIds(agencyId);
-      const dayStart = todayStart();
+      const dayStart = istDayStart();
+      const dayEnd = istNextDayStart();
 
       const [operatorCount] = await db
         .select({ cnt: count() })
@@ -89,7 +104,9 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
         .select({ id: trips.id })
         .from(trips)
         .innerJoin(routes, eq(routes.id, trips.route_id))
-        .where(and(eq(routes.agency_id, agencyId), gte(trips.created_at, dayStart)));
+        .where(
+          and(eq(routes.agency_id, agencyId), gte(trips.created_at, dayStart), lt(trips.created_at, dayEnd)),
+        );
 
       const todayTripIds = todayTrips.map((trip) => trip.id);
 
@@ -180,12 +197,63 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get('/owner/operators/:id', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    try {
+      const agencyId = req.user.agencyId as string;
+      const operatorId = (req.params as { id: string }).id;
+      const rows = await db.execute<{
+        id: string;
+        name: string;
+        phone: string | null;
+        role: string;
+        is_active: boolean;
+        created_at: string;
+        trips_created_count: string;
+        last_active_at: string | null;
+      }>(sql`
+        select
+          u.id,
+          u.name,
+          u.phone,
+          u.role,
+          u.is_active,
+          u.created_at::text as created_at,
+          count(t.id)::text as trips_created_count,
+          max(t.created_at)::text as last_active_at
+        from users u
+        left join trips t on t.operator_id = u.id
+        where u.agency_id = ${agencyId} and u.role = 'operator' and u.id = ${operatorId}
+        group by u.id
+        limit 1
+      `);
+
+      const op = rows[0];
+      if (!op) {
+        return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Operator not found in your agency' } });
+      }
+
+      return reply.send({
+        success: true,
+        data: { ...op, trips_created_count: Number(op.trips_created_count ?? 0) },
+      });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
   fastify.post('/owner/operators', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     try {
       const agencyId = req.user.agencyId as string;
       const body = (req.body as { name?: string; phone?: string; password?: string }) ?? {};
       if (!body.name || !body.phone || !body.password) {
         return reply.status(400).send({ success: false, error: { code: 'MISSING_FIELDS', message: 'name, phone, and password are required' } });
+      }
+
+      if (!/^\+91\d{10}$/.test(body.phone.trim())) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'INVALID_PHONE', message: 'Phone must be E.164 format: +91XXXXXXXXXX' },
+        });
       }
 
       const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.phone, body.phone)).limit(1);
@@ -244,10 +312,19 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
   fastify.get('/owner/trips', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     try {
       const agencyId = req.user.agencyId as string;
-      const query = (req.query as { status?: string; date?: string; page?: string; unassigned?: string }) ?? {};
+      const query = (req.query as {
+        status?: string;
+        date?: string;
+        page?: string;
+        unassigned?: string;
+        operator?: string;
+        window?: string;
+      }) ?? {};
       const page = Math.max(1, Number(query.page ?? 1));
       const pageSize = 50;
       const offset = (page - 1) * pageSize;
+
+      const istToday = istYYYYMMDD();
 
       const whereParts = [
         sql`r.agency_id = ${agencyId}`,
@@ -255,6 +332,21 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
         query.date ? sql`t.scheduled_date = ${query.date}` : sql`true`,
         query.unassigned === 'true' ? sql`t.assigned_to_operator_id is null` : sql`true`,
       ];
+
+      if (!query.status) {
+        if (query.window === 'today') {
+          whereParts.push(sql`(t.scheduled_date = ${istToday}::date or t.status = 'active')`);
+        } else if (query.window === 'upcoming') {
+          whereParts.push(sql`(t.scheduled_date > ${istToday}::date and t.status <> 'completed')`);
+        } else if (query.window === 'completed') {
+          whereParts.push(sql`t.status = 'completed'`);
+        }
+      }
+
+      if (query.operator?.trim()) {
+        const pat = `%${query.operator.trim()}%`;
+        whereParts.push(sql`(assigned_user.name ilike ${pat} or owner_user.name ilike ${pat})`);
+      }
 
       const rows = await db.execute<{
         id: string;
@@ -266,10 +358,15 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
         owner_name: string | null;
         assigned_operator_id: string | null;
         assigned_operator_name: string | null;
+        conductor_name: string | null;
         route_name: string;
         from_city: string;
         to_city: string;
         passenger_count: string;
+        pending_alerts: string;
+        sent_alerts: string;
+        failed_alerts: string;
+        bus_number: string | null;
       }>(sql`
         select
           t.id,
@@ -281,25 +378,34 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
           owner_user.name as owner_name,
           t.assigned_to_operator_id as assigned_operator_id,
           assigned_user.name as assigned_operator_name,
+          conductor_user.name as conductor_name,
           r.name as route_name,
           r.from_city,
           r.to_city,
-          count(tp.id)::text as passenger_count
+          count(tp.id)::text as passenger_count,
+          count(tp.id) filter (where tp.alert_status = 'pending')::text as pending_alerts,
+          count(tp.id) filter (where tp.alert_status = 'sent')::text as sent_alerts,
+          count(tp.id) filter (where tp.alert_status = 'failed')::text as failed_alerts,
+          b.number_plate as bus_number
         from trips t
         inner join routes r on r.id = t.route_id
         left join users owner_user on owner_user.id = t.operator_id
         left join users assigned_user on assigned_user.id = t.assigned_to_operator_id
+        left join users conductor_user on conductor_user.id = t.conductor_id
         left join trip_passengers tp on tp.trip_id = t.id
+        left join buses b on b.id = t.bus_id
         where ${sql.join(whereParts, sql` and `)}
-        group by t.id, r.id, owner_user.name, assigned_user.name
+        group by t.id, r.id, owner_user.name, assigned_user.name, conductor_user.name, b.number_plate
         order by t.created_at desc
         limit ${pageSize} offset ${offset}
       `);
 
       const [countRow] = await db.execute<{ total: string }>(sql`
-        select count(*)::text as total
+        select count(distinct t.id)::text as total
         from trips t
         inner join routes r on r.id = t.route_id
+        left join users owner_user on owner_user.id = t.operator_id
+        left join users assigned_user on assigned_user.id = t.assigned_to_operator_id
         where ${sql.join(whereParts, sql` and `)}
       `);
 
@@ -315,12 +421,19 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
           owner_name: row.owner_name,
           assigned_operator_id: row.assigned_operator_id,
           assigned_operator_name: row.assigned_operator_name,
+          conductor_name: row.conductor_name,
           route: {
             name: row.route_name,
             from_city: row.from_city,
             to_city: row.to_city,
           },
           passenger_count: Number(row.passenger_count ?? 0),
+          alerts: {
+            pending: Number(row.pending_alerts ?? 0),
+            sent: Number(row.sent_alerts ?? 0),
+            failed: Number(row.failed_alerts ?? 0),
+          },
+          bus_number: row.bus_number,
         })),
         meta: {
           page,
@@ -336,7 +449,7 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
   fastify.get('/owner/logs', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     try {
       const agencyId = req.user.agencyId as string;
-      const query = (req.query as { page?: string; channel?: string; status?: string }) ?? {};
+      const query = (req.query as { page?: string; channel?: string; status?: string; date?: string; operator?: string }) ?? {};
       const page = Math.max(1, Number(query.page ?? 1));
       const pageSize = 50;
       const offset = (page - 1) * pageSize;
@@ -345,6 +458,10 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
         sql`r.agency_id = ${agencyId}`,
         query.channel ? sql`al.channel = ${query.channel}` : sql`true`,
         query.status ? sql`al.status = ${query.status}` : sql`true`,
+        query.date ? sql`(al.attempted_at at time zone 'Asia/Kolkata')::date = ${query.date}::date` : sql`true`,
+        query.operator?.trim()
+          ? sql`owner_user.name ilike ${'%' + query.operator.trim() + '%'}`
+          : sql`true`,
       ];
 
       const rows = await db.execute<{
@@ -384,6 +501,7 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
         inner join trip_passengers tp on tp.id = al.trip_passenger_id
         inner join trips t on t.id = tp.trip_id
         inner join routes r on r.id = t.route_id
+        left join users owner_user on owner_user.id = t.operator_id
         where ${sql.join(whereParts, sql` and `)}
       `);
 
@@ -418,18 +536,52 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
   fastify.put('/agency/profile', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     try {
       const body = (req.body as { name?: string; phone?: string; email?: string; state?: string }) ?? {};
+      const patch: Partial<{ name: string; phone: string; email: string; state: string }> = {};
+      if (body.name !== undefined) patch.name = body.name.trim();
+      if (body.phone !== undefined) patch.phone = body.phone.trim();
+      if (body.email !== undefined) patch.email = body.email.trim();
+      if (body.state !== undefined) patch.state = body.state.trim();
+
+      if (Object.keys(patch).length === 0) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'MISSING_FIELDS', message: 'Provide at least one of name, phone, email, state' },
+        });
+      }
+
       const [agency] = await db
         .update(agencies)
-        .set({
-          name: body.name?.trim(),
-          phone: body.phone?.trim(),
-          email: body.email?.trim(),
-          state: body.state?.trim(),
-        })
+        .set(patch)
         .where(eq(agencies.id, req.user.agencyId as string))
         .returning({ id: agencies.id, name: agencies.name, phone: agencies.phone, email: agencies.email, state: agencies.state });
 
       return reply.send({ success: true, data: agency });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
+  /** Trip-credit wallet only (no monetary fields for agency owners). */
+  fastify.get('/owner/wallet', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    try {
+      const agencyId = req.user.agencyId as string;
+      const [wallet] = await db
+        .select({
+          trips_remaining: agencyWallets.trips_remaining,
+          trips_used_this_month: agencyWallets.trips_used_this_month,
+        })
+        .from(agencyWallets)
+        .where(eq(agencyWallets.agency_id, agencyId))
+        .limit(1);
+
+      return reply.send({
+        success: true,
+        data: {
+          trips_remaining: wallet?.trips_remaining ?? 0,
+          trips_used_this_month: wallet?.trips_used_this_month ?? 0,
+          rate_trips_per_completed_trip: 1,
+        },
+      });
     } catch (err) {
       return handleError(reply, err);
     }

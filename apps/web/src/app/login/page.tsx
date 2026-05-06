@@ -56,8 +56,9 @@ function LoginPageInner() {
     }
     setBusy(true);
     try {
+      const normalizedIdentifier = normalizeIdentifierForAuth(identifier);
       const res = await api.post<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/api/auth/login', { 
-        identifier: identifier.trim(), 
+        identifier: normalizedIdentifier, 
         password 
       });
       const { accessToken, refreshToken, user } = res.data.data;
@@ -133,22 +134,14 @@ function LoginPageInner() {
 
   return (
     <div className="bg-[#101418] min-h-screen flex flex-col font-body text-on-surface relative overflow-hidden">
-      {/* Background Decorative Blur */}
-      <div className="absolute top-0 inset-x-0 h-full w-full pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(163, 203, 242, 0.03) 0%, transparent 100%)'
-      }} />
+      {/* Background Decorative Glows */}
+      <div className="absolute top-1/4 -left-48 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-48 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(163,203,242,0.03)_0%,transparent_100%)] pointer-events-none" />
 
-      <header className="flex items-center justify-between px-8 py-6 w-full absolute top-0 z-50">
+      <header className="flex items-center px-8 py-6 w-full absolute top-0 z-50">
         <div className="font-headline font-bold text-primary tracking-widest uppercase text-sm">
           SENTINEL TRANSIT
-        </div>
-        <div className="hidden md:flex gap-8 text-xs font-bold tracking-[0.05em] text-outline-variant">
-          <button className="hover:text-on-surface transition-colors">System Status</button>
-          <button className="hover:text-on-surface transition-colors">Help Center</button>
-        </div>
-        <div className="flex gap-4 text-primary">
-          <button className="material-symbols-outlined hover:opacity-80 transition-opacity text-[1.25rem]" style={{ fontVariationSettings: "'FILL' 0" }}>language</button>
-          <button className="material-symbols-outlined hover:opacity-80 transition-opacity text-[1.25rem]" style={{ fontVariationSettings: "'FILL' 0" }}>settings</button>
         </div>
       </header>
 
@@ -182,7 +175,7 @@ function LoginPageInner() {
               if (!baseUrl) return toast.error('Google auth unavailable');
               window.location.href = `${baseUrl}/api/auth/google`;
             }}
-            className="w-full bg-surface-container-high hover:bg-surface-container-highest transition-colors py-3.5 rounded-xl flex items-center justify-center gap-3 text-sm font-bold text-on-surface mb-6 border border-white/[0.03]"
+            className="w-full bg-surface-container-high hover:bg-surface-container-highest transition-colors py-3.5 rounded-full flex items-center justify-center gap-3 text-sm font-bold text-on-surface mb-6 border border-white/[0.03]"
           >
             <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEhMhAS14snMCqgSGt_2gerPVe3WBk6jPpGQ2U9vHPct7gwHzK7f6o22qb-biLlAuFbq77_Xdr2vmPtZYDdltLqcPEFBp1W3_9PN348-b_NrkLDeRjOSR0IAuzz-0GrED78PzxpDZwZ4cJSy0fw_ICSU8Pj4Tm0rVXiYXGCbckBjxTYGq8el4rT5ljYPFDa7d5cPZ95U7Dwzu3Sr_iIFybmdxJOh8h7B9TOmXzmSmcAbXlH1D-Q70SZyd5ZwHXn-lkE3K8U4AKylZG"/>
             Continue with Google
@@ -201,9 +194,11 @@ function LoginPageInner() {
                 <div className="relative flex items-center">
                    <input 
                      required
-                     className="w-full bg-surface-container-lowest border border-transparent focus:border-primary/30 rounded-xl py-3.5 pl-4 pr-12 text-sm text-on-surface placeholder:text-outline-variant/50 font-medium outline-none transition-all" 
-                     placeholder="+1 (555) 000-0000" 
+                     className="w-full bg-surface-container-lowest border border-transparent focus:border-primary/30 rounded-full py-3.5 pl-5 pr-12 text-sm text-on-surface placeholder:text-outline-variant/50 font-medium outline-none transition-all" 
+                     placeholder="+91 XXXXXXXXXX" 
                      type="tel"
+                     autoComplete="tel"
+                     inputMode="tel"
                      value={identifier}
                      onChange={e => setIdentifier(e.target.value)}
                    />
@@ -219,9 +214,10 @@ function LoginPageInner() {
                 <div className="relative flex items-center">
                    <input 
                      required
-                     className="w-full bg-surface-container-lowest border border-transparent focus:border-primary/30 rounded-xl py-3.5 pl-4 pr-12 text-sm text-on-surface placeholder:text-outline-variant/50 font-medium outline-none transition-all tracking-widest" 
-                     placeholder="••••••••••••" 
+                     className="w-full bg-surface-container-lowest border border-transparent focus:border-primary/30 rounded-full py-3.5 pl-5 pr-12 text-sm text-on-surface placeholder:text-outline-variant/50 font-medium outline-none transition-all" 
+                     placeholder="••••••••" 
                      type="password"
+                     autoComplete="current-password"
                      value={password}
                      onChange={e => setPassword(e.target.value)}
                    />
@@ -233,7 +229,7 @@ function LoginPageInner() {
                 <button 
                   disabled={busy}
                   type="submit" 
-                  className="w-full bg-[#114b74] hover:bg-[#0f4063] text-white font-bold text-sm py-4 rounded-xl tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 uppercase shadow-lg shadow-black/20"
+                  className="w-full bg-[#114b74] hover:bg-[#0f4063] text-white font-bold text-sm py-4 rounded-full tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 uppercase shadow-lg shadow-black/20"
                 >
                   {busy ? 'PROCESSING...' : (tab === 'login' ? 'LOGIN' : 'SIGN UP')}
                 </button>
@@ -254,9 +250,11 @@ function LoginPageInner() {
                 <div className="relative flex items-center">
                    <input 
                      required
-                     className="w-full bg-surface-container-lowest border border-transparent focus:border-primary/30 rounded-xl py-3.5 pl-4 pr-12 text-sm text-on-surface placeholder:text-outline-variant/50 font-medium outline-none transition-all" 
-                     placeholder="+1 (555) 000-0000" 
+                     className="w-full bg-surface-container-lowest border border-transparent focus:border-primary/30 rounded-full py-3.5 pl-5 pr-12 text-sm text-on-surface placeholder:text-outline-variant/50 font-medium outline-none transition-all" 
+                     placeholder="+91 XXXXXXXXXX" 
                      type="tel"
+                     autoComplete="tel"
+                     inputMode="tel"
                      value={identifier}
                      onChange={e => setIdentifier(e.target.value)}
                    />
@@ -267,7 +265,7 @@ function LoginPageInner() {
                 <button 
                   disabled={busy}
                   type="submit" 
-                  className="w-full bg-[#114b74] hover:bg-[#0f4063] text-white font-bold text-sm py-4 rounded-xl tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 uppercase shadow-lg shadow-black/20"
+                  className="w-full bg-primary hover:bg-primary/90 text-on-primary font-bold text-sm py-4 rounded-full tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 uppercase shadow-lg shadow-black/20"
                 >
                   {busy ? 'SENDING...' : 'SEND OTP'}
                 </button>

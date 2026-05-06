@@ -21,13 +21,23 @@ export const setAuthActions = (
 // Request interceptor — attach token
 http.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('access_token');
+    let token = localStorage.getItem('access_token');
+    if (!token) {
+      const authData = localStorage.getItem('busalert-auth');
+      if (authData) {
+        try {
+          token = JSON.parse(authData).state?.token ?? null;
+        } catch {
+          token = null;
+        }
+      }
+    }
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Flag to prevent multiple refresh calls
+// Flag to prevent multiple refresh calls — reset on every module load (handles HMR)
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -44,6 +54,21 @@ http.interceptors.response.use(
   (res) => res,
   async (err) => {
     const originalRequest = err.config;
+
+    // Ignore 401s from auth endpoints so the frontend can display the actual error (e.g. wrong password)
+    if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register')) {
+      return Promise.reject(err);
+    }
+
+    // If the refresh endpoint itself returns a 4xx or 5xx, clear auth and go to login
+    if (originalRequest.url?.includes('/auth/refresh')) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('busalert-auth');
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+      }
+      return Promise.reject(err);
+    }
 
     if (err.response?.status === 401 && !originalRequest._retry && typeof window !== 'undefined') {
       if (isRefreshing) {
@@ -72,6 +97,7 @@ http.interceptors.response.use(
       }
 
       if (!refreshToken || !refreshAction) {
+        processQueue(err, null);
         isRefreshing = false;
         logoutAction?.();
         // Fallback if no logoutAction injected yet
@@ -89,6 +115,14 @@ http.interceptors.response.use(
           processQueue(null, data.accessToken);
           originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
           return http(originalRequest);
+        } else {
+          // If refreshAction returns null (e.g., backend returned 401/400 for the refresh token),
+          // we must clear the queue and trigger a logout.
+          const errMessage = new Error('Token refresh failed');
+          processQueue(errMessage, null);
+          logoutAction?.();
+          if (!logoutAction) window.location.href = '/login';
+          return Promise.reject(errMessage);
         }
       } catch (refreshErr) {
         processQueue(refreshErr, null);

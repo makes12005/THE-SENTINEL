@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Sentinel - Route Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#003353",
+                    "on-background": "#e0e2e8",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "secondary": "#c4c0ff",
+                    "on-tertiary-fixed-variant": "#753400",
+                    "on-secondary": "#2000a4",
+                    "on-tertiary": "#522300",
+                    "on-tertiary-fixed": "#321200",
+                    "outline-variant": "#42474e",
+                    "surface-bright": "#363a3e",
+                    "tertiary-fixed": "#ffdbc8",
+                    "on-tertiary-container": "#ff801d",
+                    "error-container": "#93000a",
+                    "background": "#101418",
+                    "secondary-container": "#3826cd",
+                    "primary-container": "#0b3c5d",
+                    "surface-variant": "#31353a",
+                    "on-secondary-fixed-variant": "#3622ca",
+                    "surface-container-low": "#181c20",
+                    "on-surface": "#e0e2e8",
+                    "on-primary-fixed-variant": "#1f4a6c",
+                    "inverse-surface": "#e0e2e8",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "on-primary-fixed": "#001d32",
+                    "on-primary-container": "#7fa7cd",
+                    "surface-container-highest": "#31353a",
+                    "outline": "#8c9198",
+                    "tertiary": "#ffb68b",
+                    "surface-dim": "#101418",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-fixed": "#100069",
+                    "inverse-primary": "#396285",
+                    "inverse-on-surface": "#2d3135",
+                    "surface-container": "#1c2024",
+                    "surface-container-high": "#262a2f",
+                    "primary": "#a3cbf2",
+                    "tertiary-container": "#602a00",
+                    "surface-tint": "#a3cbf2",
+                    "on-secondary-container": "#b4b0ff",
+                    "on-surface-variant": "#c2c7ce",
+                    "surface-container-lowest": "#0b0f13",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "primary-fixed": "#cee5ff",
+                    "on-error": "#690005",
+                    "surface": "#101418",
+                    "secondary-fixed": "#e3dfff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-manrope { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .grain-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen selection:bg-primary/30">
+<div class="grain-overlay fixed inset-0 z-[100]"></div>
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 bg-slate-900 flex flex-col py-8 pl-4">
+<div class="mb-10 px-4">
+<span class="text-lg font-bold text-slate-100 font-inter uppercase tracking-widest">Fleet Manager</span>
+<p class="text-slate-500 text-[10px] mt-1 tracking-[0.2em]">TERMINAL A-10</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-inter text-sm uppercase tracking-widest">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-all" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+<span class="font-inter text-sm uppercase tracking-widest">Trips</span>
+</a>
+<!-- Active State: Routes -->
+<a class="flex items-center gap-3 px-4 py-3 bg-slate-800 text-blue-400 rounded-r-full mr-4 translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>map</span>
+<span class="font-inter text-sm uppercase tracking-widest font-bold">Routes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-all" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-inter text-sm uppercase tracking-widest">Templates</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-all" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-inter text-sm uppercase tracking-widest">Analytics</span>
+</a>
+</nav>
+<div class="mt-auto space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-inter text-sm uppercase tracking-widest">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-inter text-sm uppercase tracking-widest">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 p-8">
+<!-- Top Navigation (Shared Component Integration) -->
+<header class="flex justify-between items-center h-20 mb-8 bg-slate-950/80 backdrop-blur-xl rounded-2xl px-8 shadow-2xl shadow-black/50">
+<div class="flex items-center gap-8">
+<h1 class="font-manrope text-2xl font-black text-blue-400 italic tracking-tight">Routes</h1>
+<div class="h-8 w-[1px] bg-outline-variant/30"></div>
+<div class="flex items-center bg-surface-container-lowest rounded-full p-1 w-64">
+<button class="flex-1 py-2 px-4 rounded-full text-xs font-bold bg-surface-container-highest text-primary transition-all">ROUTES</button>
+<button class="flex-1 py-2 px-4 rounded-full text-xs font-medium text-on-surface-variant hover:text-on-surface transition-all">TEMPLATES</button>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-primary hover:text-on-primary transition-all active:scale-95 duration-150">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                    + CREATE ROUTE
+                </button>
+<div class="flex items-center gap-4 text-slate-400">
+<span class="material-symbols-outlined hover:text-blue-300 cursor-pointer transition-colors">notifications</span>
+<span class="material-symbols-outlined hover:text-blue-300 cursor-pointer transition-colors">settings</span>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="professional male transit supervisor portrait in high contrast lighting blue tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlM1tRi5NBXMps-0akBvqYm5mjiMoh2woa70U217QCZbWHrOJWbY-bLgdhq-ipm_-6a0W9Xb9yALW_lEFmBTVUZyIWeFqQT1zVgACupzdqmUIAZ7MvFFmiz03xISEetLu0AM6ccDN5VWR4aRTyD2fAublE30wbNWAYuCIQpSHBaxHDBmHCI-KdOnU9WSotlz51twZZZXu7GHkdb7MTOBCfJFsL2zhE4sV0Kfaho1B7ssVOzXbHDPnnCEY49WrOEMt63DMirQxeA2Jd"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content: Bento Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Section 1: Route Creation Form -->
+<section class="col-span-12 lg:col-span-4 space-y-6">
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="p-2 bg-primary-container/30 rounded-lg text-primary">
+<span class="material-symbols-outlined">edit_road</span>
+</span>
+<h2 class="font-manrope font-bold text-lg uppercase tracking-wider">Route Creation</h2>
+</div>
+<form class="space-y-5">
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pl-1">Route Name</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 text-on-surface placeholder:text-outline-variant focus:ring-2 focus:ring-primary/50 transition-all" placeholder="e.g., Ahmedabad - Una Express" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pl-1">Start Point</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all" type="text" value="Ahmedabad Central"/>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pl-1">End Point</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all" type="text" value="Una Terminal"/>
+</div>
+</div>
+<div class="space-y-3 pt-2">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest pl-1">Via Points</label>
+<div class="space-y-2">
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 pr-10 text-on-surface" type="text" value="Lothal Junction"/>
+<span class="material-symbols-outlined absolute right-3 top-3 text-outline-variant cursor-pointer hover:text-error transition-colors">remove_circle</span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 pr-10 text-on-surface" type="text" value="Bhavnagar Bypass"/>
+<span class="material-symbols-outlined absolute right-3 top-3 text-outline-variant cursor-pointer hover:text-error transition-colors">remove_circle</span>
+</div>
+<button class="w-full py-3 border-2 border-dashed border-outline-variant/30 rounded-xl text-xs font-bold text-outline-variant hover:border-primary/50 hover:text-primary transition-all" type="button">
+                                    + ADD INTERMEDIATE STOP
+                                </button>
+</div>
+</div>
+</form>
+</div>
+<!-- Stats/Status Widget -->
+<div class="bg-gradient-to-br from-secondary-container/20 to-surface-container-low rounded-[1.5rem] p-6 flex items-center justify-between">
+<div>
+<p class="text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Estimated Distance</p>
+<h3 class="font-manrope text-3xl font-black">342<span class="text-sm font-medium ml-1 text-on-surface-variant">KM</span></h3>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Fuel Estimate</p>
+<h3 class="font-manrope text-3xl font-black">88<span class="text-sm font-medium ml-1 text-on-surface-variant">L</span></h3>
+</div>
+</div>
+</section>
+<!-- Section 2: Map Visualization & Trip Points -->
+<section class="col-span-12 lg:col-span-8 space-y-6">
+<div class="bg-surface-container-low rounded-[1.5rem] overflow-hidden relative min-h-[440px] shadow-2xl group">
+<!-- Map Canvas Simulation -->
+<div class="absolute inset-0 z-0 bg-slate-950 opacity-90">
+<img alt="Map View" class="w-full h-full object-cover mix-blend-luminosity opacity-40" data-alt="dark satellite map of a coastal city with neon blue glowing route lines and pulsating points" data-location="Ahmedabad" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZipwCcKo88XGXuqO6XPWAxJZddRC25LjHad9xhmPqiLshvtI9ZCYiXaoXxnyq107aaOquDS4NND9xX8cki8jW5y0hkg3zKLVf1mqgzRYlwBqB5bCHLpmsCymEjZS6-JCIIyanzDXwx3APD1WmK80jf7TImLtiJQVlFQNJT9l7uLrZoANlPQa4EnKHp0s3g5py7cStcKDX-mNWSzmXeEFiWNZbS9sni1G7eHrcAwiAZdvVxdqQxHFwO2d3h4Tzd7h29LObTjLBvJqM"/>
+<!-- Conceptual Route Line -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" viewbox="0 0 800 500">
+<path d="M 100 400 Q 250 350 400 250 T 700 100" fill="none" stroke="#a3cbf2" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="4"></path>
+<circle cx="100" cy="400" fill="#ff7a00" r="8"></circle>
+<circle cx="400" cy="250" fill="#a3cbf2" r="6"></circle>
+<circle cx="700" cy="100" fill="#6c63ff" r="8"></circle>
+</svg>
+</div>
+<!-- Map Overlays -->
+<div class="absolute top-6 left-6 z-10 flex gap-3">
+<div class="bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 border border-outline-variant/20">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-[10px] font-bold tracking-widest uppercase">Live Traffic: Normal</span>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 z-10 flex gap-2">
+<button class="bg-surface-container-highest/90 p-3 rounded-xl hover:bg-primary hover:text-on-primary transition-all">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="bg-surface-container-highest/90 p-3 rounded-xl hover:bg-primary hover:text-on-primary transition-all">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+<button class="bg-surface-container-highest/90 p-3 rounded-xl hover:bg-primary hover:text-on-primary transition-all">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+<!-- Overlay Label -->
+<div class="absolute top-6 right-6 z-10">
+<div class="bg-primary/20 backdrop-blur-xl border border-primary/30 p-4 rounded-2xl">
+<p class="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Active Visualization</p>
+<p class="font-manrope font-bold text-sm">Western Corridor NH-51</p>
+</div>
+</div>
+</div>
+<!-- Section 3: Trip Points Management (Combined) -->
+<div class="bg-surface-container-low rounded-[1.5rem] p-6 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<span class="p-2 bg-secondary-container/30 rounded-lg text-secondary">
+<span class="material-symbols-outlined">location_on</span>
+</span>
+<h2 class="font-manrope font-bold text-lg uppercase tracking-wider">Trip Points</h2>
+<span class="bg-surface-container-highest text-outline-variant px-3 py-1 rounded-full text-[10px] font-black tracking-widest">06 TOTAL STOPS</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-highest text-on-surface hover:text-primary rounded-xl text-xs font-bold transition-all border border-outline-variant/10">
+<span class="material-symbols-outlined text-lg">upload_file</span>
+                    UPLOAD VIA DOCUMENT
+                </button>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between px-2">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Selected Points</p>
+<span class="text-[10px] font-medium text-primary uppercase">06 Total Selected</span>
+</div>
+<ul class="space-y-2">
+<!-- Pickup Points -->
+<li class="flex items-center justify-between p-3 bg-surface-container-highest/50 rounded-xl group hover:bg-surface-container-high transition-all border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">radio_button_checked</span>
+<div class="flex flex-col">
+<span class="text-xs font-medium">Ahmedabad Main Stand</span>
+<span class="text-[8px] text-primary uppercase font-bold tracking-tighter">Pickup</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary cursor-pointer text-sm">drag_indicator</span>
+</li>
+<li class="flex items-center justify-between p-3 bg-error-container/10 rounded-xl group border border-error/20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-sm">warning</span>
+<div class="flex flex-col">
+<span class="text-xs font-medium text-error">Sarkhej Crossing (Off-Route)</span>
+<span class="text-[8px] text-error uppercase font-bold tracking-tighter">Pickup</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-error/50 group-hover:text-error cursor-pointer text-sm">error_outline</span>
+</li>
+<li class="flex items-center justify-between p-3 bg-surface-container-highest/50 rounded-xl group hover:bg-surface-container-high transition-all border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">radio_button_checked</span>
+<div class="flex flex-col">
+<span class="text-xs font-medium">Lothal Gate 1</span>
+<span class="text-[8px] text-primary uppercase font-bold tracking-tighter">Pickup</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant cursor-pointer text-sm">drag_indicator</span>
+</li>
+<!-- Drop Points -->
+<li class="flex items-center justify-between p-3 bg-surface-container-highest/50 rounded-xl group hover:bg-surface-container-high transition-all border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">location_on</span>
+<div class="flex flex-col">
+<span class="text-xs font-medium">Una Central Terminus</span>
+<span class="text-[8px] text-secondary uppercase font-bold tracking-tighter">Drop</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant cursor-pointer text-sm">drag_indicator</span>
+</li>
+<li class="flex items-center justify-between p-3 bg-surface-container-highest/50 rounded-xl group hover:bg-surface-container-high transition-all border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">location_on</span>
+<div class="flex flex-col">
+<span class="text-xs font-medium">Diu Entry Gate</span>
+<span class="text-[8px] text-secondary uppercase font-bold tracking-tighter">Drop</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant cursor-pointer text-sm">drag_indicator</span>
+</li>
+</ul>
+</div>
+<!-- Dropzone Area -->
+<div class="mt-6 border-2 border-dashed border-outline-variant/20 rounded-2xl p-8 flex flex-col items-center justify-center bg-surface-container-lowest/50 hover:bg-surface-container-lowest transition-all cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container-highest rounded-full flex items-center justify-center text-outline-variant group-hover:text-primary group-hover:scale-110 transition-all mb-3">
+<span class="material-symbols-outlined text-2xl">cloud_upload</span>
+</div>
+<p class="text-xs font-bold text-on-surface mb-1">Drop CSV or PDF here to bulk import points</p>
+<p class="text-[10px] text-outline-variant uppercase tracking-widest font-medium">Supports .csv, .xls, .pdf (Max 5MB)</p>
+<input class="hidden" type="file"/>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Action -->
+<footer class="mt-12 flex justify-end items-center gap-4 border-t border-outline-variant/10 pt-8">
+<button class="px-8 py-3 text-on-surface-variant font-bold text-xs uppercase tracking-widest hover:text-on-surface transition-colors">Discard Changes</button>
+<button class="bg-primary text-on-primary px-12 py-4 rounded-[1.25rem] font-black font-manrope text-sm tracking-[0.15em] flex items-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                SAVE ROUTE 
+                <span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>save</span>
+</button>
+</footer>
+</main>
+</body></html>

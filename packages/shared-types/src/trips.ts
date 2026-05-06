@@ -69,6 +69,7 @@ export const CreateTripSchema = z
     assignedOperatorId: z.string().uuid().nullable().optional(),
     scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
     scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+    scheduled_time: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional(),
   })
   .transform((data) => ({
     route_id: data.route_id ?? data.routeId ?? '',
@@ -77,6 +78,7 @@ export const CreateTripSchema = z
     bus_id: data.bus_id ?? data.busId,
     assigned_operator_id: data.assigned_operator_id ?? data.assignedOperatorId,
     scheduled_date: data.scheduled_date ?? data.scheduledDate ?? '',
+    scheduled_time: data.scheduled_time ?? null,
   }))
   .refine((data) => Boolean(data.route_id && data.conductor_id && data.scheduled_date), {
     message: 'route_id/conductor_id/scheduled_date are required',
@@ -119,6 +121,7 @@ export interface TripStatusResponse {
   id: string;
   status: TripStatus;
   scheduled_date: string;
+  scheduled_time: string | null;
   started_at: string | null;
   completed_at: string | null;
   current_location: {

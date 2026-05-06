@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#7a4523",
+                    "tertiary-container": "#ffb78d",
+                    "surface-container": "#1c2024",
+                    "surface": "#101418",
+                    "on-background": "#e0e3e8",
+                    "on-secondary": "#2d2a5e",
+                    "surface-variant": "#31353a",
+                    "primary-container": "#a3cbf2",
+                    "surface-container-low": "#181c20",
+                    "on-primary-fixed-variant": "#1f4a6b",
+                    "on-primary": "#003352",
+                    "on-error-container": "#ffdad6",
+                    "surface-dim": "#101418",
+                    "outline": "#8c9198",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "surface-container-lowest": "#0b0f12",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "background": "#101418",
+                    "secondary-fixed": "#e3dfff",
+                    "on-primary-fixed": "#001d32",
+                    "on-tertiary": "#502405",
+                    "inverse-on-surface": "#2d3135",
+                    "error": "#ffb4ab",
+                    "surface-container-high": "#262a2f",
+                    "secondary": "#c4c0ff",
+                    "secondary-container": "#434076",
+                    "on-secondary-container": "#b3afed",
+                    "on-primary-container": "#2d5678",
+                    "on-tertiary-fixed": "#321200",
+                    "on-tertiary-fixed-variant": "#6c3a19",
+                    "tertiary-fixed": "#ffdbc9",
+                    "on-surface-variant": "#c2c7ce",
+                    "on-error": "#690005",
+                    "inverse-surface": "#e0e3e8",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "primary-fixed": "#cde5ff",
+                    "surface-bright": "#363a3e",
+                    "on-secondary-fixed-variant": "#434076",
+                    "surface-container-highest": "#31353a",
+                    "inverse-primary": "#396284",
+                    "outline-variant": "#42474e",
+                    "on-surface": "#e0e3e8",
+                    "on-secondary-fixed": "#171348",
+                    "error-container": "#93000a",
+                    "primary": "#cee5ff",
+                    "tertiary": "#ffdcca",
+                    "surface-tint": "#a3cbf2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "element-tight": "0.5rem",
+                    "card-gap": "1rem",
+                    "unit-base": "4px",
+                    "page-padding": "1rem",
+                    "section-internal": "1.25rem"
+            },
+            "fontFamily": {
+                    "button-text": ["Inter"],
+                    "header-title": ["Manrope"],
+                    "metadata-label": ["Inter"],
+                    "display-time": ["Manrope"],
+                    "body-standard": ["Inter"]
+            },
+            "fontSize": {
+                    "button-text": ["11px", {"letterSpacing": "0.1em", "fontWeight": "900"}],
+                    "header-title": ["1.125rem", {"letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "metadata-label": ["10px", {"letterSpacing": "0.1em", "fontWeight": "700"}],
+                    "display-time": ["1.5rem", {"lineHeight": "1.2", "fontWeight": "900"}],
+                    "body-standard": ["0.875rem", {"lineHeight": "1.4", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #101418;
+            position: relative;
+        }
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-body-standard text-on-surface">
+<div class="grain-overlay"></div>
+<!-- SideNavBar (The Anchor) -->
+<aside class="h-screen w-64 border-r border-zinc-800 fixed left-0 hidden md:flex flex-col bg-zinc-950 z-40">
+<div class="p-6">
+<h1 class="text-xl font-black text-white tracking-widest font-header-title">VELOX OPS</h1>
+<p class="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] mt-1">Terminal A-1</p>
+</div>
+<nav class="flex-1 mt-4">
+<a class="text-zinc-500 px-6 py-4 flex items-center gap-3 hover:bg-zinc-900 hover:text-zinc-100 transition-all font-manrope text-xs font-bold tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined">grid_view</span> Overview
+            </a>
+<a class="bg-zinc-900 border-l-4 border-blue-300 text-blue-200 px-6 py-4 flex items-center gap-3 font-manrope text-xs font-bold tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined">badge</span> Operators
+            </a>
+<a class="text-zinc-500 px-6 py-4 flex items-center gap-3 hover:bg-zinc-900 hover:text-zinc-100 transition-all font-manrope text-xs font-bold tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined">directions_bus</span> Fleet
+            </a>
+<a class="text-zinc-500 px-6 py-4 flex items-center gap-3 hover:bg-zinc-900 hover:text-zinc-100 transition-all font-manrope text-xs font-bold tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined">calendar_today</span> Schedules
+            </a>
+<a class="text-zinc-500 px-6 py-4 flex items-center gap-3 hover:bg-zinc-900 hover:text-zinc-100 transition-all font-manrope text-xs font-bold tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined">insights</span> Analytics
+            </a>
+</nav>
+<div class="mt-auto border-t border-zinc-900">
+<div class="p-6">
+<button class="w-full h-12 bg-primary-container text-on-primary-container font-button-text text-button-text rounded-none active:scale-95 transition-transform">
+                    Add Operator
+                </button>
+</div>
+<a class="text-zinc-500 px-6 py-4 flex items-center gap-3 hover:bg-zinc-900 transition-all font-manrope text-xs font-bold tracking-widest uppercase" href="#">
+<span class="material-symbols-outlined">help</span> Help Center
+            </a>
+<a class="text-zinc-500 px-6 py-4 flex items-center gap-3 hover:bg-zinc-900 transition-all font-manrope text-xs font-bold tracking-widest uppercase pb-8" href="#">
+<span class="material-symbols-outlined">logout</span> Logout
+            </a>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="fixed top-0 md:left-64 right-0 h-14 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 z-30 flex justify-between items-center px-6">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<span class="material-symbols-outlined text-zinc-500">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs font-bold tracking-widest text-zinc-100 w-full placeholder:text-zinc-600" placeholder="GLOBAL FLEET SEARCH..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-zinc-500 hover:text-blue-100 transition-colors">notifications</button>
+<button class="material-symbols-outlined text-zinc-500 hover:text-blue-100 transition-colors">settings</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-zinc-700">
+<img alt="Profile Avatar" data-alt="A professional portrait of a tech-focused fleet manager with a focused expression, set against a dark industrial workspace with subtle blue ambient lighting. The style is cinematic and high-contrast, following a tech-noir aesthetic with deep blacks and sharp metallic highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8YaJbF8Gd6YAvPj7QobTsxZWDKh86kGMIJaK0FTvYNRFWJLA0225gNNKMTGVaF9xwxPRbr8ssgh9GzrBflvMlyEXt8MsYN_1EKwwU_Z0SC5Hm72e0bZNSWHfXEw2w8uisqKXW_A7v4hFGinnDn7UEK7sPmBiDhFW0Vp3T4iVwO6ImE20B9GTn6-qhEbUXF6Dx-spXQd8e2Y8fmS8JPpS-DGVFDvUAwCYLr1nbQmivb9fv4rXYl-yZ8ifcYj5ER0a76kaiBOjP6B0R"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="md:ml-64 pt-20 pb-12 px-6">
+<div class="max-w-4xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div>
+<span class="text-metadata-label font-metadata-label text-blue-300 uppercase">System Registry</span>
+<h2 class="text-3xl font-black text-white font-header-title tracking-tighter mt-1">OPERATORS</h2>
+</div>
+<div class="flex gap-3">
+<div class="flex bg-surface-container-high p-1">
+<button class="px-4 py-2 bg-zinc-800 text-blue-200 font-button-text text-button-text">GRID</button>
+<button class="px-4 py-2 text-zinc-500 font-button-text text-button-text hover:text-zinc-300">LIST</button>
+</div>
+<button class="h-12 px-6 bg-primary-container text-on-primary-container font-button-text text-button-text flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                        ADD OPERATOR
+                    </button>
+</div>
+</div>
+<!-- Dashboard Stats (Bento-lite) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+<div class="bg-surface-container-low p-5 border-l-4 border-blue-400">
+<p class="text-metadata-label font-metadata-label text-zinc-500">TOTAL STAFF</p>
+<p class="text-2xl font-black text-white font-header-title">142</p>
+</div>
+<div class="bg-surface-container-low p-5 border-l-4 border-emerald-500">
+<p class="text-metadata-label font-metadata-label text-zinc-500">ACTIVE NOW</p>
+<p class="text-2xl font-black text-white font-header-title">89</p>
+</div>
+<div class="bg-surface-container-low p-5 border-l-4 border-tertiary-container">
+<p class="text-metadata-label font-metadata-label text-zinc-500">PENDING TRIPS</p>
+<p class="text-2xl font-black text-white font-header-title">12</p>
+</div>
+</div>
+<!-- Operator Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Card 1 -->
+<div class="bg-surface-container-low border border-zinc-800/50 p-5 group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="flex gap-4">
+<div class="h-12 w-12 bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h3 class="font-black text-white text-lg tracking-tight uppercase">MARCUS VANCE</h3>
+<p class="text-xs font-bold text-zinc-500 font-mono tracking-widest">+1 (555) 092-8831</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-emerald-900/30 text-emerald-400 text-[10px] font-black tracking-widest uppercase border border-emerald-800/50">Active</span>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-800 pt-4">
+<div>
+<p class="text-metadata-label font-metadata-label text-zinc-600">ASSIGNED TRIPS</p>
+<p class="font-black text-blue-200">24</p>
+</div>
+<button class="h-8 px-4 bg-surface-container-highest text-on-surface font-button-text text-[10px] hover:bg-zinc-700 transition-colors">VIEW LOG</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-low border border-zinc-800/50 p-5 group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="flex gap-4">
+<div class="h-12 w-12 bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h3 class="font-black text-white text-lg tracking-tight uppercase">ELARA JENSEN</h3>
+<p class="text-xs font-bold text-zinc-500 font-mono tracking-widest">+1 (555) 211-4490</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-zinc-800 text-zinc-500 text-[10px] font-black tracking-widest uppercase border border-zinc-700">Disabled</span>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-800 pt-4">
+<div>
+<p class="text-metadata-label font-metadata-label text-zinc-600">ASSIGNED TRIPS</p>
+<p class="font-black text-blue-200">0</p>
+</div>
+<button class="h-8 px-4 bg-surface-container-highest text-on-surface font-button-text text-[10px] hover:bg-zinc-700 transition-colors">RE-ENABLE</button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-low border border-zinc-800/50 p-5 group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="flex gap-4">
+<div class="h-12 w-12 bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h3 class="font-black text-white text-lg tracking-tight uppercase">KOJI TANAKA</h3>
+<p class="text-xs font-bold text-zinc-500 font-mono tracking-widest">+1 (555) 882-1011</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-emerald-900/30 text-emerald-400 text-[10px] font-black tracking-widest uppercase border border-emerald-800/50">Active</span>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-800 pt-4">
+<div>
+<p class="text-metadata-label font-metadata-label text-zinc-600">ASSIGNED TRIPS</p>
+<p class="font-black text-blue-200">18</p>
+</div>
+<button class="h-8 px-4 bg-surface-container-highest text-on-surface font-button-text text-[10px] hover:bg-zinc-700 transition-colors">VIEW LOG</button>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-low border border-zinc-800/50 p-5 group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="flex gap-4">
+<div class="h-12 w-12 bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h3 class="font-black text-white text-lg tracking-tight uppercase">SARAH CHEN</h3>
+<p class="text-xs font-bold text-zinc-500 font-mono tracking-widest">+1 (555) 304-9928</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-emerald-900/30 text-emerald-400 text-[10px] font-black tracking-widest uppercase border border-emerald-800/50">Active</span>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-800 pt-4">
+<div>
+<p class="text-metadata-label font-metadata-label text-zinc-600">ASSIGNED TRIPS</p>
+<p class="font-black text-blue-200">42</p>
+</div>
+<button class="h-8 px-4 bg-surface-container-highest text-on-surface font-button-text text-[10px] hover:bg-zinc-700 transition-colors">VIEW LOG</button>
+</div>
+</div>
+<!-- Card 5 (Warning State) -->
+<div class="bg-surface-container-low border border-zinc-800/50 p-5 group hover:bg-surface-container-high transition-colors border-l-4 border-tertiary-container">
+<div class="flex justify-between items-start mb-4">
+<div class="flex gap-4">
+<div class="h-12 w-12 bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary-container">warning</span>
+</div>
+<div>
+<h3 class="font-black text-white text-lg tracking-tight uppercase">DEREK SMYTHE</h3>
+<p class="text-xs font-bold text-zinc-500 font-mono tracking-widest">+1 (555) 771-0012</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-tertiary-container/20 text-tertiary-container text-[10px] font-black tracking-widest uppercase border border-tertiary-container/50">Shift Overdue</span>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-800 pt-4">
+<div>
+<p class="text-metadata-label font-metadata-label text-zinc-600">ASSIGNED TRIPS</p>
+<p class="font-black text-blue-200">5</p>
+</div>
+<button class="h-8 px-4 bg-tertiary-container text-on-tertiary-container font-button-text text-[10px]">RESOLVE</button>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="bg-surface-container-low border border-zinc-800/50 p-5 group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="flex gap-4">
+<div class="h-12 w-12 bg-zinc-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-500">person</span>
+</div>
+<div>
+<h3 class="font-black text-white text-lg tracking-tight uppercase">ANIKA RAO</h3>
+<p class="text-xs font-bold text-zinc-500 font-mono tracking-widest">+1 (555) 443-1123</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-emerald-900/30 text-emerald-400 text-[10px] font-black tracking-widest uppercase border border-emerald-800/50">Active</span>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-800 pt-4">
+<div>
+<p class="text-metadata-label font-metadata-label text-zinc-600">ASSIGNED TRIPS</p>
+<p class="font-black text-blue-200">31</p>
+</div>
+<button class="h-8 px-4 bg-surface-container-highest text-on-surface font-button-text text-[10px] hover:bg-zinc-700 transition-colors">VIEW LOG</button>
+</div>
+</div>
+</div>
+<!-- Audit Log Section -->
+<div class="mt-12">
+<h4 class="text-metadata-label font-metadata-label text-zinc-500 mb-4 uppercase tracking-[0.2em]">Live Registry Activity</h4>
+<div class="bg-surface-container-low border border-zinc-800/50 overflow-hidden">
+<div class="p-4 border-b border-zinc-800 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="text-[10px] font-bold tracking-widest text-zinc-300">SYSTEM STABLE</span>
+</div>
+<span class="text-[10px] font-mono text-zinc-600">LATEST SYNC: 02:44:11 GMT</span>
+</div>
+<div class="divide-y divide-zinc-800/50">
+<div class="p-4 flex gap-4 items-start">
+<span class="text-xs font-mono text-zinc-600 mt-1">14:02</span>
+<p class="text-xs text-zinc-400">Operator <span class="text-blue-300 font-bold">MARCUS VANCE</span> assigned to Route <span class="text-zinc-100 font-bold">#BT-902</span></p>
+</div>
+<div class="p-4 flex gap-4 items-start">
+<span class="text-xs font-mono text-zinc-600 mt-1">13:45</span>
+<p class="text-xs text-zinc-400">Security Clearance updated for <span class="text-blue-300 font-bold">SARAH CHEN</span> (Level 4)</p>
+</div>
+<div class="p-4 flex gap-4 items-start">
+<span class="text-xs font-mono text-zinc-600 mt-1">13:12</span>
+<p class="text-xs text-zinc-400">New Operator <span class="text-blue-300 font-bold">ANIKA RAO</span> added to registry by Admin</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Nav Mobile -->
+<nav class="md:hidden fixed bottom-0 w-full bg-zinc-950 border-t border-zinc-800 flex justify-around p-2 z-50">
+<button class="flex flex-col items-center p-2 text-zinc-500">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="text-[8px] font-bold mt-1">HOME</span>
+</button>
+<button class="flex flex-col items-center p-2 text-blue-200">
+<span class="material-symbols-outlined">badge</span>
+<span class="text-[8px] font-bold mt-1">STAFF</span>
+</button>
+<button class="flex flex-col items-center p-2 text-zinc-500">
+<span class="material-symbols-outlined">directions_bus</span>
+<span class="text-[8px] font-bold mt-1">FLEET</span>
+</button>
+<button class="flex flex-col items-center p-2 text-zinc-500">
+<span class="material-symbols-outlined">insights</span>
+<span class="text-[8px] font-bold mt-1">DATA</span>
+</button>
+</nav>
+</body></html>

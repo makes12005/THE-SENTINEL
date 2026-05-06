@@ -17,24 +17,9 @@ const ROLE_REDIRECTS: Record<string, string> = {
 
 function TopAppBar() {
   return (
-    <header className="h-20 px-8 flex items-center justify-between border-b border-outline-variant/10 relative z-20 bg-background/50 backdrop-blur-md">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-          <span className="material-symbols-outlined text-on-primary text-2xl font-bold">shield</span>
-        </div>
-        <div>
-          <h1 className="font-headline font-black text-lg tracking-tight text-on-surface">SENTINEL</h1>
-          <p className="text-[10px] font-label font-bold tracking-[0.2em] text-on-surface-variant/60 uppercase">Transit Operations</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-[10px] font-label font-bold text-on-surface-variant/40 uppercase tracking-widest">Network Status</span>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-            <span className="text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider">Operational</span>
-          </div>
-        </div>
+    <header className="flex items-center px-8 py-6 w-full absolute top-0 z-50">
+      <div className="font-headline font-bold text-primary tracking-widest uppercase text-sm">
+        SENTINEL TRANSIT
       </div>
     </header>
   );
@@ -79,7 +64,11 @@ function ProfileSetupInner() {
   }
 
   return (
-    <div className="rugged-bg min-h-screen flex flex-col font-body text-on-surface overflow-x-hidden">
+    <div className="bg-[#101418] min-h-screen flex flex-col font-body text-on-surface relative overflow-hidden">
+      {/* Background Decorative Glows */}
+      <div className="absolute top-1/4 -left-48 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-48 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(163,203,242,0.03)_0%,transparent_100%)] pointer-events-none" />
       <TopAppBar />
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
@@ -94,10 +83,10 @@ function ProfileSetupInner() {
           {/* Header */}
           <section className="mb-12 text-center">
             <div className="relative inline-block mb-8">
-              <div className="w-28 h-28 rounded-[2.5rem] bg-surface-container-high flex items-center justify-center overflow-hidden border-2 border-dashed border-outline-variant/30 group hover:border-primary/50 transition-colors shadow-2xl">
+              <div className="w-28 h-28 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border-2 border-dashed border-outline-variant/30 group hover:border-primary/50 transition-colors shadow-2xl">
                 <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 group-hover:text-primary/50 transition-colors">add_a_photo</span>
               </div>
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary shadow-xl border-4 border-[#0d0f14] active:scale-90 transition-transform cursor-pointer">
+              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-on-primary shadow-xl border-4 border-[#0d0f14] active:scale-90 transition-transform cursor-pointer">
                 <span className="material-symbols-outlined text-xl font-bold">edit</span>
               </div>
             </div>
@@ -112,7 +101,7 @@ function ProfileSetupInner() {
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant/30 group-focus-within:text-primary transition-colors">person</span>
                 <input 
-                  className="w-full bg-surface-container-high border-2 border-transparent rounded-2xl py-5 pl-14 pr-6 text-on-surface font-bold focus:border-primary focus:bg-surface-container-highest outline-none transition-all shadow-inner" 
+                  className="w-full bg-surface-container-high border-2 border-transparent rounded-full py-5 pl-14 pr-6 text-on-surface font-bold focus:border-primary focus:bg-surface-container-highest outline-none transition-all shadow-inner" 
                   placeholder="Enter full name" 
                   type="text" 
                   value={name} 
@@ -124,14 +113,14 @@ function ProfileSetupInner() {
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.3em] ml-4">Phone Number</label>
               <div className="flex gap-3">
-                <div className="bg-surface-container-high rounded-2xl px-6 py-5 flex items-center gap-2 text-on-surface font-black shadow-inner">
+                <div className="bg-surface-container-high rounded-full px-6 py-5 flex items-center gap-2 text-on-surface font-black shadow-inner">
                   <span className="text-[10px] opacity-40">IN</span>
                   <span className="text-sm">+91</span>
                 </div>
                 <div className="relative flex-1 group">
                   <input 
                     readOnly
-                    className="w-full bg-surface-container-low border-2 border-transparent rounded-2xl py-5 px-6 text-on-surface-variant/60 font-bold outline-none cursor-not-allowed" 
+                    className="w-full bg-surface-container-low border-2 border-transparent rounded-full py-5 px-6 text-on-surface-variant/60 font-bold outline-none cursor-not-allowed" 
                     type="tel" 
                     value={phone?.replace('+91', '') || ''} 
                   />
@@ -146,7 +135,7 @@ function ProfileSetupInner() {
               <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.3em] ml-4">Assigned Role</label>
               <div className="relative bg-surface-container-high/40 rounded-3xl p-6 border border-outline-variant/10 flex items-center justify-between overflow-hidden group">
                 <div className="flex items-center gap-5 relative z-10">
-                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20">
+                  <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary border border-primary/20">
                     <span className="material-symbols-outlined text-2xl font-bold">
                       {user?.role === 'passenger' ? 'person' : 'directions_bus'}
                     </span>
@@ -165,7 +154,7 @@ function ProfileSetupInner() {
               </div>
             </div>
 
-            <div className="bg-primary/5 rounded-2xl p-5 mt-4 border border-primary/10 flex gap-4">
+            <div className="bg-primary/5 rounded-3xl p-5 mt-4 border border-primary/10 flex gap-4">
               <span className="material-symbols-outlined text-primary text-xl">info</span>
               <p className="text-[11px] text-on-surface-variant/80 font-medium leading-relaxed">
                 By completing the setup, you agree to the <span className="text-primary font-bold">Transit Terms</span> and operational guidelines of The Sentinel Network.
@@ -176,7 +165,7 @@ function ProfileSetupInner() {
               <button 
                 disabled={busy}
                 type="submit"
-                className="w-full h-18 bg-primary text-on-primary font-black text-sm tracking-[0.2em] rounded-2xl shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group uppercase"
+                className="w-full h-18 bg-primary text-on-primary font-black text-sm tracking-[0.2em] rounded-full shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group uppercase"
               >
                 {busy ? (
                   <div className="w-6 h-6 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />

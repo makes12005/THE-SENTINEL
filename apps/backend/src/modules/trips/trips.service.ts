@@ -1,12 +1,34 @@
 import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { db } from '../../db';
-import { buses, conductorLocations, routes, tripPassengers, trips, users } from '../../db/schema';
-import { AddPassengerRequest, CreateTripRequest, TripStatus, TripStatusResponse, UserRole } from '../../lib/shared-types';
+import { agencyWallets, buses, conductorLocations, routes, tripPassengers, trips, users, stops, tripTemplates } from '../../db/schema';
+import { AddPassengerRequest, BatchAddPassengersRequest, CreateTripRequest, TripStatus, TripStatusResponse, UserRole } from '../../lib/shared-types';
 import { deductTripCredit } from '../wallet/wallet.service';
 import { logForbiddenAccess } from './trip-auth.helper';
 
 export class TripsService {
   static async createTrip(operatorId: string, agencyId: string, payload: CreateTripRequest) {
+    // ── Template resolution ─────────────────────────────────────────────────
+    // If template_id is provided, load the template and merge its fields into
+    // the payload so the rest of the validation logic works unchanged.
+    if (payload.template_id) {
+      const [tmpl] = await db
+        .select()
+        .from(tripTemplates)
+        .where(and(eq(tripTemplates.id, payload.template_id), eq(tripTemplates.agency_id, agencyId)))
+        .limit(1);
+
+      if (!tmpl) {
+        throw Object.assign(new Error('Template not found or does not belong to your agency'), { statusCode: 404 });
+      }
+
+      // Merge template fields — caller can still override individual fields
+      if (!payload.route_id) payload.route_id = tmpl.route_id;
+      if (!payload.conductor_id && tmpl.conductor_id) payload.conductor_id = tmpl.conductor_id;
+      if (!payload.driver_id && tmpl.driver_id) payload.driver_id = tmpl.driver_id;
+      if (!payload.bus_id && tmpl.bus_id) payload.bus_id = tmpl.bus_id;
+      if (!payload.scheduled_time && tmpl.departure_time) payload.scheduled_time = tmpl.departure_time;
+    }
+
     const {
       route_id: routeId,
       conductor_id: conductorId,
@@ -14,7 +36,15 @@ export class TripsService {
       bus_id: busId,
       assigned_operator_id: assignedOperatorId,
       scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime,
     } = payload;
+
+    if (!routeId || !conductorId) {
+      throw Object.assign(
+        new Error('route_id and conductor_id are required (either directly or via template)'),
+        { statusCode: 400 }
+      );
+    }
 
     const [route] = await db
       .select({ id: routes.id, agency_id: routes.agency_id, name: routes.name })
@@ -23,7 +53,19 @@ export class TripsService {
       .limit(1);
 
     if (!route) throw Object.assign(new Error('Route not found'), { statusCode: 404 });
+
     if (route.agency_id !== agencyId) throw Object.assign(new Error('Route does not belong to your agency'), { statusCode: 403 });
+    const [wallet] = await db
+      .select({ trips_remaining: agencyWallets.trips_remaining })
+      .from(agencyWallets)
+      .where(eq(agencyWallets.agency_id, agencyId))
+      .limit(1);
+    if ((wallet?.trips_remaining ?? 0) < 1) {
+      throw Object.assign(new Error('No trips remaining. Contact your agency owner.'), {
+        statusCode: 402,
+        code: 'NO_TRIPS_REMAINING',
+      });
+    }
 
     const [conductor] = await db
       .select({ id: users.id, agency_id: users.agency_id, role: users.role, is_active: users.is_active })
@@ -82,6 +124,7 @@ export class TripsService {
     const [trip] = await db
       .insert(trips)
       .values({
+        template_id: payload.template_id || null,
         route_id: routeId,
         owned_by_operator_id: operatorId,
         assigned_operator_id: finalAssignedOperatorId,
@@ -89,6 +132,7 @@ export class TripsService {
         driver_id: driverId || null,
         bus_id: busId || null,
         scheduled_date: scheduledDate,
+        scheduled_time: scheduledTime || null,
         status: 'scheduled',
       })
       .returning();
@@ -158,6 +202,58 @@ export class TripsService {
 
     if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
 
+    const [routeRow] = await db
+      .select({
+        name: routes.name,
+        from_city: routes.from_city,
+        to_city: routes.to_city,
+      })
+      .from(routes)
+      .where(eq(routes.id, trip.route_id))
+      .limit(1);
+
+    const [conductorUser] = await db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(eq(users.id, trip.conductor_id))
+      .limit(1);
+
+    const driverUser = trip.driver_id
+      ? (
+          await db
+            .select({ id: users.id, name: users.name })
+            .from(users)
+            .where(eq(users.id, trip.driver_id))
+            .limit(1)
+        )[0] ?? null
+      : null;
+
+    const assignedOp = trip.assigned_operator_id
+      ? (
+          await db
+            .select({ id: users.id, name: users.name })
+            .from(users)
+            .where(eq(users.id, trip.assigned_operator_id))
+            .limit(1)
+        )[0] ?? null
+      : null;
+
+    const [ownerOperator] = await db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(eq(users.id, trip.owned_by_operator_id))
+      .limit(1);
+
+    const busRow = trip.bus_id
+      ? (
+          await db
+            .select({ number_plate: buses.number_plate })
+            .from(buses)
+            .where(eq(buses.id, trip.bus_id))
+            .limit(1)
+        )[0] ?? null
+      : null;
+
     const passengers = await db
       .select({
         id: tripPassengers.id,
@@ -169,7 +265,16 @@ export class TripsService {
       .from(tripPassengers)
       .where(eq(tripPassengers.trip_id, tripId));
 
-    return { ...trip, passengers };
+    return {
+      ...trip,
+      route: routeRow ?? { name: '', from_city: '', to_city: '' },
+      conductor: conductorUser ?? { id: trip.conductor_id, name: '' },
+      driver: driverUser,
+      assigned_operator: assignedOp,
+      trip_owner_operator: ownerOperator ?? { id: trip.owned_by_operator_id, name: '' },
+      bus_number_plate: busRow?.number_plate ?? null,
+      passengers,
+    };
   }
 
   static async listPassengers(tripId: string) {
@@ -233,6 +338,7 @@ export class TripsService {
       id: trip.id,
       status: trip.status as TripStatus,
       scheduled_date: trip.scheduled_date,
+      scheduled_time: trip.scheduled_time,
       started_at: trip.started_at ? trip.started_at.toISOString() : null,
       completed_at: trip.completed_at ? trip.completed_at.toISOString() : null,
       current_location: location
@@ -317,6 +423,30 @@ export class TripsService {
       .returning();
 
     return passenger;
+  }
+
+  static async batchAddPassengers(tripId: string, payload: BatchAddPassengersRequest) {
+    const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
+    if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
+
+    if (payload.passengers.length === 0) return [];
+
+    const passengers = await db.transaction(async (tx) => {
+      return tx
+        .insert(tripPassengers)
+        .values(
+          payload.passengers.map((p) => ({
+            trip_id: tripId,
+            passenger_name: p.passenger_name,
+            passenger_phone: p.passenger_phone,
+            stop_id: p.stop_id,
+            alert_status: 'pending' as const,
+          }))
+        )
+        .returning();
+    });
+
+    return passengers;
   }
 
   static async getCurrentLocation(tripId: string) {

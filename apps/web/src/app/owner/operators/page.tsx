@@ -1,27 +1,59 @@
 'use client';
 /**
- * Owner — Screen 2: Operator Management
- * List all operators in the agency, toggle active/inactive, add new operator.
- * Data: GET /api/owner/operators, POST /api/owner/operators, POST /api/owner/operators/:id/toggle
+ * Owner — Operators Screen (Velox Ops grid style)
+ * Grid view with stats, live registry activity, add/toggle operators.
  */
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { get, post } from '@/lib/api';
-import { TableSkeleton, PageHeader } from '@/components/ui';
-import { MemberCard, type MemberRow } from '@/components/shared';
 import toast from 'react-hot-toast';
 
-export default function OwnerOperatorsPage() {
+interface MemberRow {
+  id: string;
+  name: string;
+  phone: string;
+  is_active: boolean;
+  trips_created_count?: number;
+  last_active_at?: string | null;
+  status_label?: string;
+  created_at?: string | null;
+}
+
+
+function StatusBadge({ active, label }: { active: boolean; label?: string }) {
+  if (label === 'shift_overdue') {
+    return (
+      <span className="rounded border border-[#FF7A00]/60 bg-[#FF7A00]/10 px-2 py-0.5 text-[0.5625rem] font-black uppercase tracking-widest text-[#FF7A00]">
+        Shift Overdue
+      </span>
+    );
+  }
+  if (active) {
+    return (
+      <span className="rounded border border-[#7dffd4]/40 bg-[#7dffd4]/10 px-2 py-0.5 text-[0.5625rem] font-black uppercase tracking-widest text-[#7dffd4]">
+        Active
+      </span>
+    );
+  }
+  return (
+    <span className="rounded border border-[#94a3b8]/30 bg-[#94a3b8]/10 px-2 py-0.5 text-[0.5625rem] font-black uppercase tracking-widest text-[#94a3b8]">
+      Disabled
+    </span>
+  );
+}
+
+function OperatorsContent() {
   const qc = useQueryClient();
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm]       = useState({ name: '', phone: '+91', password: '' });
-  const [saving, setSaving]   = useState(false);
-  const [search, setSearch]   = useState('');
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [search, setSearch] = useState('');
 
   const { data: operators, isLoading } = useQuery<MemberRow[]>({
     queryKey: ['owner-operators'],
-    queryFn:  () => get<MemberRow[]>('/api/owner/operators'),
+    queryFn: () => get<MemberRow[]>('/api/owner/operators'),
   });
 
   const toggleMutation = useMutation({
@@ -34,147 +66,224 @@ export default function OwnerOperatorsPage() {
     onError: () => toast.error('Failed to update status'),
   });
 
-  const addMutation = useMutation({
-    mutationFn: (body: typeof form) => post('/api/owner/operators', body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['owner-operators'] });
-      setShowAdd(false);
-      setForm({ name: '', phone: '+91', password: '' });
-      toast.success('Operator created');
-    },
-    onError: (e: any) => toast.error(e.response?.data?.error?.message ?? 'Failed to create operator'),
-    onSettled: () => setSaving(false),
-  });
+
 
   const filtered = (operators ?? []).filter((op) =>
-    op.name.toLowerCase().includes(search.toLowerCase()) ||
-    op.phone.includes(search)
+    op.name.toLowerCase().includes(search.toLowerCase()) || op.phone.includes(search)
   );
+  const active = filtered.filter((o) => o.is_active).length;
+  const totalTripsCreated = operators?.reduce((sum, op) => sum + (op.trips_created_count ?? 0), 0) || 0;
 
-  const active   = filtered.filter((o) => o.is_active).length;
-  const inactive = filtered.filter((o) => !o.is_active).length;
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.phone || !form.password) {
-      toast.error('All fields are required');
-      return;
+
+  // Derive activity from operator dates
+  const liveActivity = [];
+  if (operators) {
+    for (const op of operators) {
+      if (op.created_at) {
+        liveActivity.push({
+          timestamp: new Date(op.created_at).getTime(),
+          time: new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(new Date(op.created_at)),
+          text: 'New Operator ',
+          bold: op.name,
+          after: ' added to registry',
+          boldAfter: '',
+        });
+      }
+      if (op.last_active_at) {
+        liveActivity.push({
+          timestamp: new Date(op.last_active_at).getTime(),
+          time: new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(new Date(op.last_active_at)),
+          text: 'Operator ',
+          bold: op.name,
+          after: ' assigned to a trip',
+          boldAfter: '',
+        });
+      }
     }
-    setSaving(true);
-    addMutation.mutate(form);
-  };
+  }
+
+  // Sort descending and take top 5
+  liveActivity.sort((a, b) => b.timestamp - a.timestamp);
+  const recentActivity = liveActivity.slice(0, 5);
 
   return (
-    <div>
-      {/* Header */}
-      <header className="sticky top-0 z-40 flex justify-between items-center px-8 h-16 bg-gradient-to-b from-[#181c20] to-transparent backdrop-blur-sm">
-        <PageHeader title="Operators" subtitle="Manage agency operators" />
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 bg-[#c4c0ff] text-[#2000a4] font-bold text-xs uppercase tracking-widest px-5 py-2.5 rounded-xl hover:brightness-110 active:scale-95 transition-all"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Add Operator
-        </button>
+    <div className="min-h-screen bg-[#0F172A] text-[#F1F5F9]" style={{ fontFamily: 'Inter, sans-serif' }}>
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#1e293b] bg-[#0F172A]/95 backdrop-blur-md px-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 rounded-xl bg-[#1e293b] px-3 py-2 text-sm text-[#94a3b8] w-56">
+            <span className="material-symbols-outlined text-[18px]">search</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Global fleet search…"
+              className="bg-transparent outline-none text-sm text-[#F1F5F9] placeholder-[#475569] w-full"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="h-9 w-9 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#94a3b8] hover:text-[#F1F5F9]">
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+          </button>
+          <button className="h-9 w-9 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#94a3b8] hover:text-[#F1F5F9]">
+            <span className="material-symbols-outlined text-[20px]">settings</span>
+          </button>
+          <div className="h-9 w-9 rounded-full bg-[#6C63FF]/30 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[18px] text-[#6C63FF]">person</span>
+          </div>
+        </div>
       </header>
 
-      <div className="p-8 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+      <div className="p-6 space-y-5">
+        {/* Page Title Row */}
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#475569] mb-0.5">System Registry</p>
+            <h1 className="text-3xl font-black tracking-wide text-[#F1F5F9]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              OPERATORS
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Grid / List toggle */}
+            <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
+              <button
+                onClick={() => setView('grid')}
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${view === 'grid' ? 'bg-[#1e293b] text-[#F1F5F9]' : 'text-[#475569] hover:text-[#F1F5F9]'
+                  }`}
+              >
+                Grid
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${view === 'list' ? 'bg-[#1e293b] text-[#F1F5F9]' : 'text-[#475569] hover:text-[#F1F5F9]'
+                  }`}
+              >
+                List
+              </button>
+            </div>
+            <Link
+              href="/owner/operators/new"
+              className="flex items-center gap-2 rounded-xl bg-[#b0d4ff] px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0F172A] hover:brightness-110 active:scale-95 transition-all"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Add Operator
+            </Link>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-0.5 rounded-2xl overflow-hidden border border-[#1e293b]">
           {[
-            { label: 'Total',    value: filtered.length, color: 'text-[#c4c0ff]' },
-            { label: 'Active',   value: active,          color: 'text-[#7dffd4]' },
-            { label: 'Inactive', value: inactive,        color: 'text-[#ffb4ab]' },
-          ].map((s) => (
-            <div key={s.label} className="bg-[#181c20] p-5 rounded-xl text-center">
-              <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-1">{s.label}</p>
-              <p className={`text-3xl font-black ${s.color}`} style={{ fontFamily: 'Manrope, sans-serif' }}>
-                {String(s.value).padStart(2, '0')}
+            { label: 'Total Staff', value: operators?.length || 0, accent: '#6C63FF' },
+            { label: 'Active Now', value: operators?.filter(o => o.is_active).length || 0, accent: '#7dffd4' },
+            { label: 'Trips Created', value: totalTripsCreated, accent: '#FF7A00' },
+          ].map((stat, i) => (
+            <div key={stat.label} className={`bg-[#1e293b]/50 px-6 py-4 ${i === 0 ? 'border-l-2' : ''}`}
+              style={i === 0 ? { borderLeftColor: '#6C63FF' } : i === 1 ? { borderLeftColor: '#7dffd4' } : { borderLeftColor: '#FF7A00' }}>
+              <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#475569] mb-2">{stat.label}</p>
+              <p className="text-3xl font-black text-[#F1F5F9]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                {stat.value}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Search */}
-        <div className="flex items-center gap-3 bg-[#181c20] px-4 rounded-xl border border-[#42474e]/40">
-          <span className="material-symbols-outlined text-[20px] text-[#8c9198]">search</span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or phone…"
-            className="flex-1 bg-transparent py-3 text-sm text-[#e0e2e8] placeholder-[#8c9198] outline-none"
-          />
-        </div>
-
-        {/* List */}
-        {isLoading
-          ? <TableSkeleton rows={3} />
-          : (
-            <div className="space-y-3">
-              {filtered.map((op) => (
-                <MemberCard
-                  key={op.id}
-                  member={op}
-                  onToggle={(id, current) => toggleMutation.mutate({ id, current })}
-                />
-              ))}
-              {!filtered.length && (
-                <div className="py-16 text-center text-[#8c9198] bg-[#181c20] rounded-xl">
-                  <span className="material-symbols-outlined text-4xl mb-2 block opacity-40">manage_accounts</span>
-                  <p className="text-sm">No operators found. Add one to get started.</p>
+        {/* Operators Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-32 rounded-2xl bg-[#1e293b]/50 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className={view === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
+            {filtered.map((op) => (
+              <div key={op.id} className="rounded-2xl border border-[#1e293b] bg-[#1e293b]/40 p-5 hover:border-[#6C63FF]/40 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[#0F172A] flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[22px] text-[#475569]">person</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-[#F1F5F9]">{op.name}</p>
+                      <p className="text-xs text-[#475569]">{op.phone}</p>
+                    </div>
+                  </div>
+                  <StatusBadge active={op.is_active} label={(op as any).status_label} />
                 </div>
-              )}
-            </div>
-          )
-        }
-      </div>
-
-      {/* Add Operator Modal */}
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1c2024] rounded-2xl p-8 w-full max-w-md shadow-2xl border border-[#42474e]/30">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-black text-[#e0e2e8]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                Add Operator
-              </h2>
-              <button onClick={() => setShowAdd(false)} className="text-[#8c9198] hover:text-[#e0e2e8]">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <form onSubmit={handleAdd} className="space-y-4">
-              {[
-                { label: 'Full Name',  key: 'name',     type: 'text',     placeholder: 'Rajesh Kumar' },
-                { label: 'Phone',      key: 'phone',    type: 'tel',      placeholder: '+919876543210' },
-                { label: 'Password',   key: 'password', type: 'password', placeholder: '••••••••' },
-              ].map((field) => (
-                <div key={field.key}>
-                  <label className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2 block">
-                    {field.label}
-                  </label>
-                  <input
-                    type={field.type}
-                    value={(form as any)[field.key]}
-                    onChange={(e) => setForm((f) => ({ ...f, [field.key]: e.target.value }))}
-                    placeholder={field.placeholder}
-                    className="w-full bg-[#101418] border border-[#42474e]/40 rounded-xl px-4 py-3 text-sm text-[#e0e2e8] placeholder-[#8c9198] outline-none focus:border-[#c4c0ff] transition-colors"
-                  />
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#1e293b]">
+                  <div>
+                    <p className="text-[0.5625rem] font-bold uppercase tracking-widest text-[#475569] mb-0.5">Trips Created</p>
+                    <p className="text-xl font-black text-[#F1F5F9]">{op.trips_created_count ?? 0}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => toggleMutation.mutate({ id: op.id, current: op.is_active })}
+                      className={`rounded-xl border px-3 py-2 text-[0.625rem] font-bold uppercase tracking-widest transition-colors ${op.is_active
+                          ? 'border-[#FF7A00]/30 bg-[#FF7A00]/10 text-[#FF7A00]'
+                          : 'border-[#7dffd4]/30 bg-[#7dffd4]/10 text-[#7dffd4]'
+                        }`}
+                    >
+                      {op.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <Link
+                      href={`/owner/operators/${op.id}`}
+                      className="h-9 w-9 rounded-xl border border-[#1e293b] bg-[#0F172A] flex items-center justify-center text-[#475569] hover:text-[#F1F5F9] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                    </Link>
+                  </div>
                 </div>
-              ))}
+              </div>
+            ))}
+            {!filtered.length && (
+              <div className="col-span-2 py-20 text-center rounded-2xl border border-[#1e293b] bg-[#1e293b]/30">
+                <span className="material-symbols-outlined text-4xl text-[#475569] mb-3 block">manage_accounts</span>
+                <p className="text-sm text-[#475569]">No operators found. Add one to get started.</p>
+              </div>
+            )}
+          </div>
+        )}
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full bg-[#c4c0ff] text-[#2000a4] font-bold text-sm uppercase tracking-widest py-4 rounded-xl hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 mt-2"
-              >
-                {saving ? 'Creating…' : 'Create Operator'}
-              </button>
-            </form>
+        {/* Live Registry Activity */}
+        <div className="rounded-2xl border border-[#1e293b] bg-[#1e293b]/30 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#475569]">Live Registry Activity</p>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#7dffd4] animate-pulse" />
+              <span className="text-[0.5625rem] font-bold uppercase tracking-widest text-[#475569]">System Stable</span>
+              <span className="text-[0.5625rem] text-[#334155] ml-4">
+                Latest Sync: {recentActivity.length > 0 ? recentActivity[0].time : 'Never'}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-2 border-t border-[#1e293b] pt-3">
+            {recentActivity.length > 0 ? recentActivity.map((act, i) => (
+              <div key={i} className="flex items-start gap-4 py-1.5">
+                <span className="text-xs font-mono text-[#475569] min-w-[40px]">{act.time}</span>
+                <p className="text-xs text-[#94a3b8]">
+                  {act.text}<span className="font-bold text-[#6C63FF]">{act.bold}</span>{act.after}
+                  {act.boldAfter && <span className="font-bold text-[#6C63FF]">{act.boldAfter}</span>}
+                </p>
+              </div>
+            )) : (
+              <p className="text-xs text-[#475569] italic">No recent activity found.</p>
+            )}
           </div>
         </div>
-      )}
+      </div>
+
+
     </div>
+  );
+}
+
+export default function OwnerOperatorsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0F172A] p-6 text-[#F1F5F9] animate-pulse">Loading Registry...</div>}>
+      <OperatorsContent />
+    </Suspense>
   );
 }

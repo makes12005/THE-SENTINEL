@@ -1,0 +1,1143 @@
+{
+  "evidence": {
+    "generatedAt": "2026-04-27T18:52:52.037Z",
+    "apiBase": "https://api-production-e13f.up.railway.app",
+    "frontend": "https://bus-alert-iota.vercel.app",
+    "setup": {
+      "routeId": "7afa4885-467b-4b07-946b-cf58bb4953f4",
+      "conductorId": "c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0",
+      "driverId": "b191563e-abf0-4938-83df-49fab616c205",
+      "busId": "267985b1-7fe5-484d-b919-d805a223738d",
+      "tripId": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+    },
+    "responses": {
+      "operatorLogin": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE4OWMwODE1LTE2NjUtNGY4NS04ZGQ1LTcwOTlmMTI5YWUzZSIsInJvbGUiOiJvcGVyYXRvciIsImFnZW5jeUlkIjoiYTVmMTI3ODctZmY2Zi00YmY0LWI5MDMtNDk3M2VkOGE3MGU0IiwiYWdlbmN5X2lkIjoiYTVmMTI3ODctZmY2Zi00YmY0LWI5MDMtNDk3M2VkOGE3MGU0IiwibmFtZSI6IlRlc3QgT3BlcmF0b3IiLCJpYXQiOjE3NzczMTU5NzMsImV4cCI6MTc3NzMxNjg3Mywic3ViIjoiYTg5YzA4MTUtMTY2NS00Zjg1LThkZDUtNzA5OWYxMjlhZTNlIn0.wN8LIBrwqvFUFg9HS8ftd16TsBgC6xO7MHbasnHQiDs",
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE4OWMwODE1LTE2NjUtNGY4NS04ZGQ1LTcwOTlmMTI5YWUzZSIsInJvbGUiOiJvcGVyYXRvciIsImFnZW5jeUlkIjoiYTVmMTI3ODctZmY2Zi00YmY0LWI5MDMtNDk3M2VkOGE3MGU0IiwiYWdlbmN5X2lkIjoiYTVmMTI3ODctZmY2Zi00YmY0LWI5MDMtNDk3M2VkOGE3MGU0IiwibmFtZSI6IlRlc3QgT3BlcmF0b3IiLCJpYXQiOjE3NzczMTU5NzMsImV4cCI6MTc3NzMxNjg3Mywic3ViIjoiYTg5YzA4MTUtMTY2NS00Zjg1LThkZDUtNzA5OWYxMjlhZTNlIn0.wN8LIBrwqvFUFg9HS8ftd16TsBgC6xO7MHbasnHQiDs",
+            "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoib3BlcmF0b3IiLCJhZ2VuY3lJZCI6ImE1ZjEyNzg3LWZmNmYtNGJmNC1iOTAzLTQ5NzNlZDhhNzBlNCIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzc3MzE1OTczLCJleHAiOjE3Nzk5MDc5NzMsInN1YiI6ImE4OWMwODE1LTE2NjUtNGY4NS04ZGQ1LTcwOTlmMTI5YWUzZSJ9.vTrXUdyltiGNskrIAFSET5_xOdlOGP3YKj75ni-yQ5E",
+            "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoib3BlcmF0b3IiLCJhZ2VuY3lJZCI6ImE1ZjEyNzg3LWZmNmYtNGJmNC1iOTAzLTQ5NzNlZDhhNzBlNCIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzc3MzE1OTczLCJleHAiOjE3Nzk5MDc5NzMsInN1YiI6ImE4OWMwODE1LTE2NjUtNGY4NS04ZGQ1LTcwOTlmMTI5YWUzZSJ9.vTrXUdyltiGNskrIAFSET5_xOdlOGP3YKj75ni-yQ5E",
+            "user": {
+              "id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+              "name": "Test Operator",
+              "phone": "+919876543001",
+              "email": null,
+              "role": "operator",
+              "agency_id": "a5f12787-ff6f-4bf4-b903-4973ed8a70e4",
+              "agencyId": "a5f12787-ff6f-4bf4-b903-4973ed8a70e4",
+              "redirect": "/operator/dashboard"
+            }
+          }
+        }
+      },
+      "createRoute": {
+        "status": 201,
+        "data": {
+          "success": true,
+          "data": {
+            "id": "7afa4885-467b-4b07-946b-cf58bb4953f4",
+            "agency_id": "a5f12787-ff6f-4bf4-b903-4973ed8a70e4",
+            "name": "GPS Test Route 1777315974366",
+            "from_city": "Ahmedabad",
+            "to_city": "Surat",
+            "created_at": "2026-04-27T18:52:55.158Z"
+          },
+          "meta": {
+            "timestamp": "28/4/2026, 12:22:55 am"
+          }
+        }
+      },
+      "addStops": [
+        {
+          "stop": "Ahmedabad",
+          "response": {
+            "status": 201,
+            "data": {
+              "success": true,
+              "data": {
+                "id": "7d3504c9-1d5b-429a-a52e-1e8a5dafc61e",
+                "name": "Ahmedabad",
+                "sequence_number": 1,
+                "trigger_radius_km": "10.00",
+                "latitude": 23.0225,
+                "longitude": 72.5714
+              },
+              "meta": {
+                "timestamp": "28/4/2026, 12:22:56 am"
+              }
+            }
+          }
+        },
+        {
+          "stop": "Nadiad",
+          "response": {
+            "status": 201,
+            "data": {
+              "success": true,
+              "data": {
+                "id": "cdfabf3d-d435-48f9-87ff-7c5a262cbd0c",
+                "name": "Nadiad",
+                "sequence_number": 2,
+                "trigger_radius_km": "10.00",
+                "latitude": 22.6916,
+                "longitude": 72.8634
+              },
+              "meta": {
+                "timestamp": "28/4/2026, 12:22:57 am"
+              }
+            }
+          }
+        },
+        {
+          "stop": "Vadodara",
+          "response": {
+            "status": 201,
+            "data": {
+              "success": true,
+              "data": {
+                "id": "981300ec-38c2-48ed-8d03-e8bdc7ef9a86",
+                "name": "Vadodara",
+                "sequence_number": 3,
+                "trigger_radius_km": "10.00",
+                "latitude": 22.3072,
+                "longitude": 73.1812
+              },
+              "meta": {
+                "timestamp": "28/4/2026, 12:22:58 am"
+              }
+            }
+          }
+        },
+        {
+          "stop": "Bharuch",
+          "response": {
+            "status": 201,
+            "data": {
+              "success": true,
+              "data": {
+                "id": "16edc44f-927b-45a2-aec1-284313572a89",
+                "name": "Bharuch",
+                "sequence_number": 4,
+                "trigger_radius_km": "10.00",
+                "latitude": 21.7051,
+                "longitude": 72.9959
+              },
+              "meta": {
+                "timestamp": "28/4/2026, 12:22:59 am"
+              }
+            }
+          }
+        },
+        {
+          "stop": "Surat",
+          "response": {
+            "status": 201,
+            "data": {
+              "success": true,
+              "data": {
+                "id": "cb2f0e1b-9ee7-44de-84cc-456e1b79a81d",
+                "name": "Surat",
+                "sequence_number": 5,
+                "trigger_radius_km": "10.00",
+                "latitude": 21.1702,
+                "longitude": 72.8311
+              },
+              "meta": {
+                "timestamp": "28/4/2026, 12:23:00 am"
+              }
+            }
+          }
+        }
+      ],
+      "members": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "070f374e-a696-472c-bb04-6ae648d894a6",
+              "name": "Contract Driver 863837",
+              "phone": "+919876573837",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:18:05.6425+00",
+              "created_at": "2026-04-27 13:18:01.581295+00"
+            },
+            {
+              "id": "047aacaa-1428-4de4-a90f-215c2463de4d",
+              "name": "Contract Driver 396391",
+              "phone": "+919876576391",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:10:17.976543+00",
+              "created_at": "2026-04-27 13:10:13.642157+00"
+            },
+            {
+              "id": "6dc63194-c346-41b6-b230-d1e7dc551546",
+              "name": "Contract Driver 294437",
+              "phone": "+919876574437",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:08:35.969686+00",
+              "created_at": "2026-04-27 13:08:32.108481+00"
+            },
+            {
+              "id": "96eacfca-dfc8-4dbf-b525-d6b0fa1ce3f5",
+              "name": "Contract Driver 222012",
+              "phone": "+919876572012",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:07:14.211018+00",
+              "created_at": "2026-04-27 13:07:12.711063+00"
+            },
+            {
+              "id": "042d92ba-2b8a-4611-8c14-9f025506d8d7",
+              "name": "Test Driver",
+              "phone": "+919876551059",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 12:29:08.05619+00",
+              "created_at": "2026-04-27 12:29:05.712578+00"
+            },
+            {
+              "id": "444aebd1-ac1d-4e19-b9ba-6d5f89c5cf1f",
+              "name": "Fix Test Driver",
+              "phone": "+919876557891",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 12:16:25.302473+00",
+              "created_at": "2026-04-27 12:16:19.100487+00"
+            },
+            {
+              "id": "001d1547-b2ba-4454-a7ac-8d392d074139",
+              "name": "Fix Test Driver",
+              "phone": "+919876554087",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 0,
+              "last_active_at": null,
+              "created_at": "2026-04-27 12:14:15.663405+00"
+            },
+            {
+              "id": "54a94c4e-3a2e-42e0-a000-c36cb65ffe0c",
+              "name": "Fix Test Driver",
+              "phone": "+919876553287",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 12:11:28.754109+00",
+              "created_at": "2026-04-27 12:11:14.960047+00"
+            },
+            {
+              "id": "b191563e-abf0-4938-83df-49fab616c205",
+              "name": "Test Driver",
+              "phone": "+919876543003",
+              "role": "driver",
+              "is_active": true,
+              "added_by": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+              "added_by_name": "Test Operator",
+              "trips_count": 4,
+              "last_active_at": "2026-04-27 18:32:14.781998+00",
+              "created_at": "2026-04-27 11:06:36.360674+00"
+            },
+            {
+              "id": "e1ba9b13-9c11-4acb-95cd-115540596dc7",
+              "name": "Contract Conductor 863837",
+              "phone": "+919876563837",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:18:05.6425+00",
+              "created_at": "2026-04-27 13:17:59.277241+00"
+            },
+            {
+              "id": "daedeba9-a0e4-4ea5-90af-5c44f688b932",
+              "name": "Contract Conductor 396391",
+              "phone": "+919876566391",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:10:17.976543+00",
+              "created_at": "2026-04-27 13:10:11.341427+00"
+            },
+            {
+              "id": "54bf54ce-9bb1-42d6-bce8-f43c8e1cfb35",
+              "name": "Contract Conductor 294437",
+              "phone": "+919876564437",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:08:35.969686+00",
+              "created_at": "2026-04-27 13:08:29.771665+00"
+            },
+            {
+              "id": "783a0f1a-1a4f-4c6d-88d5-40caa14188a9",
+              "name": "Contract Conductor 222012",
+              "phone": "+919876562012",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 13:07:14.211018+00",
+              "created_at": "2026-04-27 13:07:11.346575+00"
+            },
+            {
+              "id": "2a98d6c2-15ee-431e-84bd-228f9fc052a4",
+              "name": "Test Conductor",
+              "phone": "+919876541059",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 12:29:08.05619+00",
+              "created_at": "2026-04-27 12:29:03.870316+00"
+            },
+            {
+              "id": "de85a0eb-907a-421d-a628-cf0182449a6a",
+              "name": "Fix Test Conductor",
+              "phone": "+919876545943",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 12:16:25.302473+00",
+              "created_at": "2026-04-27 12:16:17.322256+00"
+            },
+            {
+              "id": "d1ef15a9-50a1-4807-bb89-1f5a9f882be4",
+              "name": "Fix Test Conductor",
+              "phone": "+919876541746",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 0,
+              "last_active_at": null,
+              "created_at": "2026-04-27 12:14:13.315975+00"
+            },
+            {
+              "id": "fde03dcc-a28f-43cb-97ff-035eb533df40",
+              "name": "Fix Test Conductor",
+              "phone": "+919876540184",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "e79d5573-18fc-4df3-9253-c9a5c1fd447c",
+              "added_by_name": "Fix Test Operator",
+              "trips_count": 1,
+              "last_active_at": "2026-04-27 12:11:28.754109+00",
+              "created_at": "2026-04-27 12:11:11.899807+00"
+            },
+            {
+              "id": "c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0",
+              "name": "Test Conductor",
+              "phone": "+919876543002",
+              "role": "conductor",
+              "is_active": true,
+              "added_by": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+              "added_by_name": "Test Operator",
+              "trips_count": 4,
+              "last_active_at": "2026-04-27 18:32:14.781998+00",
+              "created_at": "2026-04-27 11:06:34.907569+00"
+            }
+          ],
+          "meta": {
+            "count": 18,
+            "timestamp": "2026-04-27T18:53:01.131Z"
+          }
+        }
+      },
+      "createBus": {
+        "status": 201,
+        "data": {
+          "success": true,
+          "data": {
+            "id": "267985b1-7fe5-484d-b919-d805a223738d",
+            "agency_id": "a5f12787-ff6f-4bf4-b903-4973ed8a70e4",
+            "number_plate": "GJ01GP1232",
+            "model": "GPS Test Bus",
+            "capacity": 40,
+            "is_active": true,
+            "added_by": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "created_at": "2026-04-27T18:53:01.847Z"
+          }
+        }
+      },
+      "createTrip": {
+        "status": 201,
+        "data": {
+          "success": true,
+          "data": {
+            "id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4",
+            "route_id": "7afa4885-467b-4b07-946b-cf58bb4953f4",
+            "owned_by_operator_id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "assigned_operator_id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "conductor_id": "c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0",
+            "driver_id": "b191563e-abf0-4938-83df-49fab616c205",
+            "bus_id": "267985b1-7fe5-484d-b919-d805a223738d",
+            "status": "scheduled",
+            "scheduled_date": "2026-04-28",
+            "started_at": null,
+            "completed_at": null,
+            "created_at": "2026-04-27T18:53:03.455Z"
+          }
+        }
+      },
+      "uploadPassengers": {
+        "status": 201,
+        "data": {
+          "success": true,
+          "data": {
+            "uploaded": 4
+          }
+        }
+      },
+      "conductorLogin": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImMzM2U1ZTJmLWM3MTgtNGI0ZS05MDY2LWYzZWNmMTJlYjVkMCIsInJvbGUiOiJjb25kdWN0b3IiLCJhZ2VuY3lJZCI6ImE1ZjEyNzg3LWZmNmYtNGJmNC1iOTAzLTQ5NzNlZDhhNzBlNCIsImFnZW5jeV9pZCI6ImE1ZjEyNzg3LWZmNmYtNGJmNC1iOTAzLTQ5NzNlZDhhNzBlNCIsIm5hbWUiOiJUZXN0IENvbmR1Y3RvciIsImlhdCI6MTc3NzMxNTk4NiwiZXhwIjoxNzc3MzE2ODg2LCJzdWIiOiJjMzNlNWUyZi1jNzE4LTRiNGUtOTA2Ni1mM2VjZjEyZWI1ZDAifQ.9d-LwkVZKYgbLSt3MxttW2kMsSR1f-NobpNRnWiMlzA",
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImMzM2U1ZTJmLWM3MTgtNGI0ZS05MDY2LWYzZWNmMTJlYjVkMCIsInJvbGUiOiJjb25kdWN0b3IiLCJhZ2VuY3lJZCI6ImE1ZjEyNzg3LWZmNmYtNGJmNC1iOTAzLTQ5NzNlZDhhNzBlNCIsImFnZW5jeV9pZCI6ImE1ZjEyNzg3LWZmNmYtNGJmNC1iOTAzLTQ5NzNlZDhhNzBlNCIsIm5hbWUiOiJUZXN0IENvbmR1Y3RvciIsImlhdCI6MTc3NzMxNTk4NiwiZXhwIjoxNzc3MzE2ODg2LCJzdWIiOiJjMzNlNWUyZi1jNzE4LTRiNGUtOTA2Ni1mM2VjZjEyZWI1ZDAifQ.9d-LwkVZKYgbLSt3MxttW2kMsSR1f-NobpNRnWiMlzA",
+            "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiY29uZHVjdG9yIiwiYWdlbmN5SWQiOiJhNWYxMjc4Ny1mZjZmLTRiZjQtYjkwMy00OTczZWQ4YTcwZTQiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3NzMxNTk4NiwiZXhwIjoxNzc5OTA3OTg2LCJzdWIiOiJjMzNlNWUyZi1jNzE4LTRiNGUtOTA2Ni1mM2VjZjEyZWI1ZDAifQ.YE1hNPN7Wyl4ES8RGDy5lRRDxEuDJE1PMBjzRa-4Eh0",
+            "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiY29uZHVjdG9yIiwiYWdlbmN5SWQiOiJhNWYxMjc4Ny1mZjZmLTRiZjQtYjkwMy00OTczZWQ4YTcwZTQiLCJ0eXBlIjoicmVmcmVzaCIsImlhdCI6MTc3NzMxNTk4NiwiZXhwIjoxNzc5OTA3OTg2LCJzdWIiOiJjMzNlNWUyZi1jNzE4LTRiNGUtOTA2Ni1mM2VjZjEyZWI1ZDAifQ.YE1hNPN7Wyl4ES8RGDy5lRRDxEuDJE1PMBjzRa-4Eh0",
+            "user": {
+              "id": "c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0",
+              "name": "Test Conductor",
+              "phone": "+919876543002",
+              "email": null,
+              "role": "conductor",
+              "agency_id": "a5f12787-ff6f-4bf4-b903-4973ed8a70e4",
+              "agencyId": "a5f12787-ff6f-4bf4-b903-4973ed8a70e4",
+              "redirect": "/operator/dashboard"
+            }
+          }
+        }
+      },
+      "startTrip": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": {
+            "id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4",
+            "route_id": "7afa4885-467b-4b07-946b-cf58bb4953f4",
+            "owned_by_operator_id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "assigned_operator_id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "conductor_id": "c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0",
+            "driver_id": "b191563e-abf0-4938-83df-49fab616c205",
+            "bus_id": "267985b1-7fe5-484d-b919-d805a223738d",
+            "status": "active",
+            "scheduled_date": "2026-04-28",
+            "started_at": "2026-04-27T18:53:07.537Z",
+            "completed_at": null,
+            "created_at": "2026-04-27T18:53:03.455Z"
+          }
+        }
+      },
+      "farPings": [
+        {
+          "lat": 23.02,
+          "lng": 72.57,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "5dc48521-a919-432e-b69e-a2655960a4c5"
+            }
+          }
+        },
+        {
+          "lat": 22.95,
+          "lng": 72.65,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "7a78ae5f-64f8-49cb-807a-1d3584f9a707"
+            }
+          }
+        },
+        {
+          "lat": 22.85,
+          "lng": 72.7,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "6674cd84-f12c-4123-929d-ddc9680a4817"
+            }
+          }
+        },
+        {
+          "lat": 22.8,
+          "lng": 72.75,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "3959e5d5-af85-4847-a6ff-505c001ef805"
+            }
+          }
+        },
+        {
+          "lat": 22.75,
+          "lng": 72.8,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "b45e6fbd-17af-47ec-8073-f0591794536b"
+            }
+          }
+        }
+      ],
+      "passengersAfterFar": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "192d2f64-58e3-4307-94df-13e92e5f0e7e",
+              "passenger_name": "Test Passenger 2",
+              "passenger_phone": "+919876540002",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "2c7e33e6-11eb-4468-9756-32ceceaae319",
+              "passenger_name": "Test Passenger 3",
+              "passenger_phone": "+919876540003",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "38132ab6-dd30-41d7-a8ad-979839aedb52",
+              "passenger_name": "Test Passenger 4",
+              "passenger_phone": "+919876540004",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "f7195360-157f-4a49-a63c-0c888ef8d310",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "alert_status": "sent",
+              "alert_channel": null,
+              "alert_sent_at": "2026-04-27T18:53:13.031Z",
+              "created_at": "2026-04-27T18:53:05.014Z"
+            }
+          ],
+          "meta": {
+            "count": 4,
+            "timestamp": "2026-04-27T18:53:16.880Z"
+          }
+        }
+      },
+      "nearNadiadPings": [
+        {
+          "lat": 22.72,
+          "lng": 72.84,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "8c983017-12af-4fa8-8a3e-e2ff3cfa4429"
+            }
+          }
+        },
+        {
+          "lat": 22.7,
+          "lng": 72.85,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "25594104-1731-4f88-8b7c-ea1015e7579b"
+            }
+          }
+        },
+        {
+          "lat": 22.695,
+          "lng": 72.86,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "40a07926-7497-41b0-bb33-c4b88ebce9b6"
+            }
+          }
+        }
+      ],
+      "passengersAfterNadiad": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "192d2f64-58e3-4307-94df-13e92e5f0e7e",
+              "passenger_name": "Test Passenger 2",
+              "passenger_phone": "+919876540002",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "2c7e33e6-11eb-4468-9756-32ceceaae319",
+              "passenger_name": "Test Passenger 3",
+              "passenger_phone": "+919876540003",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "38132ab6-dd30-41d7-a8ad-979839aedb52",
+              "passenger_name": "Test Passenger 4",
+              "passenger_phone": "+919876540004",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "f7195360-157f-4a49-a63c-0c888ef8d310",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "alert_status": "sent",
+              "alert_channel": null,
+              "alert_sent_at": "2026-04-27T18:53:13.031Z",
+              "created_at": "2026-04-27T18:53:05.014Z"
+            }
+          ],
+          "meta": {
+            "count": 4,
+            "timestamp": "2026-04-27T18:53:26.103Z"
+          }
+        }
+      },
+      "logsAfterNadiad": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [],
+          "meta": {
+            "page": 1,
+            "page_size": 50,
+            "total": 0,
+            "timestamp": "2026-04-27T18:53:27.362Z"
+          }
+        }
+      },
+      "nearNadiadDuplicatePings": [
+        {
+          "lat": 22.692,
+          "lng": 72.863,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "a990ea9a-b946-4c3e-a4c8-8e2773acd61c"
+            }
+          }
+        },
+        {
+          "lat": 22.691,
+          "lng": 72.864,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "a2a63acd-1f36-42cd-adfa-21de62c25682"
+            }
+          }
+        },
+        {
+          "lat": 22.69,
+          "lng": 72.865,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "9f4ce957-d358-4a1c-bbe3-fdbb7c09a7cd"
+            }
+          }
+        }
+      ],
+      "logsAfterDup": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [],
+          "meta": {
+            "page": 1,
+            "page_size": 50,
+            "total": 0,
+            "timestamp": "2026-04-27T18:53:36.953Z"
+          }
+        }
+      },
+      "towardVadodaraPings": [
+        {
+          "lat": 22.5,
+          "lng": 72.95,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "f93f2395-954f-4cd9-8df9-161d2ca13b3a"
+            }
+          }
+        },
+        {
+          "lat": 22.4,
+          "lng": 73.05,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "aca552d9-013c-41f2-947f-190114eccf1e"
+            }
+          }
+        },
+        {
+          "lat": 22.32,
+          "lng": 73.17,
+          "status": 202,
+          "payload": {
+            "success": true,
+            "data": {
+              "location_id": "2f1a7078-c4ab-47d3-917d-5c106eebf48b"
+            }
+          }
+        }
+      ],
+      "passengersAfterVad": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "2c7e33e6-11eb-4468-9756-32ceceaae319",
+              "passenger_name": "Test Passenger 3",
+              "passenger_phone": "+919876540003",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "38132ab6-dd30-41d7-a8ad-979839aedb52",
+              "passenger_name": "Test Passenger 4",
+              "passenger_phone": "+919876540004",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "f7195360-157f-4a49-a63c-0c888ef8d310",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "alert_status": "sent",
+              "alert_channel": null,
+              "alert_sent_at": "2026-04-27T18:53:13.031Z",
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "192d2f64-58e3-4307-94df-13e92e5f0e7e",
+              "passenger_name": "Test Passenger 2",
+              "passenger_phone": "+919876540002",
+              "alert_status": "sent",
+              "alert_channel": null,
+              "alert_sent_at": "2026-04-27T18:53:40.288Z",
+              "created_at": "2026-04-27T18:53:05.014Z"
+            }
+          ],
+          "meta": {
+            "count": 4,
+            "timestamp": "2026-04-27T18:53:46.191Z"
+          }
+        }
+      },
+      "postOfflineCheck": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "3926a81f-bf5a-4574-9e1b-a9794b071a0f",
+              "channel": "manual",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:49.775Z",
+              "response_code": null,
+              "error_message": "All automated channels failed",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            },
+            {
+              "id": "c8a7d9e8-6ea1-4cc9-8d1a-bbd04a131640",
+              "channel": "whatsapp",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:48.509Z",
+              "response_code": "401",
+              "error_message": "HTTP 401",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            },
+            {
+              "id": "490fe4c6-7327-4f0a-a3f4-a30963937754",
+              "channel": "sms",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:47.784Z",
+              "response_code": "200",
+              "error_message": "template id missing",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            },
+            {
+              "id": "e88cc131-aa86-472e-b5be-e729f677ec76",
+              "channel": "call",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:43.304Z",
+              "response_code": "",
+              "error_message": "Request cannot be constructed from a URL that includes credentials: https://140b2af45401618eb6c475d741cceb328b507e34c646bbba:ba134530358e02f834435b5fb9b03081791f62b91ebe9e94@api.exotel.com/v1/Accounts/thesentinel1/Calls/connect.json",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            }
+          ],
+          "meta": {
+            "page": 1,
+            "page_size": 50,
+            "total": 4,
+            "timestamp": "2026-04-27T18:56:18.633Z"
+          }
+        }
+      },
+      "resumePing": {
+        "status": 202,
+        "data": {
+          "success": true,
+          "data": {
+            "location_id": "45f5a4a1-7df8-4639-b685-b547dce82b04"
+          }
+        }
+      },
+      "completeTrip": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": {
+            "id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4",
+            "route_id": "7afa4885-467b-4b07-946b-cf58bb4953f4",
+            "owned_by_operator_id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "assigned_operator_id": "a89c0815-1665-4f85-8dd5-7099f129ae3e",
+            "conductor_id": "c33e5e2f-c718-4b4e-9066-f3ecf12eb5d0",
+            "driver_id": "b191563e-abf0-4938-83df-49fab616c205",
+            "bus_id": "267985b1-7fe5-484d-b919-d805a223738d",
+            "status": "completed",
+            "scheduled_date": "2026-04-28",
+            "started_at": "2026-04-27T18:53:07.537Z",
+            "completed_at": "2026-04-27T18:56:20.433Z",
+            "created_at": "2026-04-27T18:53:03.455Z"
+          }
+        }
+      },
+      "ownerSummaryAfterComplete": {
+        "status": 403,
+        "data": {
+          "success": false,
+          "error": {
+            "code": "FORBIDDEN",
+            "message": "Insufficient permissions"
+          }
+        }
+      },
+      "alertLogsFinal": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "3926a81f-bf5a-4574-9e1b-a9794b071a0f",
+              "channel": "manual",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:49.775Z",
+              "response_code": null,
+              "error_message": "All automated channels failed",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            },
+            {
+              "id": "c8a7d9e8-6ea1-4cc9-8d1a-bbd04a131640",
+              "channel": "whatsapp",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:48.509Z",
+              "response_code": "401",
+              "error_message": "HTTP 401",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            },
+            {
+              "id": "490fe4c6-7327-4f0a-a3f4-a30963937754",
+              "channel": "sms",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:47.784Z",
+              "response_code": "200",
+              "error_message": "template id missing",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            },
+            {
+              "id": "e88cc131-aa86-472e-b5be-e729f677ec76",
+              "channel": "call",
+              "status": "failed",
+              "attempted_at": "2026-04-27T18:53:43.304Z",
+              "response_code": "",
+              "error_message": "Request cannot be constructed from a URL that includes credentials: https://140b2af45401618eb6c475d741cceb328b507e34c646bbba:ba134530358e02f834435b5fb9b03081791f62b91ebe9e94@api.exotel.com/v1/Accounts/thesentinel1/Calls/connect.json",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "trip_id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4"
+            }
+          ],
+          "meta": {
+            "page": 1,
+            "page_size": 50,
+            "total": 4,
+            "timestamp": "2026-04-27T18:56:22.570Z"
+          }
+        }
+      },
+      "passengersFinal": {
+        "status": 200,
+        "data": {
+          "success": true,
+          "data": [
+            {
+              "id": "2c7e33e6-11eb-4468-9756-32ceceaae319",
+              "passenger_name": "Test Passenger 3",
+              "passenger_phone": "+919876540003",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "38132ab6-dd30-41d7-a8ad-979839aedb52",
+              "passenger_name": "Test Passenger 4",
+              "passenger_phone": "+919876540004",
+              "alert_status": "pending",
+              "alert_channel": null,
+              "alert_sent_at": null,
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "192d2f64-58e3-4307-94df-13e92e5f0e7e",
+              "passenger_name": "Test Passenger 2",
+              "passenger_phone": "+919876540002",
+              "alert_status": "sent",
+              "alert_channel": null,
+              "alert_sent_at": "2026-04-27T18:53:40.288Z",
+              "created_at": "2026-04-27T18:53:05.014Z"
+            },
+            {
+              "id": "f7195360-157f-4a49-a63c-0c888ef8d310",
+              "passenger_name": "Test Passenger 1",
+              "passenger_phone": "+919876540001",
+              "alert_status": "failed",
+              "alert_channel": null,
+              "alert_sent_at": "2026-04-27T18:53:13.031Z",
+              "created_at": "2026-04-27T18:53:05.014Z"
+            }
+          ],
+          "meta": {
+            "count": 4,
+            "timestamp": "2026-04-27T18:56:23.533Z"
+          }
+        }
+      }
+    },
+    "tests": [],
+    "blockers": [],
+    "cleanup": [
+      {
+        "entity": "bus",
+        "id": "267985b1-7fe5-484d-b919-d805a223738d",
+        "status": 200
+      },
+      {
+        "entity": "trip",
+        "id": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4",
+        "status": "NOT_AVAILABLE_PUBLIC_ENDPOINT"
+      },
+      {
+        "entity": "route",
+        "id": "7afa4885-467b-4b07-946b-cf58bb4953f4",
+        "status": "NOT_AVAILABLE_PUBLIC_ENDPOINT"
+      },
+      {
+        "entity": "passengers",
+        "tripId": "6670f40e-4b9f-4abd-adc8-c07a9dcf7bc4",
+        "status": "NOT_AVAILABLE_PUBLIC_ENDPOINT"
+      }
+    ]
+  },
+  "results": [
+    {
+      "no": 1,
+      "test": "Start trip",
+      "expected": "active",
+      "status": "PASS",
+      "notes": "status=200"
+    },
+    {
+      "no": 2,
+      "test": "GPS far pings",
+      "expected": "no alert",
+      "status": "FAIL",
+      "notes": "pingStatuses=202,202,202,202,202; passengerStatuses=pending,pending,pending,sent"
+    },
+    {
+      "no": 3,
+      "test": "GPS near Nadiad",
+      "expected": "alert triggered",
+      "status": "PASS",
+      "notes": "passenger1_status=sent"
+    },
+    {
+      "no": 4,
+      "test": "No duplicate",
+      "expected": "no repeat",
+      "status": "PASS",
+      "notes": "nadiadLogs before=0 after=0"
+    },
+    {
+      "no": 5,
+      "test": "Worker processed",
+      "expected": "logs created",
+      "status": "FAIL",
+      "notes": "p1_status=missing"
+    },
+    {
+      "no": 6,
+      "test": "GPS near Vadodara",
+      "expected": "new alert",
+      "status": "PASS",
+      "notes": "passenger2_status=sent"
+    },
+    {
+      "no": 7,
+      "test": "Heartbeat offline",
+      "expected": "event fired",
+      "status": "UNKNOWN",
+      "notes": "Cannot verify Socket event from public API only"
+    },
+    {
+      "no": 8,
+      "test": "GPS resume",
+      "expected": "online event",
+      "status": "PASS",
+      "notes": "status=202; socket event not externally visible"
+    },
+    {
+      "no": 9,
+      "test": "Complete trip",
+      "expected": "wallet deducted",
+      "status": "PASS",
+      "notes": "complete_status=200; wallet endpoint=/api/owner/summary"
+    },
+    {
+      "no": 10,
+      "test": "Alert logs",
+      "expected": "entries exist",
+      "status": "FAIL",
+      "notes": "nadiad=true; vadodara=false"
+    },
+    {
+      "no": 11,
+      "test": "Queue empty",
+      "expected": "no stuck jobs",
+      "status": "UNKNOWN",
+      "notes": "Redis queue length not exposed via production API"
+    },
+    {
+      "no": 12,
+      "test": "Passenger status",
+      "expected": "correct",
+      "status": "PASS",
+      "notes": "{\"+919876540003\":\"pending\",\"+919876540004\":\"pending\",\"+919876540002\":\"sent\",\"+919876540001\":\"failed\"}"
+    }
+  ],
+  "criticalIssues": [
+    {
+      "test": 2,
+      "error": "pingStatuses=202,202,202,202,202; passengerStatuses=pending,pending,pending,sent",
+      "impact": "Regression in test 2 (GPS far pings) for production GPS/alert flow.",
+      "suggested_fix": "Inspect related service logs and endpoint contracts; rerun this scenario after fix."
+    },
+    {
+      "test": 5,
+      "error": "p1_status=missing",
+      "impact": "Regression in test 5 (Worker processed) for production GPS/alert flow.",
+      "suggested_fix": "Inspect related service logs and endpoint contracts; rerun this scenario after fix."
+    },
+    {
+      "test": 10,
+      "error": "nadiad=true; vadodara=false",
+      "impact": "Regression in test 10 (Alert logs) for production GPS/alert flow.",
+      "suggested_fix": "Inspect related service logs and endpoint contracts; rerun this scenario after fix."
+    },
+    {
+      "test": "observability",
+      "error": "Redis queue depth and heartbeat socket events are not externally verifiable from public API.",
+      "impact": "Cannot conclusively validate Tests 7/11 without worker/Redis observability.",
+      "suggested_fix": "Add secure operator/admin diagnostics endpoint or provide Railway worker log access for QA."
+    }
+  ]
+}

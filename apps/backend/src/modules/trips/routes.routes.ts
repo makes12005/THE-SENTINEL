@@ -1,10 +1,15 @@
 /**
  * Routes Module HTTP Layer
- * 
- * POST   /api/routes                    — create route (operator)
- * POST   /api/routes/:routeId/stops     — add stop   (operator)
- * GET    /api/routes                    — list routes (operator | owner)
- * GET    /api/routes/:routeId/stops     — list stops  (operator | owner)
+ *
+ * POST   /api/routes                          — create route
+ * GET    /api/routes                          — list routes (with stop count)
+ * GET    /api/routes/:routeId                 — get single route with stops
+ * PUT    /api/routes/:routeId                 — update route
+ * DELETE /api/routes/:routeId                 — soft delete route
+ * POST   /api/routes/:routeId/stops           — add stop
+ * GET    /api/routes/:routeId/stops           — list stops (with lat/lng)
+ * PUT    /api/routes/:routeId/stops/:stopId   — update stop
+ * DELETE /api/routes/:routeId/stops/:stopId   — delete stop
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -28,127 +33,144 @@ export default async function routesRoutes(fastify: FastifyInstance) {
   const getRouteId = (req: FastifyRequest): string =>
     (req.params as { routeId: string }).routeId;
 
-  // ── POST /api/routes ──────────────────────────────────────────────────────
-  fastify.post(
-    '/',
-    { preHandler: [requireAuth(['operator', 'admin'])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
+  const getStopId = (req: FastifyRequest): string =>
+    (req.params as { stopId: string }).stopId;
+
+  function handleErr(reply: FastifyReply, err: any) {
+    return reply.status(err.statusCode ?? 500).send({
+      success: false,
+      error: { code: err.code ?? 'REQUEST_FAILED', message: err.message ?? 'An error occurred' },
+    });
+  }
+
+  // ── POST /api/routes ─────────────────────────────────────────────────────
+  fastify.post('/', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
       try {
         const parsed = CreateRouteSchema.safeParse(req.body);
         if (!parsed.success) {
-          return reply.status(400).send({
-            success: false,
-            error: 'Validation failed',
-            data: parsed.error.issues,
-          });
+          return reply.status(400).send({ success: false, error: 'Validation failed', data: parsed.error.issues });
         }
-
         const agencyId = getAgencyIdOrReply(req, reply);
         if (!agencyId) return;
-        const route = await RoutesService.createRoute(agencyId, parsed.data);
-
+        const route = await RoutesService.createRoute(agencyId, parsed.data, req.user.id);
         return reply.status(201).send({
-          success: true,
-          data: route,
+          success: true, data: route,
           meta: { timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) },
         });
-      } catch (err: any) {
-        return reply.status(err.statusCode ?? 500).send({
-          success: false,
-          error: err.message,
-        });
-      }
+      } catch (err: any) { return handleErr(reply, err); }
     }
   );
 
-  // ── GET /api/routes ───────────────────────────────────────────────────────
-  fastify.get(
-    '/',
-    { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
+  // ── GET /api/routes ──────────────────────────────────────────────────────
+  fastify.get('/', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
       try {
         const agencyId = getAgencyIdOrReply(req, reply);
         if (!agencyId) return;
         const routes = await RoutesService.listRoutes(agencyId);
-
-        return reply.send({
-          success: true,
-          data: routes,
-          meta: {
-            count: routes.length,
-            timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-          },
-        });
-      } catch (err: any) {
-        return reply.status(err.statusCode ?? 500).send({
-          success: false,
-          error: err.message,
-        });
-      }
+        return reply.send({ success: true, data: routes, meta: { count: routes.length } });
+      } catch (err: any) { return handleErr(reply, err); }
     }
   );
 
-  // ── POST /api/routes/:routeId/stops ───────────────────────────────────────
-  fastify.post(
-    '/:routeId/stops',
-    { preHandler: [requireAuth(['operator', 'admin'])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
+  // ── GET /api/routes/:routeId ─────────────────────────────────────────────
+  fastify.get('/:routeId', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const route = await RoutesService.getRoute(getRouteId(req), agencyId);
+        return reply.send({ success: true, data: route });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
+
+  // ── PUT /api/routes/:routeId ─────────────────────────────────────────────
+  fastify.put('/:routeId', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const parsed = CreateRouteSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return reply.status(400).send({ success: false, error: 'Validation failed', data: parsed.error.issues });
+        }
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const route = await RoutesService.updateRoute(getRouteId(req), agencyId, parsed.data);
+        return reply.send({ success: true, data: route });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
+
+  // ── DELETE /api/routes/:routeId ──────────────────────────────────────────
+  fastify.delete('/:routeId', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const result = await RoutesService.softDeleteRoute(getRouteId(req), agencyId);
+        return reply.send({ success: true, data: result });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
+
+  // ── POST /api/routes/:routeId/stops ─────────────────────────────────────
+  fastify.post('/:routeId/stops', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
       try {
         const parsed = CreateStopSchema.safeParse(req.body);
         if (!parsed.success) {
-          return reply.status(400).send({
-            success: false,
-            error: 'Validation failed',
-            data: parsed.error.issues,
-          });
+          return reply.status(400).send({ success: false, error: 'Validation failed', data: parsed.error.issues });
         }
-
         const agencyId = getAgencyIdOrReply(req, reply);
         if (!agencyId) return;
-        const stop = await RoutesService.addStop(
-          getRouteId(req),
-          agencyId,
-          parsed.data
-        );
-
-        return reply.status(201).send({
-          success: true,
-          data: stop,
-          meta: { timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) },
-        });
-      } catch (err: any) {
-        return reply.status(err.statusCode ?? 500).send({
-          success: false,
-          error: err.message,
-        });
-      }
+        const stop = await RoutesService.addStop(getRouteId(req), agencyId, parsed.data);
+        return reply.status(201).send({ success: true, data: stop });
+      } catch (err: any) { return handleErr(reply, err); }
     }
   );
 
-  // ── GET /api/routes/:routeId/stops ────────────────────────────────────────
-  fastify.get(
-    '/:routeId/stops',
-    { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
+  // ── GET /api/routes/:routeId/stops ───────────────────────────────────────
+  fastify.get('/:routeId/stops', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
       try {
         const agencyId = getAgencyIdOrReply(req, reply);
         if (!agencyId) return;
         const stopsData = await RoutesService.listStops(getRouteId(req), agencyId);
+        return reply.send({ success: true, data: stopsData, meta: { count: stopsData.length } });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
 
-        return reply.send({
-          success: true,
-          data: stopsData,
-          meta: {
-            count: stopsData.length,
-            timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-          },
-        });
-      } catch (err: any) {
-        return reply.status(err.statusCode ?? 500).send({
-          success: false,
-          error: err.message,
-        });
-      }
+  // ── PUT /api/routes/:routeId/stops/:stopId ───────────────────────────────
+  fastify.put('/:routeId/stops/:stopId', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const body = req.body as any;
+        const payload = {
+          name: body.name,
+          sequence_number: body.sequence_number != null ? Number(body.sequence_number) : undefined,
+          latitude: body.latitude != null ? Number(body.latitude) : undefined,
+          longitude: body.longitude != null ? Number(body.longitude) : undefined,
+          trigger_radius_km: body.trigger_radius_km != null ? Number(body.trigger_radius_km) : undefined,
+        };
+        const stop = await RoutesService.updateStop(getRouteId(req), getStopId(req), agencyId, payload);
+        return reply.send({ success: true, data: stop });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
+
+  // ── DELETE /api/routes/:routeId/stops/:stopId ────────────────────────────
+  fastify.delete('/:routeId/stops/:stopId', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const result = await RoutesService.deleteStop(getRouteId(req), getStopId(req), agencyId);
+        return reply.send({ success: true, data: result });
+      } catch (err: any) { return handleErr(reply, err); }
     }
   );
 }

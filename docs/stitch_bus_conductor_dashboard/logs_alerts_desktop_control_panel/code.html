@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Sentinel - Logs &amp; Alerts</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#e0e3e8",
+                      "on-error-container": "#ffdad6",
+                      "primary-container": "#a3cbf2",
+                      "on-surface": "#e0e3e8",
+                      "error": "#ffb4ab",
+                      "on-background": "#e0e3e8",
+                      "surface-container-lowest": "#0b0f12",
+                      "on-secondary": "#2d2a5e",
+                      "background": "#101418",
+                      "inverse-primary": "#396284",
+                      "on-error": "#690005",
+                      "tertiary-fixed-dim": "#ffb68b",
+                      "on-primary-fixed-variant": "#1f4a6b",
+                      "on-primary-container": "#2d5678",
+                      "tertiary-container": "#ffb78d",
+                      "error-container": "#93000a",
+                      "on-tertiary-fixed-variant": "#6c3a19",
+                      "on-secondary-fixed": "#171348",
+                      "on-primary": "#003352",
+                      "surface-container": "#1c2024",
+                      "on-secondary-fixed-variant": "#434076",
+                      "primary-fixed": "#cde5ff",
+                      "surface-variant": "#31353a",
+                      "surface-container-low": "#181c20",
+                      "primary": "#cee5ff",
+                      "primary-fixed-dim": "#a3cbf2",
+                      "secondary-fixed": "#e3dfff",
+                      "on-tertiary": "#502405",
+                      "on-secondary-container": "#b3afed",
+                      "tertiary-fixed": "#ffdbc9",
+                      "secondary": "#c4c0ff",
+                      "surface": "#101418",
+                      "surface-dim": "#101418",
+                      "on-tertiary-fixed": "#321200",
+                      "on-surface-variant": "#c2c7ce",
+                      "surface-tint": "#a3cbf2",
+                      "on-primary-fixed": "#001d32",
+                      "on-tertiary-container": "#7a4523",
+                      "tertiary": "#ffdcca",
+                      "secondary-fixed-dim": "#c4c0ff",
+                      "secondary-container": "#434076",
+                      "surface-bright": "#363a3e",
+                      "surface-container-high": "#262a2f",
+                      "outline": "#8c9198",
+                      "inverse-on-surface": "#2d3135",
+                      "outline-variant": "#42474e",
+                      "surface-container-highest": "#31353a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "unit-base": "4px",
+                      "element-tight": "0.5rem",
+                      "page-padding": "1rem",
+                      "card-gap": "1rem",
+                      "section-internal": "1.25rem"
+              },
+              "fontFamily": {
+                      "header-title": [
+                              "Manrope"
+                      ],
+                      "body-standard": [
+                              "Inter"
+                      ],
+                      "button-text": [
+                              "Inter"
+                      ],
+                      "display-time": [
+                              "Manrope"
+                      ],
+                      "metadata-label": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "header-title": [
+                              "1.125rem",
+                              {
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-standard": [
+                              "0.875rem",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button-text": [
+                              "11px",
+                              {
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "900"
+                              }
+                      ],
+                      "display-time": [
+                              "1.5rem",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "900"
+                              }
+                      ],
+                      "metadata-label": [
+                              "10px",
+                              {
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        body {
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-standard antialiased selection:bg-primary-container selection:text-on-primary-container overflow-hidden flex h-screen">
+<!-- SideNavBar -->
+<nav class="hidden lg:flex flex-col fixed left-0 top-0 h-full h-screen w-64 border-r border-neutral-800 border-r border-neutral-800 bg-neutral-950 z-40">
+<div class="p-section-internal flex items-center gap-element-tight border-b border-outline-variant/20">
+<span class="material-symbols-outlined text-blue-400 text-[32px] fill">location_on</span>
+<div class="flex flex-col">
+<span class="font-header-title text-header-title text-blue-400 font-black tracking-widest uppercase">THE SENTINEL</span>
+<span class="font-metadata-label text-metadata-label text-outline uppercase tracking-widest">Fleet Control</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto py-page-padding flex flex-col gap-unit-base px-2">
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+<span>Trips</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">route</span>
+<span>Routes</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span>Passengers</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">local_gas_station</span>
+<span>Resources</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded bg-neutral-800 text-blue-300 border-l-4 border-blue-400 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined fill">warning</span>
+<span>Logs &amp; Alerts</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span>Billing</span>
+</a>
+</div>
+<div class="p-section-internal border-t border-outline-variant/20 flex flex-col gap-element-tight">
+<button class="w-full bg-surface-container-highest text-on-surface py-2 rounded flex items-center justify-center gap-2 font-button-text text-button-text uppercase tracking-widest hover:bg-surface-variant transition-colors border border-outline-variant/30">
+<span class="material-symbols-outlined text-[16px]">add_chart</span>
+                Generate Report
+            </button>
+<div class="flex flex-col gap-unit-base mt-2 px-2">
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-element-tight px-3 py-2 rounded text-neutral-500 hover:bg-neutral-900 hover:text-neutral-200 transition-all duration-200 ease-in-out font-manrope text-xs font-semibold uppercase tracking-wider" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col lg:ml-64 h-full relative">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full lg:w-[calc(100%-16rem)] h-14 z-50 bg-neutral-900/80 backdrop-blur-md border-b border-neutral-800 flat no shadows font-manrope tracking-tight uppercase font-bold text-blue-200 flex items-center justify-between px-4">
+<div class="flex items-center gap-element-tight">
+<span class="font-header-title text-header-title text-neutral-50 lg:hidden font-black tracking-widest">THE SENTINEL</span>
+<span class="font-header-title text-header-title text-neutral-50 hidden lg:block tracking-widest uppercase">Logs &amp; Alerts</span>
+</div>
+<div class="flex items-center gap-page-padding">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant text-[18px]">search</span>
+<input class="bg-surface-container-highest border border-outline-variant/30 rounded-full pl-10 pr-4 py-1.5 text-body-standard font-body-standard text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container w-64 placeholder:text-outline-variant/70 transition-all" placeholder="Search logs..." type="text"/>
+</div>
+<div class="flex items-center gap-element-tight">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-800 transition-colors Active: opacity-80">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-800 transition-colors Active: opacity-80">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30 ml-2">
+<img alt="Dispatcher Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a male dispatcher looking focused, wearing a headset. The lighting is moody and cinematic, suggesting a night shift in a high-tech control room. The color palette is dark, with subtle cool blue and slate grey tones, fitting a modern industrial tech-noir aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuJENkDYTPAbBT5wf_x9aFnM6zCvYNo7ars_hffQeXByhDQuu6ziWsCVtAFpqAZ09-tSCXPSxXOOQ0H-zz7mOD-91JnRn32YdATvrGMAKN2Q6eGD0FDS_wW9p2eXxnZ-zX2xn_apyQTJGgRB56dGB4i6hziWOlL_GbGmuNm2y_DOexNVk2xMYCjkc_2u3P3eqRMB778Cqfwxtt6ZXWfKAYlnobQ4tf4NceHSevE0LlwzG1PmrHq51qcJoJYnCsv0HiwaMG5ePvfxar"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto mt-14 p-page-padding lg:p-6 bg-surface grid grid-cols-1 xl:grid-cols-3 gap-card-gap max-w-7xl mx-auto w-full">
+<!-- Left Column: Alerts -->
+<div class="xl:col-span-2 flex flex-col gap-section-internal">
+<!-- Toggle -->
+<div class="flex bg-surface-container-low rounded p-1 border border-outline-variant/20 w-fit">
+<button class="px-6 py-2 rounded bg-surface-container-highest text-on-surface font-button-text text-button-text tracking-widest uppercase border border-outline-variant/10 shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-error">warning</span>
+                        ALERTS
+                    </button>
+<button class="px-6 py-2 rounded text-outline font-button-text text-button-text tracking-widest uppercase hover:text-on-surface transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">list_alt</span>
+                        LOGS
+                    </button>
+</div>
+<div class="flex flex-col gap-element-tight">
+<h2 class="font-header-title text-header-title text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-container">priority_high</span>
+                        PRIORITY ALERTS
+                    </h2>
+<div class="flex flex-col gap-card-gap">
+<!-- Alert 1 -->
+<div class="bg-surface-container-high rounded border-l-4 border-error p-section-internal flex flex-col md:flex-row md:items-center justify-between gap-page-padding shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-error/10 text-error font-metadata-label text-metadata-label uppercase border border-error/20">Critical</span>
+<span class="font-metadata-label text-metadata-label text-outline">Just now</span>
+</div>
+<h3 class="font-body-standard text-body-standard text-on-error-container text-lg">Passenger list missing</h3>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-outline font-metadata-label text-metadata-label">
+<span class="material-symbols-outlined text-[14px]">directions_bus</span>
+                                        GJ01AB1234
+                                    </div>
+<div class="flex items-center gap-1.5 text-outline font-metadata-label text-metadata-label">
+<span class="material-symbols-outlined text-[14px]">route</span>
+                                        Ahmedabad → Una
+                                    </div>
+</div>
+</div>
+<button class="bg-tertiary-container text-on-tertiary-container font-button-text text-button-text px-6 py-3 rounded uppercase tracking-widest hover:bg-tertiary-fixed-dim transition-colors whitespace-nowrap self-start md:self-center font-bold">
+                                FIX NOW
+                            </button>
+</div>
+<!-- Alert 2 -->
+<div class="bg-surface-container-high rounded border-l-4 border-tertiary-container p-section-internal flex flex-col md:flex-row md:items-center justify-between gap-page-padding shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-tertiary-container/10 text-tertiary-container font-metadata-label text-metadata-label uppercase border border-tertiary-container/20">Warning</span>
+<span class="font-metadata-label text-metadata-label text-outline">12m ago</span>
+</div>
+<h3 class="font-body-standard text-body-standard text-on-surface text-lg">Conductor offline</h3>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-outline font-metadata-label text-metadata-label">
+<span class="material-symbols-outlined text-[14px]">directions_bus</span>
+                                        MH12XY5678
+                                    </div>
+<div class="flex items-center gap-1.5 text-outline font-metadata-label text-metadata-label">
+<span class="material-symbols-outlined text-[14px]">route</span>
+                                        Surat → Mumbai
+                                    </div>
+</div>
+</div>
+<button class="bg-surface-container-highest text-on-surface border border-outline-variant/30 font-button-text text-button-text px-6 py-3 rounded uppercase tracking-widest hover:bg-surface-variant transition-colors whitespace-nowrap self-start md:self-center font-bold">
+                                CONTACT
+                            </button>
+</div>
+<!-- Alert 3 -->
+<div class="bg-surface-container-high rounded border-l-4 border-tertiary-container p-section-internal flex flex-col md:flex-row md:items-center justify-between gap-page-padding shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-tertiary-container/10 text-tertiary-container font-metadata-label text-metadata-label uppercase border border-tertiary-container/20">Warning</span>
+<span class="font-metadata-label text-metadata-label text-outline">45m ago</span>
+</div>
+<h3 class="font-body-standard text-body-standard text-on-surface text-lg">Call failed (Seat 12)</h3>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex items-center gap-1.5 text-outline font-metadata-label text-metadata-label">
+<span class="material-symbols-outlined text-[14px]">directions_bus</span>
+                                        GJ01AB1234
+                                    </div>
+</div>
+</div>
+<button class="bg-surface-container-highest text-on-surface border border-outline-variant/30 font-button-text text-button-text px-6 py-3 rounded uppercase tracking-widest hover:bg-surface-variant transition-colors whitespace-nowrap self-start md:self-center font-bold">
+                                VIEW PASSENGER
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Recent Activity -->
+<div class="xl:col-span-1 bg-surface-container-low border border-outline-variant/20 rounded p-section-internal flex flex-col gap-section-internal h-fit">
+<h2 class="font-header-title text-header-title text-on-surface flex items-center gap-2 border-b border-outline-variant/20 pb-4">
+<span class="material-symbols-outlined text-outline">history</span>
+                    RECENT ACTIVITY
+                </h2>
+<div class="relative flex flex-col gap-6 pl-4">
+<!-- Timeline Line -->
+<div class="absolute left-[19px] top-2 bottom-2 w-px bg-outline-variant/20"></div>
+<!-- Log Item 1 -->
+<div class="relative flex gap-4 items-start">
+<div class="absolute -left-[11px] top-1.5 w-2 h-2 rounded-full bg-error ring-4 ring-surface-container-low z-10"></div>
+<div class="flex flex-col gap-1 w-full">
+<div class="flex justify-between items-center w-full">
+<span class="font-metadata-label text-metadata-label text-error uppercase tracking-widest">Call Triggered</span>
+<span class="font-metadata-label text-metadata-label text-outline">11:10 PM</span>
+</div>
+<span class="font-body-standard text-body-standard text-on-surface">Seat 12 - GJ01AB1234</span>
+</div>
+</div>
+<!-- Log Item 2 -->
+<div class="relative flex gap-4 items-start">
+<div class="absolute -left-[11px] top-1.5 w-2 h-2 rounded-full bg-primary-container ring-4 ring-surface-container-low z-10"></div>
+<div class="flex flex-col gap-1 w-full">
+<div class="flex justify-between items-center w-full">
+<span class="font-metadata-label text-metadata-label text-primary-container uppercase tracking-widest">List Uploaded</span>
+<span class="font-metadata-label text-metadata-label text-outline">10:45 PM</span>
+</div>
+<span class="font-body-standard text-body-standard text-on-surface">System automated sync</span>
+</div>
+</div>
+<!-- Log Item 3 -->
+<div class="relative flex gap-4 items-start">
+<div class="absolute -left-[11px] top-1.5 w-2 h-2 rounded-full bg-outline ring-4 ring-surface-container-low z-10"></div>
+<div class="flex flex-col gap-1 w-full">
+<div class="flex justify-between items-center w-full">
+<span class="font-metadata-label text-metadata-label text-outline uppercase tracking-widest">Trip Started</span>
+<span class="font-metadata-label text-metadata-label text-outline">10:32 PM</span>
+</div>
+<span class="font-body-standard text-body-standard text-on-surface">Ahmedabad → Una</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

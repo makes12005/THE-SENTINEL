@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.walletTransactions = exports.walletTransactionTypeEnum = exports.agencyWallets = exports.alertLogs = exports.conductorLocations = exports.tripPassengers = exports.trips = exports.buses = exports.stops = exports.routes = exports.auditLogs = exports.refreshTokens = exports.users = exports.agencies = exports.agencyInvites = exports.alertLogStatusEnum = exports.alertChannelEnum = exports.alertStatusEnum = exports.tripStatusEnum = exports.userRoleEnum = void 0;
+exports.tripTemplates = exports.walletTransactions = exports.walletTransactionTypeEnum = exports.agencyWallets = exports.alertLogs = exports.conductorLocations = exports.tripPassengers = exports.trips = exports.buses = exports.stops = exports.routes = exports.auditLogs = exports.refreshTokens = exports.users = exports.agencies = exports.agencyInvites = exports.alertLogStatusEnum = exports.alertChannelEnum = exports.alertStatusEnum = exports.tripStatusEnum = exports.userRoleEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // ─────────────────────────────────────────────────────────────────────────────
 // PostGIS geometry(Point, 4326) — WGS84 coordinates stored as EWKT string
@@ -85,6 +85,8 @@ exports.routes = (0, pg_core_1.pgTable)('routes', {
     name: (0, pg_core_1.varchar)('name', { length: 255 }).notNull(),
     from_city: (0, pg_core_1.varchar)('from_city', { length: 255 }).notNull(),
     to_city: (0, pg_core_1.varchar)('to_city', { length: 255 }).notNull(),
+    is_active: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
+    created_by: (0, pg_core_1.uuid)('created_by').references(() => exports.users.id),
     created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
     agencyIdx: (0, pg_core_1.index)('routes_agency_idx').on(table.agency_id),
@@ -102,6 +104,7 @@ exports.stops = (0, pg_core_1.pgTable)('stops', {
     sequence_number: (0, pg_core_1.integer)('sequence_number').notNull(),
     coordinates: geometry('coordinates').notNull(),
     trigger_radius_km: (0, pg_core_1.decimal)('trigger_radius_km', { precision: 5, scale: 2 }).default('10').notNull(),
+    created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 // ─────────────────────────────────────────────────────────────────────────────
 // Buses — shared agency resource
@@ -126,6 +129,7 @@ exports.buses = (0, pg_core_1.pgTable)('buses', {
 exports.trips = (0, pg_core_1.pgTable)('trips', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     route_id: (0, pg_core_1.uuid)('route_id').references(() => exports.routes.id).notNull(),
+    template_id: (0, pg_core_1.uuid)('template_id').references(() => exports.tripTemplates.id),
     owned_by_operator_id: (0, pg_core_1.uuid)('operator_id').references(() => exports.users.id).notNull(),
     assigned_operator_id: (0, pg_core_1.uuid)('assigned_to_operator_id').references(() => exports.users.id),
     conductor_id: (0, pg_core_1.uuid)('conductor_id').references(() => exports.users.id).notNull(),
@@ -133,6 +137,7 @@ exports.trips = (0, pg_core_1.pgTable)('trips', {
     bus_id: (0, pg_core_1.uuid)('bus_id').references(() => exports.buses.id), // optional assigned bus
     status: (0, exports.tripStatusEnum)('status').default('scheduled').notNull(),
     scheduled_date: (0, pg_core_1.date)('scheduled_date').notNull(),
+    scheduled_time: (0, pg_core_1.varchar)('scheduled_time', { length: 10 }), // HH:mm format
     started_at: (0, pg_core_1.timestamp)('started_at', { withTimezone: true }),
     completed_at: (0, pg_core_1.timestamp)('completed_at', { withTimezone: true }),
     created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull()
@@ -207,4 +212,25 @@ exports.walletTransactions = (0, pg_core_1.pgTable)('wallet_transactions', {
     created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
     walletTxAgencyIdx: (0, pg_core_1.index)('wallet_tx_agency_idx').on(table.agency_id, table.created_at),
+}));
+// ─────────────────────────────────────────────────────────────────────────────
+// Trip Templates — pre-configured trip setups for recurring routes
+// ─────────────────────────────────────────────────────────────────────────────
+exports.tripTemplates = (0, pg_core_1.pgTable)('trip_templates', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    agency_id: (0, pg_core_1.uuid)('agency_id').references(() => exports.agencies.id).notNull(),
+    name: (0, pg_core_1.varchar)('name', { length: 255 }).notNull(),
+    route_id: (0, pg_core_1.uuid)('route_id').references(() => exports.routes.id).notNull(),
+    bus_id: (0, pg_core_1.uuid)('bus_id').references(() => exports.buses.id),
+    conductor_id: (0, pg_core_1.uuid)('conductor_id').references(() => exports.users.id),
+    driver_id: (0, pg_core_1.uuid)('driver_id').references(() => exports.users.id),
+    departure_time: (0, pg_core_1.time)('departure_time'),
+    arrival_time: (0, pg_core_1.time)('arrival_time'),
+    notes: (0, pg_core_1.text)('notes'),
+    is_active: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
+    created_by: (0, pg_core_1.uuid)('created_by').references(() => exports.users.id).notNull(),
+    created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+    agencyNameUnique: (0, pg_core_1.unique)('templates_agency_name_unique').on(table.agency_id, table.name),
+    agencyIdx: (0, pg_core_1.index)('templates_agency_idx').on(table.agency_id),
 }));

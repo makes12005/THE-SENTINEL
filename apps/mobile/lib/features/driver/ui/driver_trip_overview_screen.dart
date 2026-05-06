@@ -6,8 +6,8 @@ import '../provider/driver_provider.dart';
 import '../../passengers/ui/passengers_screen.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../features/alerts/socket_service.dart';
-import '../../../features/gps/gps_service.dart';
+import '../../alerts/socket_service.dart';
+import '../../gps/gps_service.dart';
 import '../../../widgets/driver_mode_badge.dart';
 import 'conductor_offline_alert.dart';
 
@@ -44,7 +44,7 @@ class _DriverTripOverviewScreenState
 
   void _initSocket() {
     _socket = SocketService.instance;
-    _socket.connect(widget.tripId);
+    _socket.connectToTrip(widget.tripId);
 
     // Conductor went offline — update state and show full-screen alert
     _socket.on('conductor_offline', (data) {
@@ -444,7 +444,7 @@ class _ConductorStatusCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isWarning ? Icons.wifi_off_rounded : Icons.person_check_outlined,
+                  isWarning ? Icons.wifi_off_rounded : Icons.verified_user_outlined,
                   color: isWarning ? AppColors.tertiary : AppColors.secondary,
                   size: 26,
                 ),

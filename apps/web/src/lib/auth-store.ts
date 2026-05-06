@@ -37,19 +37,31 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
 
       login: async (phone, password) => {
-        const res = await api.post<{ success: boolean; data: { access_token: string; user: AuthUser } }>(
+        const res = await api.post<{
+          success: boolean;
+          data: {
+            accessToken?: string;
+            access_token?: string;
+            refreshToken?: string;
+            refresh_token?: string;
+            user: AuthUser;
+          };
+        }>(
           '/api/auth/login',
           { phone, password }
         );
         if (!res.data.success) throw new Error('Login failed');
 
-        const { access_token, user } = res.data.data;
+        const accessToken = res.data.data.accessToken ?? res.data.data.access_token;
+        const refreshToken = res.data.data.refreshToken ?? res.data.data.refresh_token ?? null;
+        const { user } = res.data.data;
+        if (!accessToken) throw new Error('Login succeeded but access token is missing');
 
         // Also store in localStorage for Axios interceptor
-        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('access_token', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
 
-        set({ user, token: access_token, refreshToken: null });
+        set({ user, token: accessToken, refreshToken });
       },
 
       setSession: ({ accessToken, refreshToken, user }) => {
@@ -77,23 +89,26 @@ setAuthActions(
   () => useAuthStore.getState().logout(),
   async (refreshToken) => {
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/auth/refresh`, {
+      const res = await axios.post('/api/auth/refresh', {
         refreshToken,
       });
 
       if (res.data.success) {
-        const { access_token, refresh_token, user } = res.data.data;
+        const accessToken = res.data.data.accessToken ?? res.data.data.access_token;
+        const newRefreshToken = res.data.data.refreshToken ?? res.data.data.refresh_token;
+        const user = res.data.data.user;
+        if (!accessToken || !newRefreshToken || !user) return null;
         // Update store directly
         useAuthStore.setState({ 
-          token: access_token, 
-          refreshToken: refresh_token, 
+          token: accessToken, 
+          refreshToken: newRefreshToken, 
           user 
         });
         // Sync with legacy localStorage keys
-        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('access_token', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
         
-        return { accessToken: access_token, refreshToken: refresh_token, user };
+        return { accessToken, refreshToken: newRefreshToken, user };
       }
       return null;
     } catch (err) {

@@ -5,6 +5,7 @@ import { auditLogs, routes, trips, users } from '../../db/schema';
 import { emitSocketEvent } from '../../lib/socket';
 import {
   AddPassengerSchema,
+  BatchAddPassengersSchema,
   AssignTripSchema,
   CreateTripSchema,
   ListTripsQuerySchema,
@@ -186,6 +187,23 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
       await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
       const passenger = await TripsService.addPassenger(getTripId(req), parsed.data);
       return reply.status(201).send({ success: true, data: passenger });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
+  fastify.post('/:id/passengers/batch', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    const parsed = BatchAddPassengersSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please provide valid passenger details' } });
+    }
+
+    try {
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
+      const passengers = await TripsService.batchAddPassengers(getTripId(req), parsed.data);
+      return reply.status(201).send({ success: true, data: passengers });
     } catch (err) {
       return handleError(reply, err);
     }

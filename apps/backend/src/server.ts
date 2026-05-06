@@ -5,6 +5,7 @@ import authRoutes       from './modules/auth/auth.routes';
 import googleAuthRoutes from './modules/auth/google.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
 import routesRoutes   from './modules/trips/routes.routes';
+import templatesRoutes from './modules/trips/templates.routes';
 import operatorRoutes from './modules/operator/operator.routes';
 import ownerRoutes    from './modules/owner/owner.routes';
 import adminRoutes    from './modules/admin/admin.routes';
@@ -20,6 +21,7 @@ loadEnv();
 const fastify = Fastify({ logger: true });
 const defaultCorsOrigins = [
   'https://bus-alert-iota.vercel.app',
+  'http://localhost:3006',
   'http://localhost:3001',
   'http://localhost:3000',
 ];
@@ -46,6 +48,8 @@ fastify.register(cors, {
   preflightContinue: false,
 });
 
+
+
 // Multipart support for CSV / xlsx uploads (limits: 10 MB file, 100 fields)
 fastify.register(multipart, {
   limits: {
@@ -58,8 +62,10 @@ fastify.register(multipart, {
 // ─── Modules ──────────────────────────────────────────────────────────────────
 fastify.register(authRoutes,       { prefix: '/api/auth' });
 fastify.register(googleAuthRoutes, { prefix: '/api/auth' }); // /api/auth/google, /api/auth/google/callback
-fastify.register(tripsRoutes,    { prefix: '/api/trips' });
-fastify.register(routesRoutes,   { prefix: '/api/routes' });
+fastify.register(tripsRoutes,     { prefix: '/api/trips' });
+fastify.register(routesRoutes,    { prefix: '/api/routes' });
+fastify.register(templatesRoutes, { prefix: '/api/templates' });
+
 // Operator dashboard API (sprint 7)
 // All routes live under /api: /api/operator/summary, /api/agency/members, /api/logs/alert-logs
 fastify.register(operatorRoutes, { prefix: '/api' });

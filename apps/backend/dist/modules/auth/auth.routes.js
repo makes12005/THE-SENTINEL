@@ -84,7 +84,7 @@ function isIndianPhoneLike(raw) {
     return /^(\+91\d{10}|\d{10})$/.test(normalized);
 }
 async function issueTokens(user) {
-    const accessToken = jsonwebtoken_1.default.sign({ id: user.id, role: user.role, agencyId: user.agency_id, agency_id: user.agency_id, name: user.name }, getJwtSecret(), { expiresIn: '15m', subject: user.id });
+    const accessToken = jsonwebtoken_1.default.sign({ id: user.id, role: user.role, agencyId: user.agency_id, agency_id: user.agency_id, name: user.name }, getJwtSecret(), { expiresIn: '2h', subject: user.id });
     const refreshToken = jsonwebtoken_1.default.sign({ role: user.role, agencyId: user.agency_id, type: 'refresh' }, getRefreshSecret(), { expiresIn: '30d', subject: user.id });
     await db_1.db.insert(schema_1.refreshTokens).values({
         user_id: user.id,
@@ -446,6 +446,15 @@ const authRoutes = async (fastify) => {
         await otp_service_1.OTPService.storeOTP(key, otp);
         fastify.log.info({ identifier: key, otp }, 'OTP generated');
         const result = await otp_service_1.OTPService.sendOTP(key, otp);
+        if (!result.ok) {
+            return reply.status(result.statusCode ?? 502).send({
+                success: false,
+                error: {
+                    code: 'OTP_DELIVERY_FAILED',
+                    message: result.errorMessage ?? 'Failed to deliver OTP',
+                },
+            });
+        }
         const isDev = process.env.NODE_ENV !== 'production';
         return reply.send({
             success: true,

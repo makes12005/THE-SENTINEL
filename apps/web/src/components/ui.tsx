@@ -25,11 +25,11 @@ export function InlineSkeletonText({ width = 'w-32' }: { width?: string }) {
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <h1 className="text-2xl font-black text-[#a3cbf2] tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
+      <h1 className="text-xl font-bold text-[#a3cbf2] tracking-wide" style={{ fontFamily: 'Manrope, sans-serif' }}>
         {title}
       </h1>
       {subtitle && (
-        <p className="text-xs text-[#c2c7ce] uppercase tracking-widest mt-1">{subtitle}</p>
+        <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#8c9198] mt-1">{subtitle}</p>
       )}
     </div>
   );

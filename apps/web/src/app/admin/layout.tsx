@@ -16,10 +16,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setIsHydrated(true);
   }, []);
 
+  const ROLE_HOME: Record<string, string> = {
+    admin: '/admin/dashboard',
+    owner: '/owner/dashboard',
+    operator: '/operator/dashboard',
+    driver: '/operator/dashboard',
+    conductor: '/operator/dashboard',
+    passenger: '/access-code',
+  };
+
   useEffect(() => {
     if (!isHydrated) return;
-    if (!user || !token) { router.replace('/login'); return; }
-    if (user.role !== 'admin') { router.replace('/login'); return; }
+    if (!user || !token) {
+      router.replace('/login');
+      return;
+    }
+    if (user.role !== 'admin') {
+      router.replace(ROLE_HOME[user.role] ?? '/login');
+    }
   }, [user, token, isHydrated, router]);
 
   if (!isHydrated || !user || !token || user.role !== 'admin') return null;

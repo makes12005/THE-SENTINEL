@@ -4,7 +4,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc --project tsconfig.json",
-    "dev": "npx tsx src/server.ts",
+    "dev": "npx tsx watch src/server.ts",
     "start": "node dist/server.js",
     "worker:alert": "node dist/workers/alert.worker.js",
     "worker:heartbeat": "node dist/workers/heartbeat.worker.js",

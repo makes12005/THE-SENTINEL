@@ -53,7 +53,16 @@ final GoRouter appRouter = GoRouter(
   refreshListenable: SessionNotifier.instance,
 
   redirect: (BuildContext context, GoRouterState state) async {
-    final hasSession = await SecureStorage.hasValidSession();
+    bool hasSession = false;
+    try {
+      hasSession = await SecureStorage.hasValidSession();
+    } catch (e) {
+      // Prevent black-screen crash when secure storage fails (e.g., init issue).
+      // On failure, fall back to unauthenticated flow.
+      // ignore: avoid_print
+      debugPrint('[Router] SecureStorage.hasValidSession failed: $e');
+      hasSession = false;
+    }
     final isLoggingIn = state.matchedLocation == AppRoutes.welcome || 
                         state.matchedLocation == AppRoutes.otp || 
                         state.matchedLocation == AppRoutes.signup;
@@ -62,11 +71,26 @@ final GoRouter appRouter = GoRouter(
 
     if (hasSession && isLoggingIn) {
       // Route to the correct dashboard based on role
-      final role = await SecureStorage.getRole();
-      return routeForRole(role);
+      try {
+        final role = await SecureStorage.getRole();
+        return routeForRole(role);
+      } catch (e) {
+        debugPrint('[Router] SecureStorage.getRole failed: $e');
+        return AppRoutes.welcome;
+      }
     }
 
-    final role = hasSession ? await SecureStorage.getRole() : null;
+    String? role;
+    if (hasSession) {
+      try {
+        role = await SecureStorage.getRole();
+      } catch (e) {
+        debugPrint('[Router] SecureStorage.getRole failed: $e');
+        role = null;
+      }
+    } else {
+      role = null;
+    }
     final isDriverRoute = state.matchedLocation.startsWith('/driver');
     if (hasSession && isDriverRoute && role != 'driver') {
       return routeForRole(role);

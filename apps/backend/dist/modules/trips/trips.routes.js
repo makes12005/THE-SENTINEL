@@ -190,6 +190,23 @@ async function tripsRoutes(fastify) {
             return handleError(reply, err);
         }
     });
+    fastify.post('/:id/passengers/batch', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.OPERATOR, shared_types_1.UserRole.OWNER, shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        const parsed = shared_types_1.BatchAddPassengersSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Please provide valid passenger details' } });
+        }
+        try {
+            const agencyId = getAgencyIdOrReply(req, reply);
+            if (!agencyId)
+                return;
+            await (0, trip_auth_helper_1.verifyTripAgency)(getTripId(req), agencyId, req.user.id, req.user.role);
+            const passengers = await trips_service_1.TripsService.batchAddPassengers(getTripId(req), parsed.data);
+            return reply.status(201).send({ success: true, data: passengers });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
     fastify.post('/:id/passengers/upload', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.OPERATOR, shared_types_1.UserRole.OWNER, shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
         try {
             const agencyId = getAgencyIdOrReply(req, reply);

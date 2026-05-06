@@ -9,7 +9,34 @@ const wallet_service_1 = require("../wallet/wallet.service");
 const trip_auth_helper_1 = require("./trip-auth.helper");
 class TripsService {
     static async createTrip(operatorId, agencyId, payload) {
-        const { route_id: routeId, conductor_id: conductorId, driver_id: driverId, bus_id: busId, assigned_operator_id: assignedOperatorId, scheduled_date: scheduledDate, } = payload;
+        // ── Template resolution ─────────────────────────────────────────────────
+        // If template_id is provided, load the template and merge its fields into
+        // the payload so the rest of the validation logic works unchanged.
+        if (payload.template_id) {
+            const [tmpl] = await db_1.db
+                .select()
+                .from(schema_1.tripTemplates)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.tripTemplates.id, payload.template_id), (0, drizzle_orm_1.eq)(schema_1.tripTemplates.agency_id, agencyId)))
+                .limit(1);
+            if (!tmpl) {
+                throw Object.assign(new Error('Template not found or does not belong to your agency'), { statusCode: 404 });
+            }
+            // Merge template fields — caller can still override individual fields
+            if (!payload.route_id)
+                payload.route_id = tmpl.route_id;
+            if (!payload.conductor_id && tmpl.conductor_id)
+                payload.conductor_id = tmpl.conductor_id;
+            if (!payload.driver_id && tmpl.driver_id)
+                payload.driver_id = tmpl.driver_id;
+            if (!payload.bus_id && tmpl.bus_id)
+                payload.bus_id = tmpl.bus_id;
+            if (!payload.scheduled_time && tmpl.departure_time)
+                payload.scheduled_time = tmpl.departure_time;
+        }
+        const { route_id: routeId, conductor_id: conductorId, driver_id: driverId, bus_id: busId, assigned_operator_id: assignedOperatorId, scheduled_date: scheduledDate, scheduled_time: scheduledTime, } = payload;
+        if (!routeId || !conductorId) {
+            throw Object.assign(new Error('route_id and conductor_id are required (either directly or via template)'), { statusCode: 400 });
+        }
         const [route] = await db_1.db
             .select({ id: schema_1.routes.id, agency_id: schema_1.routes.agency_id, name: schema_1.routes.name })
             .from(schema_1.routes)
@@ -19,6 +46,17 @@ class TripsService {
             throw Object.assign(new Error('Route not found'), { statusCode: 404 });
         if (route.agency_id !== agencyId)
             throw Object.assign(new Error('Route does not belong to your agency'), { statusCode: 403 });
+        const [wallet] = await db_1.db
+            .select({ trips_remaining: schema_1.agencyWallets.trips_remaining })
+            .from(schema_1.agencyWallets)
+            .where((0, drizzle_orm_1.eq)(schema_1.agencyWallets.agency_id, agencyId))
+            .limit(1);
+        if ((wallet?.trips_remaining ?? 0) < 1) {
+            throw Object.assign(new Error('No trips remaining. Contact your agency owner.'), {
+                statusCode: 402,
+                code: 'NO_TRIPS_REMAINING',
+            });
+        }
         const [conductor] = await db_1.db
             .select({ id: schema_1.users.id, agency_id: schema_1.users.agency_id, role: schema_1.users.role, is_active: schema_1.users.is_active })
             .from(schema_1.users)
@@ -77,6 +115,7 @@ class TripsService {
         const [trip] = await db_1.db
             .insert(schema_1.trips)
             .values({
+            template_id: payload.template_id || null,
             route_id: routeId,
             owned_by_operator_id: operatorId,
             assigned_operator_id: finalAssignedOperatorId,
@@ -84,6 +123,7 @@ class TripsService {
             driver_id: driverId || null,
             bus_id: busId || null,
             scheduled_date: scheduledDate,
+            scheduled_time: scheduledTime || null,
             status: 'scheduled',
         })
             .returning();
@@ -140,6 +180,46 @@ class TripsService {
             .limit(1);
         if (!trip)
             throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
+        const [routeRow] = await db_1.db
+            .select({
+            name: schema_1.routes.name,
+            from_city: schema_1.routes.from_city,
+            to_city: schema_1.routes.to_city,
+        })
+            .from(schema_1.routes)
+            .where((0, drizzle_orm_1.eq)(schema_1.routes.id, trip.route_id))
+            .limit(1);
+        const [conductorUser] = await db_1.db
+            .select({ id: schema_1.users.id, name: schema_1.users.name })
+            .from(schema_1.users)
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, trip.conductor_id))
+            .limit(1);
+        const driverUser = trip.driver_id
+            ? (await db_1.db
+                .select({ id: schema_1.users.id, name: schema_1.users.name })
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, trip.driver_id))
+                .limit(1))[0] ?? null
+            : null;
+        const assignedOp = trip.assigned_operator_id
+            ? (await db_1.db
+                .select({ id: schema_1.users.id, name: schema_1.users.name })
+                .from(schema_1.users)
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, trip.assigned_operator_id))
+                .limit(1))[0] ?? null
+            : null;
+        const [ownerOperator] = await db_1.db
+            .select({ id: schema_1.users.id, name: schema_1.users.name })
+            .from(schema_1.users)
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, trip.owned_by_operator_id))
+            .limit(1);
+        const busRow = trip.bus_id
+            ? (await db_1.db
+                .select({ number_plate: schema_1.buses.number_plate })
+                .from(schema_1.buses)
+                .where((0, drizzle_orm_1.eq)(schema_1.buses.id, trip.bus_id))
+                .limit(1))[0] ?? null
+            : null;
         const passengers = await db_1.db
             .select({
             id: schema_1.tripPassengers.id,
@@ -150,7 +230,16 @@ class TripsService {
         })
             .from(schema_1.tripPassengers)
             .where((0, drizzle_orm_1.eq)(schema_1.tripPassengers.trip_id, tripId));
-        return { ...trip, passengers };
+        return {
+            ...trip,
+            route: routeRow ?? { name: '', from_city: '', to_city: '' },
+            conductor: conductorUser ?? { id: trip.conductor_id, name: '' },
+            driver: driverUser,
+            assigned_operator: assignedOp,
+            trip_owner_operator: ownerOperator ?? { id: trip.owned_by_operator_id, name: '' },
+            bus_number_plate: busRow?.number_plate ?? null,
+            passengers,
+        };
     }
     static async listPassengers(tripId) {
         return db_1.db
@@ -198,6 +287,7 @@ class TripsService {
             id: trip.id,
             status: trip.status,
             scheduled_date: trip.scheduled_date,
+            scheduled_time: trip.scheduled_time,
             started_at: trip.started_at ? trip.started_at.toISOString() : null,
             completed_at: trip.completed_at ? trip.completed_at.toISOString() : null,
             current_location: location
@@ -280,6 +370,26 @@ class TripsService {
         })
             .returning();
         return passenger;
+    }
+    static async batchAddPassengers(tripId, payload) {
+        const [trip] = await db_1.db.select().from(schema_1.trips).where((0, drizzle_orm_1.eq)(schema_1.trips.id, tripId)).limit(1);
+        if (!trip)
+            throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
+        if (payload.passengers.length === 0)
+            return [];
+        const passengers = await db_1.db.transaction(async (tx) => {
+            return tx
+                .insert(schema_1.tripPassengers)
+                .values(payload.passengers.map((p) => ({
+                trip_id: tripId,
+                passenger_name: p.passenger_name,
+                passenger_phone: p.passenger_phone,
+                stop_id: p.stop_id,
+                alert_status: 'pending',
+            })))
+                .returning();
+        });
+        return passengers;
     }
     static async getCurrentLocation(tripId) {
         const rows = Array.from(await db_1.db.execute((0, drizzle_orm_1.sql) `

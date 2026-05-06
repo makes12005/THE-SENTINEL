@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #101418;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #181c20;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #42474e;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "secondary-fixed": "#e3dfff",
+                        "error": "#ffb4ab",
+                        "on-tertiary-container": "#7a4523",
+                        "background": "#101418",
+                        "surface": "#101418",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "on-error": "#690005",
+                        "surface-variant": "#31353a",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-secondary": "#2d2a5e",
+                        "outline-variant": "#42474e",
+                        "on-secondary-fixed-variant": "#434076",
+                        "surface-tint": "#a3cbf2",
+                        "surface-container": "#1c2024",
+                        "on-tertiary": "#502405",
+                        "secondary": "#c4c0ff",
+                        "on-error-container": "#ffdad6",
+                        "outline": "#8c9198",
+                        "primary-container": "#a3cbf2",
+                        "tertiary": "#ffdcca",
+                        "surface-container-highest": "#31353a",
+                        "secondary-container": "#434076",
+                        "inverse-surface": "#e0e3e8",
+                        "on-primary-fixed": "#001d32",
+                        "on-tertiary-fixed": "#321200",
+                        "on-surface": "#e0e3e8",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-secondary-fixed": "#171348",
+                        "on-secondary-container": "#b3afed",
+                        "surface-container-high": "#262a2f",
+                        "surface-container-low": "#181c20",
+                        "on-primary": "#003352",
+                        "inverse-primary": "#396284",
+                        "surface-container-lowest": "#0b0f12",
+                        "surface-dim": "#101418",
+                        "on-primary-container": "#2d5678",
+                        "tertiary-fixed": "#ffdbc9",
+                        "primary-fixed": "#cde5ff",
+                        "tertiary-container": "#ffb78d",
+                        "inverse-on-surface": "#2d3135",
+                        "error-container": "#93000a",
+                        "primary": "#cee5ff",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "on-background": "#e0e3e8",
+                        "surface-bright": "#363a3e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "page-padding": "1rem",
+                        "card-gap": "1rem",
+                        "section-internal": "1.25rem",
+                        "element-tight": "0.5rem",
+                        "unit-base": "4px"
+                    },
+                    "fontFamily": {
+                        "display-time": ["Manrope"],
+                        "body-standard": ["Inter"],
+                        "metadata-label": ["Inter"],
+                        "header-title": ["Manrope"],
+                        "button-text": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-time": ["1.5rem", {"lineHeight": "1.2", "fontWeight": "900"}],
+                        "body-standard": ["0.875rem", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "metadata-label": ["10px", {"letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "header-title": ["1.125rem", {"letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "button-text": ["11px", {"letterSpacing": "0.1em", "fontWeight": "900"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-standard selection:bg-primary-container selection:text-on-primary-container custom-scrollbar">
+<div class="grain-overlay"></div>
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-zinc-800 bg-zinc-950 flex flex-col py-6 px-2 z-50">
+<div class="px-4 mb-8">
+<h1 class="text-zinc-100 font-black tracking-tighter font-manrope text-xl">LOGISTICS HUB</h1>
+<p class="font-manrope text-xs font-semibold tracking-tight text-zinc-500">Terminal 01-A</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-all font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+<!-- Active State: Activity Logs -->
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer bg-zinc-800 text-sky-300 border-l-4 border-sky-500 font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span>Activity Logs</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-all font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+<span>Fleet Status</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-all font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="alt_route">alt_route</span>
+<span>Route Control</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-all font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span>Security</span>
+</div>
+</nav>
+<div class="mt-auto pt-6 border-t border-zinc-800 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-all font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Support</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 cursor-pointer text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 transition-all font-manrope text-xs font-semibold tracking-tight">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</div>
+</div>
+</aside>
+<!-- Content Wrapper -->
+<div class="pl-64">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-64 h-14 z-40 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 flex items-center justify-between px-6">
+<div class="flex items-center gap-4 flex-1">
+<span class="font-manrope font-black tracking-widest text-xl text-zinc-100 uppercase">VELOX FLEET NOIR</span>
+<div class="relative max-w-md w-full ml-8">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+<input class="bg-zinc-950 border border-zinc-800 text-zinc-100 text-[10px] tracking-wider font-bold py-2 pl-10 pr-4 w-full focus:outline-none focus:border-sky-500 transition-colors uppercase" placeholder="SEARCH OPERATORS OR ROUTES..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-zinc-400 hover:text-sky-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-sky-500 rounded-full border border-zinc-900"></span>
+</button>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="text-right">
+<p class="text-zinc-100 font-manrope text-[10px] font-bold tracking-wider leading-none">COMMANDER ALPHA</p>
+<p class="text-sky-400 font-manrope text-[8px] font-bold tracking-widest uppercase">Agency Owner</p>
+</div>
+<img alt="Agency Owner Profile" class="w-8 h-8 rounded bg-zinc-800 object-cover" data-alt="A portrait of a sophisticated logistics agency owner in their late 40s wearing a high-tech tactical charcoal jacket. The setting is a dimly lit, high-contrast command center filled with subtle cyan and orange lighting from digital displays. The atmosphere is professional, resilient, and authoritative, reflecting a tech-noir aesthetic with high detail and dramatic shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAznVwdOzlMQ7Ss7LUwwzKKLRu4pgcUlju5n2b6bBINWivNFwy5xk_9nViVeCwZuphNAz1aC446Ls7kjKNYcc17t-KlDcvd7l74nNoNSaIzoBJIv0GsI0L57uL_2g9QwcLeW1Y-npuNfGTRTbYyKjhyx7Zt6utSXEAQp8z4CW1Q9eulSahNBxCZRq5x-whMJvgZe-uQKPQ11fEfAJk0cmMDZp829bAUIh68zzG3W8UyfaD-yGQKjQ_rmud8qjaGWGYAwFej0vKJlvcA"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="mt-14 p-page-padding max-w-2xl mx-auto min-h-screen">
+<!-- Page Header & Summary -->
+<section class="mb-8">
+<div class="flex items-end justify-between mb-6">
+<div>
+<span class="font-metadata-label text-primary uppercase tracking-widest block mb-1">Operational Oversight</span>
+<h2 class="font-header-title text-on-surface text-2xl uppercase">Global Logs &amp; Activity</h2>
+</div>
+<div class="text-right">
+<span class="font-metadata-label text-zinc-500 uppercase">System Status</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-green-500 rounded-full"></span>
+<span class="font-body-standard text-[10px] text-zinc-300">FULLY OPERATIONAL</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low border border-outline-variant/10 p-section-internal relative overflow-hidden group">
+<div class="relative z-10">
+<span class="font-metadata-label text-zinc-500 uppercase">Total Logs Today</span>
+<p class="font-display-time text-primary-container mt-1">12,842</p>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-7xl text-zinc-800/20 group-hover:text-primary-container/10 transition-colors" data-icon="analytics">analytics</span>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 p-section-internal relative overflow-hidden group">
+<div class="relative z-10">
+<span class="font-metadata-label text-zinc-500 uppercase">Active Alerts</span>
+<p class="font-display-time text-tertiary-container mt-1">04</p>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-7xl text-zinc-800/20 group-hover:text-tertiary-container/10 transition-colors" data-icon="warning">warning</span>
+</div>
+</div>
+</section>
+<!-- Filters -->
+<section class="flex flex-wrap items-center gap-3 mb-8 bg-surface-container-high/50 p-3 border border-outline-variant/10">
+<div class="flex-1 min-w-[140px] relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant text-[10px] font-bold text-zinc-400 py-2.5 px-4 appearance-none focus:outline-none focus:border-primary uppercase tracking-widest">
+<option>All Operators</option>
+<option>Alpha Unit</option>
+<option>Bravo Group</option>
+<option>Delta Logistics</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none text-xs">keyboard_arrow_down</span>
+</div>
+<div class="flex-1 min-w-[140px] relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant text-[10px] font-bold text-zinc-400 py-2.5 px-4 appearance-none focus:outline-none focus:border-primary uppercase tracking-widest">
+<option>All Routes</option>
+<option>Central-01</option>
+<option>Harbor-North</option>
+<option>T-Industrial</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none text-xs">keyboard_arrow_down</span>
+</div>
+<div class="flex-1 min-w-[140px] relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant text-[10px] font-bold text-zinc-400 py-2.5 px-4 appearance-none focus:outline-none focus:border-primary uppercase tracking-widest">
+<option>Today</option>
+<option>Yesterday</option>
+<option>Past 7 Days</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none text-xs">calendar_today</span>
+</div>
+</section>
+<!-- Activity Stream -->
+<section class="space-y-12 pb-20">
+<!-- Group: TODAY -->
+<div>
+<div class="flex items-center gap-4 mb-6">
+<h3 class="font-header-title text-zinc-100 uppercase tracking-tighter text-sm">Today</h3>
+<div class="h-px flex-1 bg-zinc-800"></div>
+<span class="font-metadata-label text-zinc-500">OCT 24, 2023</span>
+</div>
+<div class="relative space-y-4 ml-2">
+<div class="absolute left-[11px] top-4 bottom-4 w-[1px] bg-outline-variant/20"></div>
+<!-- Log Item 1: Success -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-3 w-6 h-6 bg-surface-container-low border border-zinc-800 rounded-full flex items-center justify-center z-10">
+<div class="w-2 h-2 bg-green-400 rounded-full"></div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 p-4 transition-colors hover:bg-surface-container-high">
+<div class="flex items-start justify-between mb-2">
+<div>
+<h4 class="font-body-standard text-zinc-100 uppercase tracking-tight">Trip Started: T-882</h4>
+<p class="font-metadata-label text-zinc-500 mt-0.5">OPERATOR: SARAH K. • ROUTE: CENTRAL-01</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-green-900/30 text-green-400 font-metadata-label px-2 py-0.5 border border-green-800/50">SUCCESS</span>
+<span class="font-display-time text-xs text-zinc-500 mt-2">09:42:01</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Log Item 2: Warning -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-3 w-6 h-6 bg-surface-container-low border border-zinc-800 rounded-full flex items-center justify-center z-10">
+<div class="w-2 h-2 bg-tertiary-container rounded-full"></div>
+</div>
+<div class="bg-surface-container-low border-l-4 border-l-tertiary-container border-y border-r border-outline-variant/10 p-4 transition-colors hover:bg-surface-container-high">
+<div class="flex items-start justify-between mb-2">
+<div>
+<h4 class="font-body-standard text-zinc-100 uppercase tracking-tight">Minor Delay: Route Obstruction</h4>
+<p class="font-metadata-label text-zinc-500 mt-0.5">OPERATOR: MARCUS V. • ROUTE: HARBOR-NORTH</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-tertiary-container/20 text-tertiary-container font-metadata-label px-2 py-0.5 border border-tertiary-container/30">WARNING</span>
+<span class="font-display-time text-xs text-zinc-500 mt-2">08:15:22</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Log Item 3: Info -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-3 w-6 h-6 bg-surface-container-low border border-zinc-800 rounded-full flex items-center justify-center z-10">
+<div class="w-2 h-2 bg-sky-400 rounded-full"></div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 p-4 transition-colors hover:bg-surface-container-high">
+<div class="flex items-start justify-between mb-2">
+<div>
+<h4 class="font-body-standard text-zinc-100 uppercase tracking-tight">Operator Shift Change</h4>
+<p class="font-metadata-label text-zinc-500 mt-0.5">SYSTEM LOG • STATION: TERMINAL 01-A</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-sky-900/30 text-sky-300 font-metadata-label px-2 py-0.5 border border-sky-800/50">INFO</span>
+<span class="font-display-time text-xs text-zinc-500 mt-2">06:00:00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: YESTERDAY -->
+<div>
+<div class="flex items-center gap-4 mb-6">
+<h3 class="font-header-title text-zinc-100 uppercase tracking-tighter text-sm">Yesterday</h3>
+<div class="h-px flex-1 bg-zinc-800"></div>
+<span class="font-metadata-label text-zinc-500">OCT 23, 2023</span>
+</div>
+<div class="relative space-y-4 ml-2">
+<div class="absolute left-[11px] top-4 bottom-4 w-[1px] bg-outline-variant/20"></div>
+<!-- Log Item 4: Error -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-3 w-6 h-6 bg-surface-container-low border border-zinc-800 rounded-full flex items-center justify-center z-10">
+<div class="w-2 h-2 bg-error rounded-full"></div>
+</div>
+<div class="bg-surface-container-low border-l-4 border-l-error border-y border-r border-outline-variant/10 p-4 transition-colors hover:bg-surface-container-high">
+<div class="flex items-start justify-between mb-2">
+<div>
+<h4 class="font-body-standard text-zinc-100 uppercase tracking-tight">Critical Engine Failure: T-401</h4>
+<p class="font-metadata-label text-zinc-500 mt-0.5">OPERATOR: ELARA J. • ROUTE: T-INDUSTRIAL</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-error-container/40 text-error font-metadata-label px-2 py-0.5 border border-error-container/50">ERROR</span>
+<span class="font-display-time text-xs text-zinc-500 mt-2">22:45:11</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Log Item 5: Success -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-3 w-6 h-6 bg-surface-container-low border border-zinc-800 rounded-full flex items-center justify-center z-10">
+<div class="w-2 h-2 bg-green-400 rounded-full"></div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 p-4 transition-colors hover:bg-surface-container-high">
+<div class="flex items-start justify-between mb-2">
+<div>
+<h4 class="font-body-standard text-zinc-100 uppercase tracking-tight">Route Optimization Completed</h4>
+<p class="font-metadata-label text-zinc-500 mt-0.5">SYSTEM AUTO-TASK • ALL UNITS</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-green-900/30 text-green-400 font-metadata-label px-2 py-0.5 border border-green-800/50">SUCCESS</span>
+<span class="font-display-time text-xs text-zinc-500 mt-2">19:30:00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Load More Anchor -->
+<div class="pt-8 border-t border-zinc-800 text-center">
+<span class="font-metadata-label text-zinc-500 uppercase tracking-widest cursor-pointer hover:text-sky-400 transition-colors">LOAD PREVIOUS OPERATIONAL DATA</span>
+</div>
+</section>
+</main>
+</div>
+</body></html>

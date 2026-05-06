@@ -54,6 +54,11 @@ async function operatorRoutes(fastify) {
             let totalPassengersToday = 0;
             let alertsSentToday = 0;
             let failedAlertsToday = 0;
+            const [wallet] = await db_1.db
+                .select({ trips_remaining: schema_1.agencyWallets.trips_remaining })
+                .from(schema_1.agencyWallets)
+                .where((0, drizzle_orm_1.eq)(schema_1.agencyWallets.agency_id, agencyId))
+                .limit(1);
             if (todayTripIds.length > 0) {
                 const [passRow] = await db_1.db
                     .select({ cnt: (0, drizzle_orm_1.count)() })
@@ -78,6 +83,7 @@ async function operatorRoutes(fastify) {
                     total_passengers_today: totalPassengersToday,
                     alerts_sent_today: alertsSentToday,
                     failed_alerts_today: failedAlertsToday,
+                    trips_remaining: Number(wallet?.trips_remaining ?? 0),
                 },
                 meta: { timestamp: new Date().toISOString() },
             });
@@ -169,12 +175,15 @@ async function operatorRoutes(fastify) {
                 conditions.push((0, drizzle_orm_1.eq)(schema_1.alertLogs.channel, query.channel));
             if (query.status)
                 conditions.push((0, drizzle_orm_1.eq)(schema_1.alertLogs.status, query.status));
-            if (query.date) {
-                const start = new Date(query.date);
+            if (query.date_from || query.date) {
+                const start = new Date(query.date_from ?? query.date);
                 start.setUTCHours(0, 0, 0, 0);
-                const end = new Date(start);
-                end.setUTCDate(end.getUTCDate() + 1);
                 conditions.push((0, drizzle_orm_1.gte)(schema_1.alertLogs.attempted_at, start));
+            }
+            if (query.date_to) {
+                const end = new Date(query.date_to);
+                end.setUTCHours(23, 59, 59, 999);
+                conditions.push((0, drizzle_orm_1.sql) `${schema_1.alertLogs.attempted_at} <= ${end}`);
             }
             // 4. Count + paginated fetch
             const [countRow] = await db_1.db
@@ -193,9 +202,14 @@ async function operatorRoutes(fastify) {
                 passenger_name: schema_1.tripPassengers.passenger_name,
                 passenger_phone: schema_1.tripPassengers.passenger_phone,
                 trip_id: schema_1.tripPassengers.trip_id,
+                trip_name: schema_1.routes.name,
+                stop_name: schema_1.stops.name,
             })
                 .from(schema_1.alertLogs)
                 .innerJoin(schema_1.tripPassengers, (0, drizzle_orm_1.eq)(schema_1.alertLogs.trip_passenger_id, schema_1.tripPassengers.id))
+                .innerJoin(schema_1.trips, (0, drizzle_orm_1.eq)(schema_1.trips.id, schema_1.tripPassengers.trip_id))
+                .innerJoin(schema_1.routes, (0, drizzle_orm_1.eq)(schema_1.routes.id, schema_1.trips.route_id))
+                .leftJoin(schema_1.stops, (0, drizzle_orm_1.eq)(schema_1.stops.id, schema_1.tripPassengers.stop_id))
                 .where((0, drizzle_orm_1.and)(...conditions))
                 .orderBy((0, drizzle_orm_1.desc)(schema_1.alertLogs.attempted_at))
                 .limit(PAGE_SIZE)

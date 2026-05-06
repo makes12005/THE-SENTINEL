@@ -1,6 +1,58 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-05-02 (IST)
+Last Updated: 2026-05-05 (IST)
+
+## 2026-05-05 - Full Web Production E2E Test Run
+
+- Executed a full 45-case production web test sweep against:
+  - Frontend: `https://bus-alert-iota.vercel.app`
+  - Backend: `https://api-production-e13f.up.railway.app`
+- Generated report: `docs/test-reports/full-web-test-report.md`
+- Generated raw evidence: `docs/test-reports/full-web-test-evidence.json`
+- Captured screenshots in: `docs/test-reports/screenshots/full-web/`
+- Section pass rates:
+  - Admin: `2/11`
+  - Owner: `3/12`
+  - Operator: `3/18`
+  - Cross-role: `0/4`
+  - Overall: `8/45` (`17.78%`)
+- Critical issues found:
+  - Login form automation repeatedly failed to locate expected phone/password controls on production login route in headless run.
+  - Multiple role pages lacked deterministic, stable selectors for reliable end-to-end automation of create/edit workflows.
+  - Console captured critical 404 resource errors on owner operator-create and operator templates routes.
+  - Cross-role chain tests are currently non-deterministic without safe test fixtures and dedicated production-safe test data.
+- Next action:
+  - Add deterministic `data-testid` hooks for auth and CRUD flows, create production-safe fixture entities, then rerun full role + cross-role E2E suite.
+
+## 2026-05-03 - Owner Dashboard Data Integration (Mock Data Removal)
+
+- Completely purged meaningless static mock data from the Agency Owner portal.
+- Migrated the `Schedules` page to actively track "Upcoming Scheduled" and "Active" trips fetched dynamically from the `/api/owner/trips` endpoint.
+- Transformed the `Analytics` page to dynamically query `/api/owner/summary` and `/api/owner/trips` to calculate accurate real-time top route performance, trip volume breakdowns, and high-level KPIs.
+- Cleaned up the `Dashboard` and `Settings` pages by stripping legacy fallback arrays and preventing fake profile data flashes before backend queries resolve.
+- Maintained total visual parity with the Sentinel Command Center aesthetic while establishing true real-time operational representation for newly onboarded agencies.
+## 2026-05-02 - Owner Web Audit (complete route/API/auth cleanup)
+
+- Completed full Owner-section audit across backend + web owner routes.
+- Added/updated backend owner APIs:
+  - `GET /api/owner/operators/:id`
+  - `GET /api/owner/wallet`
+  - improved `GET /api/owner/trips` filters (`window`, `operator`) and richer row data (conductor + alert counts)
+  - improved `GET /api/owner/logs` filters (`date`, `operator`)
+  - hardened `PUT /api/agency/profile` patch behavior
+- Updated owner frontend:
+  - Sidebar now includes `resources` + `trip wallet` routes
+  - Replaced mock-heavy owner pages (`logs`, `trip detail`) with API-backed flows
+  - Trips monitoring now supports status/date/operator filtering and reassignment
+  - Wallet is trip-credit only (no money/revenue), with low/empty wallet banners
+  - Settings supports agency profile save + password change
+  - Operator pages improved (validation, activate/deactivate UX, real operator detail API)
+- Access-control fix: non-admin users on admin layout now redirect to their role home (owner → `/owner/dashboard`).
+- Verification:
+  - `apps/web`: `npx tsc --noEmit` ✅
+  - `apps/backend`: `npx tsc --noEmit` ✅
+- Report: `docs/test-reports/owner-audit-report.md`
+- Next action: operator audit.
 
 ## 2026-05-02 - Admin Web Audit (routes, APIs, wallet rewrite)
 
@@ -603,3 +655,92 @@ Deploy the Bus Alert backend (API + Socket.IO + Background Workers) and frontend
 ### Next Actions
 - Execute the Gujarat pilot test physically in tracking vehicles.
 - Monitor active connections and Exotel payload delivery times during real-world simulation.
+
+---
+
+## Sprint Update: Operator Section Audit (2026-05-02)
+
+### Objective
+Complete end-to-end audit and stabilization of the operator web section (`/operator/*`) with route mapping, API wiring validation, critical bug fixes, and regression-safe local verification.
+
+### What Was Audited
+- Operator routes: dashboard, trips hub + sub-pages, routes, monitor, resources, logs, trip detail
+- Sidebar/navigation links and role guards
+- API integration paths, request payloads, and response handling
+- Wallet warning/block behavior for trip creation
+- Passenger privacy masking and IST timestamp rendering
+
+### Issues Found and Fixed
+- Removed broken operator nav links that led to 404s (`/operator/passengers`, `/operator/billing`)
+- Rewired dashboard KPI cards to real `/api/operator/summary` values (removed mock metrics)
+- Added wallet warning banner and backend `trips_remaining` in operator summary response
+- Enforced "no trips remaining" create-trip block in backend (`TripsService.createTrip`) and frontend modal
+- Fixed create-trip dropdown loading to role-filtered endpoints (`/api/agency/members?role=...`)
+- Added trip list filters (status/date/route search) and deep-link create modal handling (`?modal=create`)
+- Fixed CSV upload to use multipart (`postForm`) and added `.xlsx` support + row-count feedback
+- Fixed alert logs page to actually send filters/date range to API
+- Extended alert logs API to return trip name + stop name and support date range filtering
+- Added route edit support (`PUT /api/routes/:routeId`) and route stop-management flow in operator UI
+- Fixed trip detail page to use `/api/trips/:id` and masked passenger phone display
+- Improved live monitor with trip status snapshots + socket disconnect cleanup
+
+### Local Verification
+- `npx tsc --noEmit` in `apps/web` passed
+- `pnpm --filter backend exec tsc --noEmit` passed
+- `ReadLints` on touched operator/backend files returned no diagnostics
+
+### Artifacts
+- Report: `docs/test-reports/operator-audit-report.md`
+
+### Next Action
+- Conductor app audit
+
+## 2026-05-03: Agency Operator Persistence & Verification
+- **Task**: Finalize operator persistence and verify dashboard synchronization.
+- **Actions**:
+    - Performed a database audit to ensure `agency_id` is correctly scoped via JWT context in `owner.routes.ts`.
+    - Reset Agency Owner password to `123123123` via database script to enable testing.
+    - Successfully created two new operators: **Operator Gamma** and **Operator Delta**.
+    - Verified that operators appear in the Operators Registry and contribute to the Dashboard KPI (Total Operators: 4).
+    - Captured visual proof of the updated system state.
+- **Environment**:
+    - Backend: Port 3005
+    - Frontend: Port 3006
+    - Database: PostGIS enabled PostgreSQL.
+- **Credentials for Testing**:
+    - Agency Owner: `9825247228` / `123123123`
+    - Operator Gamma: `9100000007` / `123123123`
+    - Operator Delta: `9100000008` / `123123123`
+- **Known Issues Resolved**:
+    - Fixed an issue where operator accounts were being created as "orphans" (missing agency association).
+    - Resolved a React Query caching lag that required a manual session refresh to see updated KPI counts.
+
+## Sprint Update: Routes & Templates Implementation (2026-05-04)
+
+### Objective
+Implement and validate operator-facing Routes + Templates workflows with backend APIs, map visualization, and trip creation from template.
+
+### Implemented
+- Routes feature implemented:
+  - Route list enriched with creator name + actions (view/edit/delete).
+  - Dedicated route detail screen added at `/operator/routes/[id]`.
+  - Stop CRUD with map-based coordinate picking and sequence reordering controls.
+  - Backend route delete guard added for active-trip usage.
+- Templates feature implemented:
+  - Template CRUD hardening with agency ownership validation for route/bus/conductor/driver.
+  - Duplicate template-name handling kept as agency-scoped 409.
+  - Template detail now includes route + ordered stops with coordinates.
+  - Create/Edit template modal now shows route map preview.
+  - "Use template" modal creates trip using `template_id + scheduled_date`.
+- Map visualization added:
+  - Shared `RouteMap` used in routes and template flows (markers, polyline, fit bounds).
+
+### Local Verification
+- `pnpm --filter backend db:generate` passed and created migration `0006_third_blur.sql`.
+- `pnpm --filter backend build` passed.
+- `pnpm --filter web build` passed.
+- `ReadLints` on touched files returned no diagnostics.
+- `db:push` was attempted but blocked by interactive Drizzle ambiguity prompt (rename vs create decision for `template_id`).
+
+### Next Action
+- full operator audit

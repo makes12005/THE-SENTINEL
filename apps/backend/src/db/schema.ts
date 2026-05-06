@@ -1,6 +1,6 @@
 import {
   pgTable, uuid, varchar, text, boolean, timestamp, jsonb,
-  pgEnum, integer, decimal, bigint, index, customType, date, unique
+  pgEnum, integer, decimal, bigint, index, customType, date, unique, time
 } from 'drizzle-orm/pg-core';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,6 +93,8 @@ export const routes = pgTable('routes', {
   name: varchar('name', { length: 255 }).notNull(),
   from_city: varchar('from_city', { length: 255 }).notNull(),
   to_city: varchar('to_city', { length: 255 }).notNull(),
+  is_active: boolean('is_active').default(true).notNull(),
+  created_by: uuid('created_by').references(() => users.id),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
   agencyIdx: index('routes_agency_idx').on(table.agency_id),
@@ -111,6 +113,7 @@ export const stops = pgTable('stops', {
   sequence_number: integer('sequence_number').notNull(),
   coordinates: geometry('coordinates').notNull(),
   trigger_radius_km: decimal('trigger_radius_km', { precision: 5, scale: 2 }).default('10').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,6 +140,7 @@ export const buses = pgTable('buses', {
 export const trips = pgTable('trips', {
   id: uuid('id').defaultRandom().primaryKey(),
   route_id: uuid('route_id').references(() => routes.id).notNull(),
+  template_id: uuid('template_id').references(() => tripTemplates.id),
   owned_by_operator_id: uuid('operator_id').references(() => users.id).notNull(),
   assigned_operator_id: uuid('assigned_to_operator_id').references(() => users.id),
   conductor_id: uuid('conductor_id').references(() => users.id).notNull(),
@@ -144,6 +148,7 @@ export const trips = pgTable('trips', {
   bus_id: uuid('bus_id').references(() => buses.id),  // optional assigned bus
   status: tripStatusEnum('status').default('scheduled').notNull(),
   scheduled_date: date('scheduled_date').notNull(),
+  scheduled_time: varchar('scheduled_time', { length: 10 }), // HH:mm format
   started_at: timestamp('started_at', { withTimezone: true }),
   completed_at: timestamp('completed_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
@@ -225,3 +230,26 @@ export const walletTransactions = pgTable('wallet_transactions', {
 }, (table) => ({
   walletTxAgencyIdx: index('wallet_tx_agency_idx').on(table.agency_id, table.created_at),
 }));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trip Templates — pre-configured trip setups for recurring routes
+// ─────────────────────────────────────────────────────────────────────────────
+export const tripTemplates = pgTable('trip_templates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  agency_id: uuid('agency_id').references(() => agencies.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  route_id: uuid('route_id').references(() => routes.id).notNull(),
+  bus_id: uuid('bus_id').references(() => buses.id),
+  conductor_id: uuid('conductor_id').references(() => users.id),
+  driver_id: uuid('driver_id').references(() => users.id),
+  departure_time: time('departure_time'),
+  arrival_time: time('arrival_time'),
+  notes: text('notes'),
+  is_active: boolean('is_active').default(true).notNull(),
+  created_by: uuid('created_by').references(() => users.id).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  agencyNameUnique: unique('templates_agency_name_unique').on(table.agency_id, table.name),
+  agencyIdx: index('templates_agency_idx').on(table.agency_id),
+}));
+

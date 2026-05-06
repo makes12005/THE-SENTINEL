@@ -1,5 +1,5 @@
-import '../../core/network/api_client.dart';
-import '../../core/network/endpoints.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/endpoints.dart';
 import '../model/trip.dart';
 
 class TripsRepository {

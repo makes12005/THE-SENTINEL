@@ -53,6 +53,13 @@ UI RESPONSIVENESS RULE:
 - Responsiveness sprint happens AFTER all screens converted
 - Do not add responsive breakpoints during conversion phase
 
+COLOR PALETTE:
+Primary: Deep Blue (#0B3C5D)
+Secondary: Soft Purple (#6C63FF)
+Accent (Alerts): Orange (#FF7A00)
+Background: Dark (#0F172A)
+Text: Light (#F1F5F9)
+
 UI CONVERSION RULES:
 
 Source priority:

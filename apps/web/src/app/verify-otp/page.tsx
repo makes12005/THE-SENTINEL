@@ -55,7 +55,7 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: st
           onChange={(e) => handleChange(i, e)}
           onKeyDown={(e) => handleKey(i, e)}
           autoComplete="one-time-code"
-          className="w-full aspect-square text-center font-headline font-bold text-2xl bg-surface-container-high border-none rounded-xl text-primary focus:ring-2 focus:ring-primary focus:bg-surface-container-highest transition-all outline-none shadow-sm disabled:opacity-50"
+          className="w-full aspect-square text-center font-headline font-bold text-2xl bg-surface-container-high border-none rounded-full text-primary focus:ring-2 focus:ring-primary focus:bg-surface-container-highest transition-all outline-none shadow-sm disabled:opacity-50"
         />
       ))}
     </div>
@@ -63,14 +63,10 @@ function OtpInput({ value, onChange, disabled }: { value: string; onChange(v: st
 }
 
 function TopAppBar() {
-  const router = useRouter();
   return (
-    <header className="flex items-center w-full px-6 py-4 h-16 bg-[#181c20] sticky top-0 z-50">
-      <div className="flex items-center gap-4 w-full">
-        <button onClick={() => router.back()} aria-label="Go back" className="p-2 -ml-2 rounded-full hover:bg-[#262a2f] transition-colors duration-200 active:scale-95 transition-transform">
-          <span className="material-symbols-outlined text-[#a3cbf2]">arrow_back</span>
-        </button>
-        <h1 className="font-headline font-bold text-lg tracking-tight text-[#a3cbf2]">Verify OTP</h1>
+    <header className="flex items-center px-8 py-6 w-full absolute top-0 z-50">
+      <div className="font-headline font-bold text-primary tracking-widest uppercase text-sm">
+        SENTINEL TRANSIT
       </div>
     </header>
   );
@@ -193,21 +189,17 @@ function VerifyOtpPageInner() {
     : identifier.replace(/(\+?\d{2,3})\d+(\d{4})/, '$1*****$2');
 
   return (
-    <div className="bg-background text-on-background font-body antialiased min-h-screen flex flex-col relative overflow-hidden">
-      {/* Background Decorative Blur mapped to rugged-surface */}
-      <div className="absolute inset-0 z-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle at top left, rgba(163, 203, 242, 0.05), transparent)'
-      }}></div>
-      
-      <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none mix-blend-overlay" style={{
-        backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")"
-      }}></div>
+    <div className="bg-[#101418] min-h-screen flex flex-col font-body text-on-surface relative overflow-hidden">
+      {/* Background Decorative Glows */}
+      <div className="absolute top-1/4 -left-48 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-48 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(163,203,242,0.03)_0%,transparent_100%)] pointer-events-none" />
 
       <TopAppBar />
 
       <main className="flex-grow flex flex-col items-center justify-center px-6 max-w-lg mx-auto w-full relative z-10">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-surface-container-high mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-surface-container-high mb-8">
             <span className="material-symbols-outlined text-primary text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>
               shield_lock
             </span>
@@ -225,7 +217,7 @@ function VerifyOtpPageInner() {
             <button 
               type="submit"
               disabled={busy || otp.length < 6}
-              className="w-full h-16 bg-on-tertiary-container text-on-tertiary font-headline font-extrabold text-lg rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-tertiary-container/20 hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest disabled:opacity-50"
+              className="w-full h-16 bg-on-tertiary-container text-on-tertiary font-headline font-extrabold text-lg rounded-full flex items-center justify-center gap-2 shadow-lg shadow-tertiary-container/20 hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-widest disabled:opacity-50"
             >
               {busy ? (
                 <div className="w-6 h-6 border-2 border-on-tertiary/30 border-t-on-tertiary rounded-full animate-spin" />

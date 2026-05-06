@@ -1,0 +1,73 @@
+{
+  "generatedAt": "2026-04-27T12:42:38.881Z",
+  "loginAttempted": true,
+  "loginOk": true,
+  "results": [
+    {
+      "no": 16,
+      "test": "Operator Dashboard Loads",
+      "status": "PASS",
+      "route": "/operator/dashboard",
+      "screenshot": "docs/test-reports/screenshots-16-dashboard.png",
+      "note": "KPI labels visible",
+      "consoleErrors": [],
+      "loginAttempted": true,
+      "loginOk": true
+    },
+    {
+      "no": 17,
+      "test": "Routes Page",
+      "status": "PASS",
+      "route": "/operator/routes",
+      "screenshot": "docs/test-reports/screenshots-17-routes.png",
+      "note": "Route table visible",
+      "consoleErrors": [],
+      "loginAttempted": true,
+      "loginOk": true
+    },
+    {
+      "no": 18,
+      "test": "Trips Page",
+      "status": "PASS",
+      "route": "/operator/trips",
+      "screenshot": "docs/test-reports/screenshots-18-trips.png",
+      "note": "Trip table visible",
+      "consoleErrors": [],
+      "loginAttempted": true,
+      "loginOk": true
+    },
+    {
+      "no": 19,
+      "test": "Resources Page",
+      "status": "PASS",
+      "route": "/operator/resources",
+      "screenshot": "docs/test-reports/screenshots-19-resources.png",
+      "note": "Resource tabs and rows visible",
+      "consoleErrors": [],
+      "loginAttempted": true,
+      "loginOk": true
+    },
+    {
+      "no": 20,
+      "test": "Live Monitor",
+      "status": "PASS",
+      "route": "/operator/monitor",
+      "screenshot": "docs/test-reports/screenshots-20-monitor.png",
+      "note": "Monitor content visible",
+      "consoleErrors": [],
+      "loginAttempted": true,
+      "loginOk": true
+    },
+    {
+      "no": 21,
+      "test": "Logs Page",
+      "status": "PASS",
+      "route": "/operator/logs",
+      "screenshot": "docs/test-reports/screenshots-21-logs.png",
+      "note": "Logs page and filters visible",
+      "consoleErrors": [],
+      "loginAttempted": true,
+      "loginOk": true
+    }
+  ]
+}

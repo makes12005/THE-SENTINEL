@@ -73,7 +73,7 @@ class _ManualAlertDialogState extends ConsumerState<ManualAlertDialog>
     }
   }
 
-  Future<void> _informManually(String tripId) async {
+  Future<void> _informManually() async {
     setState(() => _loading = true);
     try {
       // Call the API directly — no tripId needed for acknowledge endpoint
@@ -248,7 +248,7 @@ class _ManualAlertDialogState extends ConsumerState<ManualAlertDialog>
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        onPressed: _loading ? null : () => _informManually(''),
+                        onPressed: _loading ? null : _informManually,
                         child: _loading
                             ? const SizedBox(width: 20, height: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.tertiary))

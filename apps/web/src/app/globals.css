@@ -2,57 +2,19 @@
 
 /* ── Design tokens from HTML reference ───────────────────────────────────────── */
 @theme inline {
-  --color-surface-tint: #a3cbf2;
-  --color-surface-bright: #363a3e;
-  --color-tertiary: #ffb68b;
-  --color-surface-container-lowest: #0b0f13;
-  --color-outline: #8c9198;
-  --color-on-secondary-fixed: #100069;
-  --color-background: #101418;
-  --color-primary-fixed: #cee5ff;
-  --color-on-tertiary: #522300;
-  --color-inverse-surface: #e0e2e8;
-  --color-on-secondary: #2000a4;
-  --color-on-primary-fixed-variant: #1f4a6c;
-  --color-surface-container-highest: #31353a;
-  --color-primary: #a3cbf2;
-  --color-surface: #101418;
-  --color-on-surface-variant: #c2c7ce;
-  --color-tertiary-container: #602a00;
-  --color-on-error: #690005;
-  --color-inverse-primary: #396285;
-  --color-error: #ffb4ab;
-  --color-primary-container: #0b3c5d;
-  --color-secondary: #c4c0ff;
-  --color-on-primary: #003353;
-  --color-error-container: #93000a;
-  --color-on-primary-fixed: #001d32;
-  --color-on-primary-container: #7fa7cd;
-  --color-inverse-on-surface: #2d3135;
-  --color-tertiary-fixed-dim: #ffb68b;
-  --color-tertiary-fixed: #ffdbc8;
-  --color-surface-dim: #101418;
-  --color-on-error-container: #ffdad6;
-  --color-on-tertiary-fixed-variant: #753400;
-  --color-on-secondary-fixed-variant: #3622ca;
-  --color-secondary-fixed-dim: #c4c0ff;
-  --color-on-secondary-container: #b4b0ff;
-  --color-surface-container-low: #181c20;
-  --color-secondary-fixed: #e3dfff;
-  --color-secondary-container: #3826cd;
-  --color-outline-variant: #42474e;
-  --color-on-surface: #e0e2e8;
-  --color-primary-fixed-dim: #a3cbf2;
-  --color-on-background: #e0e2e8;
-  --color-on-tertiary-container: #ff801d;
-  --color-surface-container: #1c2024;
-  --color-surface-container-high: #262a2f;
-  --color-on-tertiary-fixed: #321200;
-  --color-surface-variant: #31353a;
+  --color-primary: #0B3C5D;
+  --color-secondary: #6C63FF;
+  --color-accent: #FF7A00;
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-hover: #334155;
+  --color-on-surface: #F1F5F9;
+  --color-on-surface-muted: #94A3B8;
+  --color-border: rgba(148, 163, 184, 0.1);
+  --color-outline: #475569;
 
   --font-headline: 'Manrope', 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
-  --font-label: 'Inter', sans-serif;
 
   --radius-sm: 0.375rem;
   --radius-md: 0.75rem;
@@ -60,10 +22,20 @@
   --radius-xl: 2rem;
   --radius-full: 9999px;
 
-  --glass-bg: rgba(26, 26, 46, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  --glass-bg: rgba(15, 23, 42, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
+
+/* Status Colors */
+.status-success { color: #22C55E; background: rgba(34, 197, 94, 0.1); }
+.status-error { color: #EF4444; background: rgba(239, 68, 68, 0.1); }
+.status-warn { color: #F59E0B; background: rgba(245, 158, 11, 0.1); }
+.status-info { color: #3B82F6; background: rgba(59, 130, 246, 0.1); }
+.status-optimal { color: #22C55E; background: rgba(34, 197, 94, 0.1); }
+.status-delay { color: #F59E0B; background: rgba(245, 158, 11, 0.1); }
+.status-alert { color: #EF4444; background: rgba(239, 68, 68, 0.1); }
+
 
 /* ── Base resets ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
@@ -175,4 +147,28 @@ body {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+.rugged-bg {
+  background-color: #0d0f14;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(25, 30, 45, 0.8) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(20, 25, 40, 0.8) 0%, transparent 50%);
+  position: relative;
+  min-height: 100vh;
+}
+
+.rugged-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.rugged-bg > * {
+  position: relative;
+  z-index: 2;
 }

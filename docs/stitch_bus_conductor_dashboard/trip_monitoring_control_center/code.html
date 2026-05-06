@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800;900&amp;family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #101418;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #181c20;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #31353a;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#b3afed",
+                        "on-error-container": "#ffdad6",
+                        "background": "#101418",
+                        "on-tertiary": "#502405",
+                        "surface-container-highest": "#31353a",
+                        "secondary-container": "#434076",
+                        "primary": "#cee5ff",
+                        "outline-variant": "#42474e",
+                        "outline": "#8c9198",
+                        "surface-container-high": "#262a2f",
+                        "tertiary": "#ffdcca",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "inverse-surface": "#e0e3e8",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#c2c7ce",
+                        "tertiary-container": "#ffb78d",
+                        "secondary-fixed": "#e3dfff",
+                        "primary-container": "#a3cbf2",
+                        "on-secondary": "#2d2a5e",
+                        "secondary": "#c4c0ff",
+                        "primary-fixed": "#cde5ff",
+                        "on-primary": "#003352",
+                        "inverse-on-surface": "#2d3135",
+                        "on-secondary-fixed": "#171348",
+                        "on-background": "#e0e3e8",
+                        "on-tertiary-container": "#7a4523",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "surface-dim": "#101418",
+                        "surface-container-lowest": "#0b0f12",
+                        "surface": "#101418",
+                        "on-tertiary-fixed": "#321200",
+                        "surface-variant": "#31353a",
+                        "on-surface": "#e0e3e8",
+                        "surface-tint": "#a3cbf2",
+                        "surface-container-low": "#181c20",
+                        "on-secondary-fixed-variant": "#434076",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "on-error": "#690005",
+                        "surface-bright": "#363a3e",
+                        "on-primary-container": "#2d5678",
+                        "inverse-primary": "#396284",
+                        "tertiary-fixed": "#ffdbc9",
+                        "surface-container": "#1c2024",
+                        "on-primary-fixed": "#001d32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "card-gap": "1rem",
+                        "section-internal": "1.25rem",
+                        "page-padding": "1rem",
+                        "unit-base": "4px",
+                        "element-tight": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "button-text": ["Inter"],
+                        "metadata-label": ["Inter"],
+                        "body-standard": ["Inter"],
+                        "display-time": ["Manrope"],
+                        "header-title": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "button-text": ["11px", {"letterSpacing": "0.1em", "fontWeight": "900"}],
+                        "metadata-label": ["10px", {"letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "body-standard": ["0.875rem", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "display-time": ["1.5rem", {"lineHeight": "1.2", "fontWeight": "900"}],
+                        "header-title": ["1.125rem", {"letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="antialiased text-on-background">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="h-screen w-64 fixed left-0 top-0 hidden md:flex flex-col bg-zinc-950 border-r border-zinc-800 font-manrope tracking-tight font-medium py-6 z-50">
+<div class="px-6 mb-10">
+<h1 class="text-white font-black italic text-xl">VELOX FLEET</h1>
+<p class="text-[8px] font-black tracking-[0.3em] text-sky-400 mt-1 uppercase">Mission Critical</p>
+</div>
+<nav class="flex-grow space-y-1">
+<div class="text-zinc-600 px-6 mb-2 text-[10px] font-bold tracking-widest uppercase">OPERATIONS</div>
+<a class="text-zinc-500 py-3 px-6 flex items-center gap-3 hover:bg-zinc-900/80 hover:text-zinc-200 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+                Live Map
+            </a>
+<a class="bg-sky-500/10 text-sky-400 border-l-4 border-sky-500 py-3 px-6 flex items-center gap-3 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Fleet Logs
+            </a>
+<a class="text-zinc-500 py-3 px-6 flex items-center gap-3 hover:bg-zinc-900/80 hover:text-zinc-200 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+                Schedules
+            </a>
+<a class="text-zinc-500 py-3 px-6 flex items-center gap-3 hover:bg-zinc-900/80 hover:text-zinc-200 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="badge">badge</span>
+                Crew Stats
+            </a>
+<a class="text-zinc-500 py-3 px-6 flex items-center gap-3 hover:bg-zinc-900/80 hover:text-zinc-200 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+                Reports
+            </a>
+</nav>
+<div class="border-t border-zinc-900 pt-6">
+<a class="text-zinc-500 py-3 px-6 flex items-center gap-3 hover:bg-zinc-900/80 hover:text-zinc-200 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                Support
+            </a>
+<a class="text-zinc-500 py-3 px-6 flex items-center gap-3 hover:bg-zinc-900/80 hover:text-zinc-200 transition-colors duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Log Out
+            </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="md:ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar (Authority: JSON) -->
+<header class="fixed top-0 md:left-64 right-0 h-14 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 z-40 flex justify-between items-center px-4 max-w-none">
+<div class="flex items-center gap-4">
+<h2 class="font-manrope uppercase tracking-wider font-bold text-xs text-sky-400">Trip Detail: Ahmedabad → Una</h2>
+<span class="bg-tertiary-container text-on-tertiary-container font-button-text text-button-text px-2 py-0.5 rounded-sm">DELAYED</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-500" data-icon="bus_alert">directions_bus</span>
+<span class="font-body-standard text-body-standard text-on-background">GJ01AB1234</span>
+</div>
+<div class="h-4 w-px bg-zinc-800"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-500" data-icon="group">group</span>
+<span class="font-metadata-label text-metadata-label text-on-surface-variant">CREW: RAJESH K., AMIT P.</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-zinc-500 hover:bg-zinc-900/50 hover:text-white transition-all active:scale-95 duration-75">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-zinc-500 hover:bg-zinc-900/50 hover:text-white transition-all active:scale-95 duration-75">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden ml-2">
+<img alt="Agency Owner Avatar" data-alt="A professional headshot of a mature bus agency owner in a charcoal suit, set against a dark industrial background with soft blue lighting. The portrait is sharp, emphasizing a sense of authority and precision through high-contrast lighting and a tech-noir aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGuSF82r4kly8KKsgKAkH6hT_AZNvLiPZK05ruqlLqDerBN0hOqdKqNxUccow_Fxm8tCrLcqTj-HMZvKfCjo2yeMQmnSXc8UnwQlIWsFZztiD4sqZfmO9--MpBX-JSSR34es0ndb60df5PtbetNhzyX89saw6u72eAZZ-36F6U5zcoixx9bzKtvuHt6iby9xexmgOReJsYyhoOKM7BlBj0l4AzImncwUEwJ2Xnzfil-_0wVbtO-n0OKqrJE7sou5TsC1THfr_TTkHT"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="mt-14 p-page-padding flex flex-col gap-card-gap max-w-[1400px] mx-auto w-full">
+<!-- Responsive Grid System -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-card-gap">
+<!-- Left Column: Criticals & Schedule (1/3) -->
+<div class="lg:col-span-4 flex flex-col gap-card-gap">
+<!-- Critical Alerts -->
+<section class="bg-surface-container-high border-l-4 border-error p-section-internal">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<h3 class="font-header-title text-header-title uppercase tracking-tight text-on-background">Critical Alerts</h3>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-3 border border-outline-variant/10 rounded flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-1" data-icon="assignment_late">assignment_late</span>
+<div>
+<p class="font-body-standard text-body-standard text-on-surface">Passenger list missing</p>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">DIGITAL MANIFEST NOT SYNCED</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-3 border border-outline-variant/10 rounded flex items-start gap-3">
+<span class="material-symbols-outlined text-tertiary mt-1" data-icon="phone_disabled">phone_disabled</span>
+<div>
+<p class="font-body-standard text-body-standard text-on-surface">Call failed (Driver)</p>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">LAST ATTEMPT: 14:02 PM</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Trip Schedule -->
+<section class="bg-surface-container-low border border-outline-variant/10 p-section-internal">
+<h3 class="font-header-title text-header-title uppercase tracking-tight text-on-background mb-4">Trip Schedule</h3>
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+<div>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">PLANNED DEPARTURE</p>
+<p class="font-display-time text-display-time text-primary">08:00 AM</p>
+</div>
+<div class="text-right">
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">ACTUAL</p>
+<p class="font-display-time text-display-time text-on-surface">08:14 AM</p>
+</div>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+<div>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">EST. ARRIVAL</p>
+<p class="font-display-time text-display-time text-primary">04:30 PM</p>
+</div>
+<div class="text-right">
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">DELAYED BY</p>
+<p class="font-display-time text-display-time text-tertiary">+42 MIN</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Speed & Performance -->
+<div class="grid grid-cols-2 gap-card-gap">
+<div class="bg-surface-container-low p-section-internal border border-outline-variant/10">
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mb-1">CURRENT SPEED</p>
+<p class="font-display-time text-display-time text-primary">62 <span class="text-xs font-bold text-on-surface-variant">KM/H</span></p>
+</div>
+<div class="bg-surface-container-low p-section-internal border border-outline-variant/10">
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mb-1">IDLE TIME</p>
+<p class="font-display-time text-display-time text-on-surface">04 <span class="text-xs font-bold text-on-surface-variant">MIN</span></p>
+</div>
+</div>
+</div>
+<!-- Center Column: Live Tracking (2/3) -->
+<div class="lg:col-span-8 flex flex-col gap-card-gap">
+<!-- Map Visual Container -->
+<section class="bg-surface-container-low border border-outline-variant/10 rounded-xl overflow-hidden flex flex-col min-h-[500px]">
+<div class="p-4 bg-zinc-950 flex justify-between items-center border-b border-zinc-900">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-sky-400" data-icon="satellite_alt">satellite_alt</span>
+<h3 class="font-header-title text-header-title uppercase tracking-tighter">Live Tracking</h3>
+</div>
+<div class="bg-surface-container-highest px-3 py-1 rounded-full flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-metadata-label text-metadata-label">GPS ACTIVE</span>
+</div>
+</div>
+<!-- Map Content -->
+<div class="relative flex-grow bg-zinc-900">
+<img class="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-500" data-alt="A dark, high-contrast digital map interface showing a highway route through a semi-arid landscape. The map is stylized with deep charcoal and blue tones, featuring a neon-blue path indicating the bus route. A single glowing marker represents the vehicle's current position near Bagodara, Gujarat. The overall mood is technical, precise, and professional." data-location="Ahmedabad, India" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgG_4dOyNziHzjIHgig-c225vjkh5ns0CCAbqdH-Krpc672FlSz-_Vq_17ZganyHzf3bY9sx1gjwXqsN8AcROoJ7zf4f8qIyTi6nW_Sz-BkHqL-RetLhFqoF8EhoLiNwyoXbUuKHJ9QQ4BOCAFczrdYgsUrTMxPpQsB_WJlow4Fr_jV2Qgz3-0_dbneOSGQ6LF_PuSJwA0Y9s1cLibJxeEafgbD4RNOOIs_T_-7XR4apQJ14E6Tdbn1cgoYsMQJG4R4Hkx5kDhAJKW"/>
+<!-- Overlays -->
+<div class="absolute bottom-6 left-6 right-6 flex justify-between items-end">
+<div class="bg-zinc-950/90 backdrop-blur-md p-4 border border-zinc-800 rounded shadow-2xl">
+<p class="font-metadata-label text-metadata-label text-sky-400 mb-1">NEXT STOP</p>
+<p class="font-header-title text-header-title uppercase">Bagodara</p>
+<p class="font-body-standard text-body-standard text-on-surface-variant">Distance: 14.2 km</p>
+</div>
+<div class="bg-zinc-950/90 backdrop-blur-md p-4 border border-zinc-800 rounded shadow-2xl flex items-center gap-4">
+<div class="text-right">
+<p class="font-metadata-label text-metadata-label text-zinc-500">FUEL LEVEL</p>
+<div class="w-24 h-1.5 bg-zinc-800 rounded-full mt-2">
+<div class="h-full bg-primary w-3/4 rounded-full"></div>
+</div>
+</div>
+<p class="font-display-time text-display-time">75%</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Activity Log (Timeline) -->
+<section class="bg-surface-container-low border border-outline-variant/10 p-section-internal">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-zinc-500" data-icon="history">history</span>
+<h3 class="font-header-title text-header-title uppercase tracking-tight">Mission Activity Log</h3>
+</div>
+<div class="relative ml-4 space-y-8">
+<!-- Timeline Vertical Line -->
+<div class="absolute left-[3px] top-2 bottom-2 w-px bg-outline-variant/20"></div>
+<!-- Log Item 1 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-2 h-2 rounded-full bg-primary ring-4 ring-background"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-body-standard text-body-standard text-on-surface">Trip Started</p>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant uppercase">Initial Checkpoint: Ahmedabad Terminal 1</p>
+</div>
+<p class="font-metadata-label text-metadata-label text-zinc-500">08:14 AM</p>
+</div>
+</div>
+<!-- Log Item 2 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-2 h-2 rounded-full bg-primary ring-4 ring-background"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-body-standard text-body-standard text-on-surface">Manifest Uploaded</p>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant uppercase">Digital Copy Signed by Rajesh K.</p>
+</div>
+<p class="font-metadata-label text-metadata-label text-zinc-500">08:10 AM</p>
+</div>
+</div>
+<!-- Log Item 3 -->
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-2 h-2 rounded-full bg-zinc-600 ring-4 ring-background"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-body-standard text-body-standard text-zinc-500">Bus Inspection Completed</p>
+<p class="font-metadata-label text-metadata-label text-zinc-600 uppercase">Passed all safety protocols</p>
+</div>
+<p class="font-metadata-label text-metadata-label text-zinc-700">07:45 AM</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Footer Meta Info -->
+<footer class="mt-8 flex justify-between items-center px-4 py-6 border-t border-zinc-900 opacity-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="shield_with_heart">shield_with_heart</span>
+<span class="font-metadata-label text-metadata-label uppercase tracking-widest">Velox Secure Protocol v4.2</span>
+</div>
+<div class="text-right">
+<span class="font-metadata-label text-metadata-label">LAST SYSTEM SYNC: 14:15:02 UTC</span>
+</div>
+</footer>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Velox Fleet Noir - Buses List</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800;900&amp;family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-fixed-variant": "#1f4a6b",
+                      "surface-container-low": "#181c20",
+                      "outline": "#8c9198",
+                      "primary-container": "#a3cbf2",
+                      "on-surface-variant": "#c2c7ce",
+                      "on-tertiary-fixed-variant": "#6c3a19",
+                      "tertiary-container": "#ffb78d",
+                      "tertiary-fixed-dim": "#ffb68b",
+                      "outline-variant": "#42474e",
+                      "on-background": "#e0e3e8",
+                      "secondary": "#c4c0ff",
+                      "surface-container-highest": "#31353a",
+                      "on-error": "#690005",
+                      "primary-fixed-dim": "#a3cbf2",
+                      "on-secondary-container": "#b3afed",
+                      "secondary-container": "#434076",
+                      "surface-dim": "#101418",
+                      "on-tertiary-fixed": "#321200",
+                      "primary": "#cee5ff",
+                      "error-container": "#93000a",
+                      "inverse-primary": "#396284",
+                      "surface-variant": "#31353a",
+                      "secondary-fixed-dim": "#c4c0ff",
+                      "on-primary-fixed": "#001d32",
+                      "surface-container-high": "#262a2f",
+                      "on-tertiary": "#502405",
+                      "on-secondary-fixed-variant": "#434076",
+                      "on-surface": "#e0e3e8",
+                      "on-primary-container": "#2d5678",
+                      "on-primary": "#003352",
+                      "on-secondary-fixed": "#171348",
+                      "surface": "#101418",
+                      "primary-fixed": "#cde5ff",
+                      "surface-tint": "#a3cbf2",
+                      "inverse-on-surface": "#2d3135",
+                      "secondary-fixed": "#e3dfff",
+                      "surface-container": "#1c2024",
+                      "on-secondary": "#2d2a5e",
+                      "tertiary-fixed": "#ffdbc9",
+                      "surface-container-lowest": "#0b0f12",
+                      "error": "#ffb4ab",
+                      "inverse-surface": "#e0e3e8",
+                      "tertiary": "#ffdcca",
+                      "surface-bright": "#363a3e",
+                      "on-tertiary-container": "#7a4523",
+                      "on-error-container": "#ffdad6",
+                      "background": "#101418"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "unit-base": "4px",
+                      "element-tight": "0.5rem",
+                      "card-gap": "1rem",
+                      "page-padding": "1rem",
+                      "section-internal": "1.25rem"
+              },
+              "fontFamily": {
+                      "button-text": [
+                              "Inter"
+                      ],
+                      "metadata-label": [
+                              "Inter"
+                      ],
+                      "header-title": [
+                              "Manrope"
+                      ],
+                      "display-time": [
+                              "Manrope"
+                      ],
+                      "body-standard": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "button-text": [
+                              "11px",
+                              {
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "900"
+                              }
+                      ],
+                      "metadata-label": [
+                              "10px",
+                              {
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "header-title": [
+                              "1.125rem",
+                              {
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "display-time": [
+                              "1.5rem",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "900"
+                              }
+                      ],
+                      "body-standard": [
+                              "0.875rem",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            position: relative;
+        }
+        /* Global SVG noise overlay for tactile texture */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden antialiased font-body-standard text-body-standard">
+<!-- SideNavBar Component (Hidden on Mobile) -->
+<nav class="hidden md:flex flex-col bg-zinc-950 text-sky-200 font-manrope uppercase text-xs font-bold tracking-widest h-screen w-64 border-r border-zinc-900 border-r border-zinc-800/30 noise-overlay flat no shadows fixed left-0 top-0 bottom-0 pt-14 z-40">
+<div class="px-6 mb-8 mt-2">
+<h1 class="text-white font-black text-xl mb-1">VELOX FLEET</h1>
+<p class="text-zinc-500 text-[10px]">NOIR TERMINAL</p>
+</div>
+<ul class="flex-1 space-y-1">
+<li>
+<a class="bg-zinc-900 text-sky-200 border-l-4 border-sky-400 px-4 py-3 flex items-center gap-3 cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">directions_bus</span>
+                    Fleet
+                </a>
+</li>
+<li>
+<a class="text-zinc-500 hover:bg-zinc-900/50 px-4 py-3 flex items-center gap-3 transition-all cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">route</span>
+                    Routes
+                </a>
+</li>
+<li>
+<a class="text-zinc-500 hover:bg-zinc-900/50 px-4 py-3 flex items-center gap-3 transition-all cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">group</span>
+                    Personnel
+                </a>
+</li>
+<li>
+<a class="text-zinc-500 hover:bg-zinc-900/50 px-4 py-3 flex items-center gap-3 transition-all cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">engineering</span>
+                    Maintenance
+                </a>
+</li>
+<li>
+<a class="text-zinc-500 hover:bg-zinc-900/50 px-4 py-3 flex items-center gap-3 transition-all cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">segment</span>
+                    Logs
+                </a>
+</li>
+</ul>
+<div class="mt-auto px-6 pb-6">
+<div class="bg-surface-container-high border-l-4 border-sky-400 p-3 mb-6">
+<span class="text-[10px] text-sky-200 tracking-wider">SYSTEM STATUS: NOMINAL</span>
+</div>
+<ul class="space-y-1">
+<li>
+<a class="text-zinc-500 hover:bg-zinc-900/50 px-4 py-3 flex items-center gap-3 transition-all cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+</li>
+<li>
+<a class="text-zinc-500 hover:bg-zinc-900/50 px-4 py-3 flex items-center gap-3 transition-all cursor-pointer transition-opacity duration-200 hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">help</span>
+                        Support
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 relative w-full h-full">
+<!-- TopNavBar Component -->
+<header class="bg-zinc-950/80 backdrop-blur-md text-sky-200 dark:text-sky-100 font-manrope font-bold tracking-tighter uppercase docked full-width top-0 h-14 border-b border-zinc-800/50 flat no shadows tonal-layering flex justify-between items-center w-full px-6 sticky top-0 z-50">
+<div class="flex items-center gap-4 flex-1">
+<div class="md:hidden text-lg font-black tracking-[0.2em] text-white">
+                    FLEET OPS
+                </div>
+<!-- Search Bar (Desktop focus) -->
+<div class="hidden md:flex relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded px-9 py-1.5 focus:outline-none focus:border-sky-400/50 text-xs font-normal tracking-normal h-8" placeholder="Search buses..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-primary-container text-on-primary-container font-button-text text-button-text h-8 px-4 flex items-center gap-2 rounded hover:bg-primary-fixed-dim transition-colors duration-150 active:opacity-80 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[14px] font-bold">add</span>
+                    ADD BUS
+                </button>
+<div class="flex items-center gap-1 border-l border-outline-variant/30 pl-3 ml-1 h-8">
+<button class="text-zinc-500 font-medium hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors duration-150 active:opacity-80 active:scale-[0.98] w-8 h-8 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+</button>
+<button class="text-zinc-500 font-medium hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors duration-150 active:opacity-80 active:scale-[0.98] w-8 h-8 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/50 overflow-hidden ml-2 flex items-center justify-center hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[16px] text-zinc-400">person</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto p-page-padding pb-24 md:pb-page-padding bg-surface">
+<div class="max-w-7xl mx-auto">
+<!-- Page Header Area -->
+<div class="mb-6 flex justify-between items-end">
+<div>
+<h2 class="font-header-title text-header-title text-on-surface mb-1 uppercase">Active Fleet Roster</h2>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">TOTAL UNITS: 42 | CRITICAL: 1</p>
+</div>
+<!-- Filters/Sort -->
+<div class="flex gap-2">
+<button class="bg-surface-container-highest text-on-surface font-button-text text-button-text px-3 py-1.5 rounded flex items-center gap-1.5 border border-outline-variant/20 hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-[14px]">filter_list</span>
+                            FILTER
+                        </button>
+<button class="bg-surface-container-highest text-on-surface font-button-text text-button-text px-3 py-1.5 rounded flex items-center gap-1.5 border border-outline-variant/20 hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-[14px]">sort</span>
+                            SORT
+                        </button>
+</div>
+</div>
+<!-- Grid of Bus Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
+<!-- Card 1: Active -->
+<div class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-section-internal relative overflow-hidden group hover:border-outline-variant/30 transition-colors flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="font-display-time text-display-time text-primary mb-1 tracking-tight">GJ01AB1234</div>
+<div class="font-metadata-label text-metadata-label text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[12px]">directions_bus</span>
+                                    AC SLEEPER • VOLVO 9400
+                                </div>
+</div>
+<div class="bg-primary-container/20 border border-primary-container/50 text-primary-container px-2 py-0.5 rounded font-metadata-label text-[9px] uppercase tracking-widest flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                                ACTIVE
+                            </div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-5 flex-1">
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">CAPACITY</div>
+<div class="font-body-standard text-body-standard text-on-surface">42 Seats</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">NEXT SERVICE</div>
+<div class="font-body-standard text-body-standard text-on-surface">12 Oct 2023</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">CURRENT DRIVER</div>
+<div class="font-body-standard text-body-standard text-on-surface">M. Sharma</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">LOCATION</div>
+<div class="font-body-standard text-[12px] text-on-surface truncate">Terminal A</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 pt-4 flex justify-between items-center mt-auto">
+<span class="font-metadata-label text-[10px] text-zinc-500">LAST UPDATED: 2M AGO</span>
+<button class="text-primary hover:text-primary-fixed-dim font-button-text text-button-text flex items-center gap-1 transition-colors">
+                                MANAGE
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Warning/In Workshop -->
+<div class="bg-surface-container-high border-l-4 border-tertiary-container rounded-lg p-section-internal relative overflow-hidden group flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="font-display-time text-display-time text-tertiary-container mb-1 tracking-tight">MH04CD5678</div>
+<div class="font-metadata-label text-metadata-label text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[12px]">directions_bus</span>
+                                    NON-AC SEATER • TATA LPO
+                                </div>
+</div>
+<div class="bg-tertiary-container/10 border border-tertiary-container/30 text-tertiary-container px-2 py-0.5 rounded font-metadata-label text-[9px] uppercase tracking-widest flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">build</span>
+                                WORKSHOP
+                            </div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-5 flex-1">
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">CAPACITY</div>
+<div class="font-body-standard text-body-standard text-on-surface">55 Seats</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">EST. RELEASE</div>
+<div class="font-body-standard text-body-standard text-on-surface text-tertiary-fixed-dim">15 Oct 2023</div>
+</div>
+<div class="col-span-2 bg-surface-container-highest p-2 rounded border border-outline-variant/20">
+<div class="font-metadata-label text-[9px] text-tertiary-container mb-1">ISSUE LOGGED</div>
+<div class="font-body-standard text-[12px] text-on-surface truncate">Transmission fluid leak reported; pending inspection.</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 pt-4 flex justify-between items-center mt-auto">
+<span class="font-metadata-label text-[10px] text-zinc-500">IN SHOP: 3 DAYS</span>
+<button class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded font-button-text text-button-text flex items-center gap-1 hover:bg-tertiary-fixed-dim transition-colors">
+                                VIEW LOG
+                            </button>
+</div>
+</div>
+<!-- Card 3: Active -->
+<div class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-section-internal relative overflow-hidden group hover:border-outline-variant/30 transition-colors flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<div>
+<div class="font-display-time text-display-time text-primary mb-1 tracking-tight">DL01EF9012</div>
+<div class="font-metadata-label text-metadata-label text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[12px]">directions_bus</span>
+                                    AC SEATER • SCANIA METROLINK
+                                </div>
+</div>
+<div class="bg-primary-container/20 border border-primary-container/50 text-primary-container px-2 py-0.5 rounded font-metadata-label text-[9px] uppercase tracking-widest flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                                ACTIVE
+                            </div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-5 flex-1">
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">CAPACITY</div>
+<div class="font-body-standard text-body-standard text-on-surface">45 Seats</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">NEXT SERVICE</div>
+<div class="font-body-standard text-body-standard text-on-surface">02 Nov 2023</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">CURRENT DRIVER</div>
+<div class="font-body-standard text-body-standard text-on-surface">R. Singh</div>
+</div>
+<div>
+<div class="font-metadata-label text-metadata-label text-outline mb-0.5">LOCATION</div>
+<div class="font-body-standard text-[12px] text-on-surface truncate">En Route (NH44)</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 pt-4 flex justify-between items-center mt-auto">
+<span class="font-metadata-label text-[10px] text-zinc-500">LAST UPDATED: 15M AGO</span>
+<button class="text-primary hover:text-primary-fixed-dim font-button-text text-button-text flex items-center gap-1 transition-colors">
+                                MANAGE
+                                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

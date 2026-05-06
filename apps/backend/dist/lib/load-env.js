@@ -56,6 +56,8 @@ function uniqueExistingFiles(files) {
 function loadEnv() {
     if (loaded)
         return;
+    const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
+    const isProduction = nodeEnv === 'production';
     const baseDirs = [
         process.cwd(),
         path_1.default.resolve(process.cwd(), '..'),
@@ -64,7 +66,12 @@ function loadEnv() {
     ];
     const candidates = [];
     for (const dir of baseDirs) {
-        candidates.push(path_1.default.join(dir, '.env.production'), path_1.default.join(dir, '.env'), path_1.default.join(dir, '.env.local'), path_1.default.join(dir, 'apps', 'backend', '.env.production'), path_1.default.join(dir, 'apps', 'backend', '.env'), path_1.default.join(dir, 'apps', 'backend', '.env.local'));
+        if (isProduction) {
+            candidates.push(path_1.default.join(dir, '.env.production'), path_1.default.join(dir, '.env'), path_1.default.join(dir, '.env.local'), path_1.default.join(dir, 'apps', 'backend', '.env.production'), path_1.default.join(dir, 'apps', 'backend', '.env'), path_1.default.join(dir, 'apps', 'backend', '.env.local'));
+        }
+        else {
+            candidates.push(path_1.default.join(dir, '.env.development'), path_1.default.join(dir, '.env.local'), path_1.default.join(dir, '.env'), path_1.default.join(dir, 'apps', 'backend', '.env.development'), path_1.default.join(dir, 'apps', 'backend', '.env.local'), path_1.default.join(dir, 'apps', 'backend', '.env'));
+        }
     }
     for (const file of uniqueExistingFiles(candidates)) {
         dotenv.config({ path: file, override: true });

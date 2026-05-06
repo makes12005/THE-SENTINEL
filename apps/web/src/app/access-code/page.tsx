@@ -10,24 +10,9 @@ import { markAccessCodeCompleted, hasCompletedAccessCode } from '@/lib/auth-redi
 
 function TopAppBar() {
   return (
-    <header className="h-20 px-8 flex items-center justify-between border-b border-outline-variant/10 relative z-20 bg-background/50 backdrop-blur-md">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-          <span className="material-symbols-outlined text-on-primary text-2xl font-bold">shield</span>
-        </div>
-        <div>
-          <h1 className="font-headline font-black text-lg tracking-tight text-on-surface">SENTINEL</h1>
-          <p className="text-[10px] font-label font-bold tracking-[0.2em] text-on-surface-variant/60 uppercase">Transit Operations</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-[10px] font-label font-bold text-on-surface-variant/40 uppercase tracking-widest">Network Status</span>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-            <span className="text-xs font-bold text-on-surface-variant/80 uppercase tracking-wider">Operational</span>
-          </div>
-        </div>
+    <header className="flex items-center px-8 py-6 w-full absolute top-0 z-50">
+      <div className="font-headline font-bold text-primary tracking-widest uppercase text-sm">
+        SENTINEL TRANSIT
       </div>
     </header>
   );
@@ -88,14 +73,18 @@ function AccessCodePageInner() {
   }
 
   return (
-    <div className="rugged-bg min-h-screen flex flex-col font-body text-on-surface overflow-x-hidden">
+    <div className="bg-[#101418] min-h-screen flex flex-col font-body text-on-surface relative overflow-hidden">
+      {/* Background Decorative Glows */}
+      <div className="absolute top-1/4 -left-48 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-48 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(163,203,242,0.03)_0%,transparent_100%)] pointer-events-none" />
       <TopAppBar />
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-[420px]">
           {/* Header */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-[2.5rem] bg-surface-container-high border border-outline-variant/10 mb-8 shadow-2xl">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-surface-container-high border border-outline-variant/10 mb-8 shadow-2xl">
               <span className="material-symbols-outlined text-4xl text-primary font-bold">terminal</span>
             </div>
             <h2 className="text-4xl font-headline font-black tracking-tight mb-3">Sync Node</h2>
@@ -116,7 +105,7 @@ function AccessCodePageInner() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="SENTINEL-XXXX"
-                  className="w-full bg-surface-container-high border-2 border-transparent rounded-2xl py-5 px-6 text-on-surface placeholder:text-on-surface-variant/20 focus:border-primary focus:bg-surface-container-highest outline-none transition-all text-center text-xl font-black tracking-[0.2em] uppercase shadow-inner"
+                  className="w-full bg-surface-container-high border-2 border-transparent rounded-full py-5 px-6 text-on-surface placeholder:text-on-surface-variant/20 focus:border-primary focus:bg-surface-container-highest outline-none transition-all text-center text-xl font-black tracking-[0.2em] uppercase shadow-inner"
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -128,7 +117,7 @@ function AccessCodePageInner() {
               <button
                 onClick={handleContinue}
                 disabled={loading}
-                className="w-full bg-primary text-on-primary font-black text-sm py-5 rounded-2xl tracking-[0.2em] transition-all active:scale-[0.98] shadow-2xl shadow-primary/30 uppercase disabled:opacity-50 flex items-center justify-center gap-3"
+                className="w-full bg-primary text-on-primary font-black text-sm py-5 rounded-full tracking-[0.2em] transition-all active:scale-[0.98] shadow-2xl shadow-primary/30 uppercase disabled:opacity-50 flex items-center justify-center gap-3"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />

@@ -125,7 +125,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF181C20),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
@@ -165,7 +165,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
-                  const SizedBox(height: 64),
+                  const SizedBox(height: 56),
                   // Header Icon
                   Container(
                     width: 80,
@@ -180,7 +180,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       size: 48,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                   // Header Text
                   Text(
                     'Enter Code',
@@ -203,7 +203,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 42),
                   
                   // OTP Input Grid
                   Pinput(
@@ -264,7 +264,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   
                   // Timer & Resend
                   Column(
@@ -312,7 +312,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 18),
+                  Text(
+                    'SENTINEL SECURE NODE v4.2.0',
+                    style: GoogleFonts.manrope(
+                      color: AppColors.onSurfaceVariant.withOpacity(0.35),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
                 ],
               ),
             ),

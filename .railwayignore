@@ -1,0 +1,13 @@
+.git
+.turbo
+node_modules
+apps/mobile
+apps/web
+docs
+scratch
+scripts
+railway-mcp-server
+**/playwright-report
+**/test-results
+**/*.log
+**/*.tmp

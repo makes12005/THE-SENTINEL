@@ -1,0 +1,10 @@
+node_modules
+scratch
+scripts
+test_output.txt
+test_users.txt
+*.log
+*.tmp
+dist
+../mobile
+../web

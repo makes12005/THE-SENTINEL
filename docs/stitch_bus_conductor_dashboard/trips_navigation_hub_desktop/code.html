@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SENTINEL_TRANSIT - Trips Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&amp;family=Manrope:wght@700;800&amp;family=Space+Mono:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .rugged-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+        }
+        .blueprint-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(206, 229, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(206, 229, 255, 0.03) 1px, transparent 1px);
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+        }
+        .ambient-blur {
+            position: fixed;
+            top: -20%;
+            right: -10%;
+            width: 70vw;
+            height: 70vh;
+            background: radial-gradient(circle, rgba(163, 203, 242, 0.05) 0%, transparent 70%);
+            filter: blur(100px);
+            z-index: -1;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#e0e3e8",
+                    "surface-dim": "#101418",
+                    "on-tertiary": "#502405",
+                    "on-primary-fixed-variant": "#1f4a6b",
+                    "on-secondary": "#2d2a5e",
+                    "on-surface-variant": "#c2c7ce",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "primary": "#cee5ff",
+                    "surface-container-high": "#262a2f",
+                    "primary-container": "#a3cbf2",
+                    "on-tertiary-container": "#7a4523",
+                    "surface-container-low": "#181c20",
+                    "on-error-container": "#ffdad6",
+                    "background": "#101418",
+                    "on-secondary-fixed": "#171348",
+                    "on-primary-container": "#2d5678",
+                    "surface-container-lowest": "#0b0f12",
+                    "inverse-on-surface": "#2d3135",
+                    "error-container": "#93000a",
+                    "tertiary": "#ffdcca",
+                    "surface-bright": "#363a3e",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "tertiary-fixed": "#ffdbc9",
+                    "surface-container": "#1c2024",
+                    "secondary-container": "#434076",
+                    "on-primary-fixed": "#001d32",
+                    "secondary-fixed": "#e3dfff",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed-variant": "#6c3a19",
+                    "tertiary-container": "#ffb78d",
+                    "surface-container-highest": "#31353a",
+                    "on-secondary-fixed-variant": "#434076",
+                    "on-background": "#e0e3e8",
+                    "outline-variant": "#42474e",
+                    "error": "#ffb4ab",
+                    "on-primary": "#003352",
+                    "surface-tint": "#a3cbf2",
+                    "on-secondary-container": "#b3afed",
+                    "surface": "#101418",
+                    "surface-variant": "#31353a",
+                    "outline": "#8c9198",
+                    "primary-fixed": "#cde5ff",
+                    "inverse-primary": "#396284",
+                    "secondary": "#c4c0ff",
+                    "on-surface": "#e0e3e8",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "on-tertiary-fixed": "#321200"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "8px",
+                    "stack-md": "32px",
+                    "container-max": "384px",
+                    "stack-lg": "48px",
+                    "gutter": "24px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "code-input": [
+                            "Space Mono", "monospace"
+                    ],
+                    "body-lg": [
+                            "Inter", "sans-serif"
+                    ],
+                    "button-text": [
+                            "Manrope", "sans-serif"
+                    ],
+                    "headline-md": [
+                            "Manrope", "sans-serif"
+                    ],
+                    "label-caps": [
+                            "Inter", "sans-serif"
+                    ],
+                    "display-xl": [
+                            "Manrope", "sans-serif"
+                    ]
+            },
+            "fontSize": {
+                    "code-input": [
+                            "32px",
+                            {
+                                    "letterSpacing": "0.2em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "button-text": [
+                            "18px",
+                            {
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-caps": [
+                            "10px",
+                            {
+                                    "lineHeight": "1.0",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "display-xl": [
+                            "36px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "800"
+                            }
+                    ]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-surface min-h-screen overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<div class="rugged-overlay"></div>
+<div class="blueprint-grid"></div>
+<div class="ambient-blur"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-zinc-950/90 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)] border-zinc-800/50 md:pl-[280px] transition-all duration-300 ease-in-out">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md text-sky-200 uppercase tracking-tighter hidden md:block">SENTINEL_TRANSIT</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="h-[64px] bg-primary-container text-primary px-6 rounded-DEFAULT font-button-text text-button-text uppercase flex items-center gap-2 shadow-xl hover:bg-primary-fixed transition-colors">
+                + CREATE TRIP
+            </button>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-sky-300 hover:text-sky-200 hover:bg-zinc-900/50 transition-all duration-300 ease-in-out">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-sky-300 hover:text-sky-200 hover:bg-zinc-900/50 transition-all duration-300 ease-in-out">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant bg-surface-container-high">
+<img alt="Operator Avatar" class="w-full h-full object-cover" data-alt="A futuristic portrait of a technical operator wearing a tactical headset, illuminated by cool blue screen light in a dark command center. The image has a high-contrast, rugged aesthetic matching the overall tactical futurism theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1BJ9zIOaVbRI2FGpRrlZwfyhAaELKkfJhxWdlc6sa57Q4PdY_8lNCnV5Jv8QvyE4ApkiV_yz-bcxbPadcc-J3qxh-82WBifJnkckzvzGjaYzB9irHhFiZ357IQwJkVLTU3mBvbJaJWaNXC6LVeFXcX4NZkWmu9zvtiZB3kEiRXpNYgP7NgRoDaeZ_XO7W0QRDEgIw8zeMPzWX3wrsmzmqsEEbayWedIfib77xrKjsMbfEfl2K-9pIh1GR9osBFvD6xp1VnEQNvj9n"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full z-40 flex-col pt-20 bg-zinc-950 border-r border-zinc-800 docked w-64">
+<div class="px-6 pb-6 border-b border-zinc-800 mb-4">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-1">Unit 734</div>
+<div class="font-headline-md text-headline-md text-sky-400 font-black">OPERATOR_ID</div>
+<div class="font-label-caps text-label-caps text-zinc-500 mt-2">Active Session: 08h 12m</div>
+</div>
+<div class="flex-1 overflow-y-auto py-4 flex flex-col gap-2">
+<a class="text-zinc-500 flex items-center gap-4 px-6 py-4 font-manrope font-bold text-xs tracking-widest hover:bg-zinc-900 transition-colors uppercase" href="#">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">directions_bus</span>
+</div>
+                Fleet
+            </a>
+<a class="bg-sky-400/10 text-sky-300 border-r-4 border-sky-400 flex items-center gap-4 px-6 py-4 font-manrope font-bold text-xs tracking-widest Active: ring-1 ring-sky-400/30 scale-[0.99] uppercase" href="#">
+<div class="w-8 h-8 rounded-DEFAULT bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px] text-primary" style="font-variation-settings: 'FILL' 1;">route</span>
+</div>
+                Trips
+            </a>
+<a class="text-zinc-500 flex items-center gap-4 px-6 py-4 font-manrope font-bold text-xs tracking-widest hover:bg-zinc-900 transition-colors uppercase" href="#">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</div>
+                Dispatch
+            </a>
+<a class="text-zinc-500 flex items-center gap-4 px-6 py-4 font-manrope font-bold text-xs tracking-widest hover:bg-zinc-900 transition-colors uppercase" href="#">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+</div>
+                Logistics
+            </a>
+</div>
+<div class="p-6 border-t border-zinc-800 flex flex-col gap-4">
+<button class="w-full h-12 border border-outline-variant text-sky-300 rounded-DEFAULT font-button-text text-sm uppercase flex items-center justify-center gap-2 hover:bg-zinc-900 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                INITIATE_NEW_TRIP
+            </button>
+<div class="flex justify-between">
+<button class="text-zinc-500 hover:text-sky-300 transition-colors flex items-center gap-2 font-label-caps text-label-caps uppercase">
+<span class="material-symbols-outlined text-[16px]">help_center</span>
+                    Support
+                 </button>
+<button class="text-zinc-500 hover:text-error transition-colors flex items-center gap-2 font-label-caps text-label-caps uppercase">
+<span class="material-symbols-outlined text-[16px]">logout</span>
+                    Sign Out
+                 </button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-[112px] pb-24 md:pl-72 pr-6 md:pr-12 min-h-screen">
+<div class="mb-stack-lg max-w-[1200px] mx-auto">
+<h1 class="font-display-xl text-display-xl text-on-surface mb-2">Trips</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage and monitor your fleet's active and scheduled deployments.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter max-w-[1200px] mx-auto">
+<!-- Pending Passenger List Card -->
+<button class="group relative bg-surface-container-low rounded-xl p-8 border border-outline-variant/30 hover:border-tertiary-container/50 hover:bg-surface-container transition-all duration-300 text-left overflow-hidden h-[240px] flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary-container/10 blur-3xl rounded-full group-hover:bg-tertiary-container/20 transition-all"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-outline-variant/50 flex items-center justify-center group-hover:ring-1 group-hover:ring-tertiary-container/50 transition-all">
+<span class="material-symbols-outlined text-tertiary-container text-[24px]">group</span>
+</div>
+<div class="flex items-center gap-2 bg-tertiary-container/10 px-3 py-1 rounded-full border border-tertiary-container/30">
+<div class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></div>
+<span class="font-label-caps text-label-caps text-tertiary-container uppercase">Action Required</span>
+</div>
+</div>
+<div class="relative z-10">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-tertiary-fixed transition-colors">Pending Passenger List</h2>
+<div class="flex items-baseline gap-2">
+<span class="font-code-input text-code-input text-tertiary-container">3</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Trips Awaiting Confirmation</span>
+</div>
+</div>
+</button>
+<!-- Today / Current Card -->
+<button class="group relative bg-surface-container-low rounded-xl p-8 border border-outline-variant/30 hover:border-primary/50 hover:bg-surface-container transition-all duration-300 text-left overflow-hidden h-[240px] flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full group-hover:bg-primary/20 transition-all"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-outline-variant/50 flex items-center justify-center group-hover:ring-1 group-hover:ring-primary/50 transition-all">
+<span class="material-symbols-outlined text-primary text-[24px]">explore</span>
+</div>
+<div class="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full border border-primary/30">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label-caps text-label-caps text-primary uppercase">Active Now</span>
+</div>
+</div>
+<div class="relative z-10">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-primary-fixed transition-colors">Today / Current</h2>
+<div class="flex items-baseline gap-2">
+<span class="font-code-input text-code-input text-primary">5</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Ongoing Deployments</span>
+</div>
+</div>
+</button>
+<!-- Upcoming Card -->
+<button class="group relative bg-surface-container-low rounded-xl p-8 border border-outline-variant/30 hover:border-outline/50 hover:bg-surface-container transition-all duration-300 text-left overflow-hidden h-[240px] flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 blur-3xl rounded-full group-hover:bg-secondary/10 transition-all"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-outline-variant/50 flex items-center justify-center group-hover:ring-1 group-hover:ring-outline/50 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-[24px]">calendar_month</span>
+</div>
+</div>
+<div class="relative z-10">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-white transition-colors">Upcoming</h2>
+<div class="flex items-baseline gap-2">
+<span class="font-code-input text-code-input text-on-surface-variant group-hover:text-on-surface transition-colors">8</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Scheduled Trips</span>
+</div>
+</div>
+</button>
+<!-- Completed Card -->
+<button class="group relative bg-surface-container-low rounded-xl p-8 border border-outline-variant/30 hover:border-outline/50 hover:bg-surface-container transition-all duration-300 text-left overflow-hidden h-[240px] flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-32 h-32 bg-surface-variant/20 blur-3xl rounded-full group-hover:bg-surface-variant/40 transition-all"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high border border-outline-variant/50 flex items-center justify-center group-hover:ring-1 group-hover:ring-outline/50 transition-all opacity-70">
+<span class="material-symbols-outlined text-outline text-[24px]">check_circle</span>
+</div>
+</div>
+<div class="relative z-10 opacity-70 group-hover:opacity-100 transition-opacity">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2 group-hover:text-white transition-colors">Completed</h2>
+<div class="flex items-baseline gap-2">
+<span class="font-code-input text-code-input text-outline group-hover:text-on-surface-variant transition-colors">12</span>
+<span class="font-label-caps text-label-caps text-outline uppercase">Logged Missions</span>
+</div>
+</div>
+</button>
+</div>
+</main>
+</body></html>

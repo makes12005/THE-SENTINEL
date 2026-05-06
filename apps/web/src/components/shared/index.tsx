@@ -4,7 +4,9 @@
  * Moved from operator-specific usage to shared/ so owner pages can import them.
  */
 
+import type React from 'react';
 import Link from 'next/link';
+import { formatIstDateTime } from '@/lib/format-ist';
 
 // ── AlertStatusBadge ──────────────────────────────────────────────────────────
 const channelIcons: Record<string, string> = {
@@ -62,15 +64,19 @@ export interface TripRow {
   route?:         { name?: string; from_city?: string; to_city?: string };
   conductor?:     { name?: string };
   passenger_count?: number;
+  /** e.g. "Alerts: 4 sent · 1 failed · 12 pax" — owner trip monitoring */
+  alert_summary?: string;
 }
 
 interface TripTableProps {
   trips:        TripRow[];
   basePath:     string;  // e.g. /operator/trips or /owner/trips
   showOperator: boolean; // owner sees operator name column
+  /** Optional per-row controls (e.g. owner reassignment). */
+  extraActions?: (trip: TripRow) => React.ReactNode;
 }
 
-export function TripTable({ trips, basePath, showOperator }: TripTableProps) {
+export function TripTable({ trips, basePath, showOperator, extraActions }: TripTableProps) {
   if (!trips.length) {
     return (
       <div className="py-16 text-center text-[#8c9198] bg-[#181c20] rounded-xl">
@@ -85,7 +91,7 @@ export function TripTable({ trips, basePath, showOperator }: TripTableProps) {
         <thead>
           <tr className="text-left text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce]/60">
             <th className="px-6 pb-2">Route</th>
-            {showOperator && <th className="px-6 pb-2">Operator</th>}
+            {showOperator && <th className="px-6 pb-2">Operator / crew</th>}
             <th className="px-6 pb-2">Date</th>
             <th className="px-6 pb-2">Status</th>
             <th className="px-6 pb-2 text-right">Action</th>
@@ -95,13 +101,27 @@ export function TripTable({ trips, basePath, showOperator }: TripTableProps) {
           {trips.map((trip) => (
             <tr key={trip.id} className="bg-[#181c20] hover:bg-[#1c2024] transition-colors">
               <td className="px-6 py-4 rounded-l-xl font-bold text-[#e0e2e8] text-sm">
-                {trip.route
-                  ? `${trip.route.from_city} → ${trip.route.to_city}`
-                  : <span className="text-[#8c9198]">—</span>}
+                <div>
+                  {trip.route
+                    ? `${trip.route.from_city} → ${trip.route.to_city}`
+                    : <span className="text-[#8c9198]">—</span>}
+                  {trip.route?.name ? (
+                    <p className="text-[0.625rem] font-normal text-[#8c9198] mt-0.5">{trip.route.name}</p>
+                  ) : null}
+                  {trip.alert_summary ? (
+                    <p className="text-[0.625rem] font-normal text-[#8c9198] mt-0.5">{trip.alert_summary}</p>
+                  ) : null}
+                </div>
               </td>
               {showOperator && (
                 <td className="px-6 py-4 text-sm text-[#c2c7ce]">
-                  {trip.operator_name ?? '—'}
+                  <p>{trip.operator_name ?? '—'}</p>
+                  {trip.conductor?.name ? (
+                    <p className="text-[0.625rem] text-[#8c9198] mt-1">Conductor · {trip.conductor.name}</p>
+                  ) : null}
+                  {trip.passenger_count !== undefined ? (
+                    <p className="text-[0.625rem] text-[#8c9198] mt-1">{trip.passenger_count} passengers</p>
+                  ) : null}
                 </td>
               )}
               <td className="px-6 py-4 text-xs font-mono text-[#8c9198]">
@@ -111,12 +131,15 @@ export function TripTable({ trips, basePath, showOperator }: TripTableProps) {
                 <StatusBadge status={trip.status} />
               </td>
               <td className="px-6 py-4 rounded-r-xl text-right">
-                <Link
-                  href={`${basePath}/${trip.id}`}
-                  className="text-xs text-[#a3cbf2] hover:underline uppercase tracking-wider"
-                >
-                  View →
-                </Link>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Link
+                    href={`${basePath}/${trip.id}`}
+                    className="text-xs text-[#a3cbf2] hover:underline uppercase tracking-wider"
+                  >
+                    View →
+                  </Link>
+                  {extraActions?.(trip)}
+                </div>
               </td>
             </tr>
           ))}
@@ -159,9 +182,8 @@ export function LogsTable({ logs, showOperator }: LogsTableProps) {
           <tr className="text-left text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce]/60">
             <th className="px-6 pb-2">Passenger</th>
             {showOperator && <th className="px-6 pb-2">Operator</th>}
-            <th className="px-6 pb-2">Channel</th>
-            <th className="px-6 pb-2">Status</th>
-            <th className="px-6 pb-2">Time</th>
+            <th className="px-6 pb-2">Channel / outcome</th>
+            <th className="px-6 pb-2">Time (IST)</th>
             <th className="px-6 pb-2">Error</th>
           </tr>
         </thead>
@@ -178,11 +200,8 @@ export function LogsTable({ logs, showOperator }: LogsTableProps) {
               <td className="px-6 py-4">
                 <AlertStatusBadge channel={log.channel} status={log.status} />
               </td>
-              <td className="px-6 py-4">
-                <StatusBadge status={log.status === 'success' ? 'active' : 'completed'} />
-              </td>
               <td className="px-6 py-4 text-xs font-mono text-[#8c9198]">
-                {new Date(log.attempted_at).toLocaleTimeString('en-IN')}
+                {formatIstDateTime(log.attempted_at)}
               </td>
               <td className="px-6 py-4 rounded-r-xl text-xs text-[#ffb4ab] max-w-[200px] truncate">
                 {log.error_message ?? '—'}

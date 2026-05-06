@@ -6,7 +6,7 @@ const redis_1 = require("../../lib/redis");
 const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
 const MSG91_SENDER_ID = process.env.MSG91_SENDER_ID;
 const MSG91_OTP_TEMPLATE_ID = process.env.MSG91_OTP_TEMPLATE_ID; // Provide a template ID for OTPs
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const OTP_TTL = 300; // 5 minutes
 const MAX_ATTEMPTS = 3;
 /** Returns true when the string looks like an e-mail address */
@@ -32,7 +32,13 @@ class OTPService {
      * Dispatches the OTP either via Email or SMS.
      */
     static async sendOTP(contact, otp) {
-        if (isEmail(contact)) {
+        const channel = isEmail(contact) ? 'email' : 'sms';
+        console.log('Sending OTP to:', contact);
+        console.log('Channel:', channel);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('OTP:', otp);
+        }
+        if (channel === 'email') {
             return this.sendViaEmail(contact, otp);
         }
         else {
@@ -78,14 +84,11 @@ class OTPService {
         }
     }
     static async sendViaEmail(email, otp) {
-        const BREVO_API_KEY = process.env.BRAVO_API_KEY || process.env.BREVO_API_KEY || process.env.RESEND_API_KEY; // Accept all for fallback
         if (!BREVO_API_KEY) {
             console.warn('BREVO_API_KEY not configured. Falling back to dev-mode delivery.');
             return { ok: true };
         }
         try {
-            // For now, if someone provides RESEND_API_KEY by accident instead of BREVO, 
-            // let's try calling Brevo API anyway (which will likely fail with 401, but the code structure handles it)
             const res = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: {
@@ -102,9 +105,11 @@ class OTPService {
             });
             if (!res.ok) {
                 const errorText = await res.text();
+                console.log('Provider response:', errorText);
                 console.error('Failed to send email via Brevo:', errorText);
                 return { ok: false, errorMessage: 'Failed to send email OTP', statusCode: res.status };
             }
+            console.log('Provider response:', `brevo status ${res.status}`);
             return { ok: true };
         }
         catch (err) {
@@ -135,6 +140,7 @@ class OTPService {
                 body: JSON.stringify(payload),
             });
             const json = await res.json().catch(() => ({}));
+            console.log('Provider response:', json);
             if (res.ok && json?.type === 'success') {
                 return { ok: true };
             }

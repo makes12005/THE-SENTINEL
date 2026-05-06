@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Velox Fleet Noir - Trip Monitoring</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800;900&amp;family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#b3afed",
+                        "inverse-primary": "#396284",
+                        "surface-container": "#1c2024",
+                        "secondary": "#c4c0ff",
+                        "on-primary-fixed": "#001d32",
+                        "on-primary": "#003352",
+                        "secondary-container": "#434076",
+                        "primary": "#cee5ff",
+                        "on-surface": "#e0e3e8",
+                        "error": "#ffb4ab",
+                        "primary-container": "#a3cbf2",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-primary-container": "#2d5678",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#171348",
+                        "surface-dim": "#101418",
+                        "on-secondary-fixed-variant": "#434076",
+                        "tertiary-container": "#ffb78d",
+                        "background": "#101418",
+                        "surface-bright": "#363a3e",
+                        "outline-variant": "#42474e",
+                        "on-tertiary": "#502405",
+                        "on-error": "#690005",
+                        "surface": "#101418",
+                        "secondary-fixed": "#e3dfff",
+                        "outline": "#8c9198",
+                        "on-secondary": "#2d2a5e",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "primary-fixed": "#cde5ff",
+                        "on-background": "#e0e3e8",
+                        "inverse-on-surface": "#2d3135",
+                        "surface-variant": "#31353a",
+                        "surface-tint": "#a3cbf2",
+                        "surface-container-lowest": "#0b0f12",
+                        "inverse-surface": "#e0e3e8",
+                        "tertiary": "#ffdcca",
+                        "tertiary-fixed": "#ffdbc9",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "surface-container-highest": "#31353a",
+                        "on-tertiary-fixed": "#321200",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-low": "#181c20",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-tertiary-container": "#7a4523",
+                        "surface-container-high": "#262a2f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "card-gap": "1rem",
+                        "element-tight": "0.5rem",
+                        "page-padding": "1rem",
+                        "section-internal": "1.25rem",
+                        "unit-base": "4px"
+                    },
+                    "fontFamily": {
+                        "metadata-label": ["Inter"],
+                        "header-title": ["Manrope"],
+                        "display-time": ["Manrope"],
+                        "body-standard": ["Inter"],
+                        "button-text": ["Inter"]
+                    },
+                    "fontSize": {
+                        "metadata-label": ["10px", {"letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "header-title": ["1.125rem", {"letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "display-time": ["1.5rem", {"lineHeight": "1.2", "fontWeight": "900"}],
+                        "body-standard": ["0.875rem", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "button-text": ["11px", {"letterSpacing": "0.1em", "fontWeight": "900"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-standard overflow-hidden">
+<div class="grain-overlay"></div>
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full h-14 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50 flex items-center justify-between px-6">
+<div class="flex items-center gap-8">
+<span class="text-zinc-50 text-lg font-black tracking-widest">VELOX FLEET NOIR</span>
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">search</span>
+<input class="bg-zinc-900 border-none text-[10px] font-bold tracking-widest text-zinc-300 w-64 h-8 pl-10 focus:ring-1 focus:ring-sky-500 rounded-sm uppercase" placeholder="SEARCH ASSETS, TRIPS OR TERMINALS..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-zinc-500 hover:text-zinc-200 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-zinc-500 hover:text-zinc-200 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-zinc-700">
+<img alt="Agency Owner Avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a middle-aged transit operations manager with a focused expression, set against a blurred industrial background of a logistics terminal. The lighting is dramatic and moody with deep shadows and cool highlights, fitting the Tech Noir aesthetic of the Velox brand. He is wearing a dark, high-quality technical vest." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAN4pp5P2S3D8la73A_9xCJu6b2sgRn7NvfL-sfU_wlYGtWxzWeu-fcVSuoO_zof-hbkB9F5pk26J0sbfEg8LaJuAw3NJFX7QCwOS2BgkuR-I-iup-dwYcdwYBfqDx45ZmJINW6iy1tapBiakUwMt_JwX2W1jA1Eiomno2PJ6-iPyQsyq8oLcVvDMlJeKCOwhYCjnYUumdhTPuxeW4dppXotgxadPzgPcB0ARe8WexhmGZ1av2UrbtOd2t3crq_wMm3f4ojlvzNAYKc"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 bg-zinc-900 border-r border-zinc-800 flex flex-col py-6">
+<div class="px-6 mb-10 flex items-center gap-3">
+<div class="w-8 h-8 bg-sky-500 flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-zinc-950 font-bold" data-icon="terminal">terminal</span>
+</div>
+<div>
+<h2 class="text-zinc-100 font-bold tracking-tighter text-sm">VELOX OPS</h2>
+<p class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Terminal 01-A</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-zinc-500 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-200 transition-colors font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="bg-zinc-800 text-zinc-50 border-l-4 border-sky-500 flex items-center gap-3 px-4 py-3 font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span>
+                Live Trips
+            </a>
+<a class="text-zinc-500 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-200 transition-colors font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+                Fleet Assets
+            </a>
+<a class="text-zinc-500 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-200 transition-colors font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Analytics
+            </a>
+<a class="text-zinc-500 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-200 transition-colors font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+                Schedule
+            </a>
+</nav>
+<div class="mt-auto border-t border-zinc-800 pt-4 space-y-1">
+<a class="text-zinc-500 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-200 transition-colors font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                Support
+            </a>
+<a class="text-zinc-500 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-200 transition-colors font-['Manrope'] font-semibold tracking-wide uppercase text-[11px]" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                Logs
+            </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="pl-64 pt-14 h-screen flex flex-col bg-background">
+<!-- Header Section -->
+<div class="px-8 py-6 flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div>
+<h1 class="font-header-title text-header-title text-on-surface uppercase">Trip Monitoring</h1>
+<p class="font-metadata-label text-metadata-label text-outline uppercase mt-1">REAL-TIME OPERATIONAL OVERVIEW</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-primary-container text-on-primary-container font-button-text text-button-text h-10 px-6 rounded-sm uppercase active:scale-95 transition-all">
+                        DEPLOY NEW TRIP
+                    </button>
+<button class="bg-surface-container-highest text-on-surface font-button-text text-button-text h-10 px-4 rounded-sm uppercase active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Custom Tab Navigation -->
+<div class="flex border-b border-surface-container-high gap-8">
+<button class="pb-3 border-b-2 border-primary text-primary font-button-text text-button-text uppercase tracking-widest">
+                    [ Today / Current ]
+                </button>
+<button class="pb-3 border-b-2 border-transparent text-outline hover:text-on-surface font-button-text text-button-text uppercase tracking-widest transition-colors">
+                    [ Upcoming ]
+                </button>
+<button class="pb-3 border-b-2 border-transparent text-outline hover:text-on-surface font-button-text text-button-text uppercase tracking-widest transition-colors">
+                    [ Completed ]
+                </button>
+</div>
+</div>
+<!-- Trips List Container -->
+<div class="flex-1 overflow-y-auto px-8 pb-8">
+<div class="flex flex-col gap-card-gap max-w-5xl">
+<!-- Active Trip Card -->
+<div class="bg-surface-container-low border-l-4 border-primary p-section-internal flex items-center gap-6 relative group hover:bg-surface-container transition-colors">
+<div class="flex-1 grid grid-cols-12 gap-4 items-center">
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ROUTE</p>
+<p class="font-body-standard text-body-standard text-on-surface">Ahmedabad <span class="text-primary">→</span> Una</p>
+</div>
+<div class="col-span-2">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ASSET ID</p>
+<p class="font-body-standard text-body-standard text-on-surface uppercase">GJ01AB1234</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-tighter rounded-sm">
+<span class="w-1 h-1 bg-primary rounded-full mr-1.5 animate-pulse"></span>
+                                ACTIVE
+                            </span>
+</div>
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">LIVE POSITION</p>
+<p class="font-body-standard text-body-standard text-on-surface">Next: Bhavnagar Highway</p>
+</div>
+<div class="col-span-2 text-right">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">EFFICIENCY</p>
+<p class="font-display-time text-primary text-sm">94%</p>
+</div>
+</div>
+<div class="w-px h-10 bg-outline-variant/20"></div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-metadata-label text-metadata-label text-outline">0 ALERTS</span>
+<a class="font-button-text text-button-text text-primary uppercase hover:underline" href="#">View Live Track</a>
+</div>
+</div>
+<!-- Delayed Trip Card -->
+<div class="bg-surface-container-low border-l-4 border-tertiary p-section-internal flex items-center gap-6 relative group hover:bg-surface-container transition-colors">
+<div class="flex-1 grid grid-cols-12 gap-4 items-center">
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ROUTE</p>
+<p class="font-body-standard text-body-standard text-on-surface">Surat <span class="text-tertiary">→</span> Mumbai Central</p>
+</div>
+<div class="col-span-2">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ASSET ID</p>
+<p class="font-body-standard text-body-standard text-on-surface uppercase">GJ05CD5678</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center px-2 py-0.5 bg-tertiary/10 text-tertiary border border-tertiary/20 text-[9px] font-black uppercase tracking-tighter rounded-sm">
+<span class="w-1 h-1 bg-tertiary rounded-full mr-1.5"></span>
+                                DELAYED
+                            </span>
+</div>
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-tertiary uppercase mb-1">INCIDENT REPORTED</p>
+<p class="font-body-standard text-body-standard text-on-surface">Stuck at Vapi Toll (+22m)</p>
+</div>
+<div class="col-span-2 text-right">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">EFFICIENCY</p>
+<p class="font-display-time text-tertiary text-sm">81%</p>
+</div>
+</div>
+<div class="w-px h-10 bg-outline-variant/20"></div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-metadata-label text-metadata-label text-tertiary">2 ALERTS</span>
+<a class="font-button-text text-button-text text-tertiary uppercase hover:underline" href="#">Details</a>
+</div>
+</div>
+<!-- Pending Trip Card -->
+<div class="bg-surface-container-low border-l-4 border-outline p-section-internal flex items-center gap-6 relative group hover:bg-surface-container transition-colors">
+<div class="flex-1 grid grid-cols-12 gap-4 items-center">
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ROUTE</p>
+<p class="font-body-standard text-body-standard text-on-surface">Rajkot <span class="text-outline">→</span> Dwarka</p>
+</div>
+<div class="col-span-2">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ASSET ID</p>
+<p class="font-body-standard text-body-standard text-on-surface uppercase">GJ03XY9012</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center px-2 py-0.5 bg-surface-container-highest text-outline border border-outline-variant/30 text-[9px] font-black uppercase tracking-tighter rounded-sm">
+                                PENDING
+                            </span>
+</div>
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">STATUS</p>
+<p class="font-body-standard text-body-standard text-on-surface">Departs in: 1h 45m</p>
+</div>
+<div class="col-span-2 text-right">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">EFFICIENCY</p>
+<p class="font-display-time text-outline text-sm">N/A</p>
+</div>
+</div>
+<div class="w-px h-10 bg-outline-variant/20"></div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-metadata-label text-metadata-label text-outline">0 ALERTS</span>
+<a class="font-button-text text-button-text text-outline hover:text-on-surface uppercase hover:underline" href="#">Edit Trip</a>
+</div>
+</div>
+<!-- Another Active Trip Card -->
+<div class="bg-surface-container-low border-l-4 border-primary p-section-internal flex items-center gap-6 relative group hover:bg-surface-container transition-colors">
+<div class="flex-1 grid grid-cols-12 gap-4 items-center">
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ROUTE</p>
+<p class="font-body-standard text-body-standard text-on-surface">Vadodara <span class="text-primary">→</span> Saputara</p>
+</div>
+<div class="col-span-2">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">ASSET ID</p>
+<p class="font-body-standard text-body-standard text-on-surface uppercase">GJ06JK4321</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-tighter rounded-sm">
+<span class="w-1 h-1 bg-primary rounded-full mr-1.5 animate-pulse"></span>
+                                ACTIVE
+                            </span>
+</div>
+<div class="col-span-3">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">LIVE POSITION</p>
+<p class="font-body-standard text-body-standard text-on-surface">Entering: Waghai Ghat</p>
+</div>
+<div class="col-span-2 text-right">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-1">EFFICIENCY</p>
+<p class="font-display-time text-primary text-sm">98%</p>
+</div>
+</div>
+<div class="w-px h-10 bg-outline-variant/20"></div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-metadata-label text-metadata-label text-outline">0 ALERTS</span>
+<a class="font-button-text text-button-text text-primary uppercase hover:underline" href="#">View Live Track</a>
+</div>
+</div>
+<!-- Map Context Section (Optional Aesthetic Density) -->
+<div class="mt-8">
+<p class="font-metadata-label text-metadata-label text-outline uppercase mb-4">LIVE GEOSPATIAL FEED (REGION: WESTERN CORRIDOR)</p>
+<div class="h-48 w-full bg-surface-container-low border border-outline-variant/20 rounded-sm relative overflow-hidden">
+<img alt="Live Map View" class="w-full h-full object-cover opacity-60 grayscale brightness-50" data-alt="A dark-themed satellite map of a coastal highway network at night, with glowing blue and orange data overlays indicating heavy vehicle movement. The map style is minimalist and high-contrast, utilizing a palette of deep charcoals, electric blues, and neon ambers. Subtle grid lines and data nodes are visible across the terrain." data-location="Gujarat" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8Ycrfz1UVmjeC-9kSwbxBuv3DLuwOM-Wn7MzdcQ66HKU2s79H5na6wtaD7zTA87_JJo8dc3OyoLzA7MTK77SIbSQRh_d58QXm7IH8KLGehowxS2IaF6ULZxjbkbpZO8lBh7fVVLCHSO9pl3SPSQGcaR2ssxOan4mWViDNAAtn-REk-rpp32gvT0Vqlae9kreeN8BwvybeJ5-d6HO7137Nr2mgItckPk6sSAilpTyNDOiufz90MF-9mIttMixjLft1yB5r01JoLiMd"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+<div class="absolute bottom-4 left-4 flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-metadata-label text-metadata-label text-on-surface uppercase">14 ASSETS ONLINE</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-metadata-label text-metadata-label text-on-surface uppercase">03 DELAYS REPORTED</span>
+</div>
+</div>
+<div class="absolute top-4 right-4 bg-zinc-950/60 backdrop-blur px-2 py-1 border border-zinc-700/50">
+<span class="font-metadata-label text-metadata-label text-zinc-400 uppercase">GEO-REF: 23.0225° N, 72.5714° E</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

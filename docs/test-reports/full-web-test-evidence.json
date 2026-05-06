@@ -1,0 +1,518 @@
+{
+  "admin": [
+    {
+      "id": "A1",
+      "name": "Admin Login",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[type=\"tel\"]').first()\n"
+    },
+    {
+      "id": "A2",
+      "name": "Admin Dashboard KPI cards",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/A2-admin-dashboard-2026-05-05T09-52-40-128Z.png",
+      "notes": "Matched 0/5 KPI labels (best-effort label matching)."
+    },
+    {
+      "id": "A3",
+      "name": "Agency Management Page",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/A3-admin-agencies-2026-05-05T09-52-42-111Z.png",
+      "notes": "Agencies page did not show expected content."
+    },
+    {
+      "id": "A4",
+      "name": "Invite Agency",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[type=\"tel\"]').first()\n"
+    },
+    {
+      "id": "A5",
+      "name": "Agency Toggle",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "No toggle button found on agency page."
+    },
+    {
+      "id": "A6",
+      "name": "Billing Page",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/A6-admin-wallet-2026-05-05T09-53-14-586Z.png",
+      "notes": "Matched 0/4 expected wallet cues."
+    },
+    {
+      "id": "A7",
+      "name": "Top Up Wallet",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /top up/i }).first()\n"
+    },
+    {
+      "id": "A8",
+      "name": "Set Rate Per Trip",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: /set rate|rate/i }).first()\n"
+    },
+    {
+      "id": "A9",
+      "name": "System Health Page",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/A9-admin-health-2026-05-05T09-54-17-158Z.png",
+      "notes": "Matched 0/5 health cues."
+    },
+    {
+      "id": "A10",
+      "name": "Audit Logs Page",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "docs/test-reports/screenshots/full-web/A10-admin-audit-2026-05-05T09-54-19-325Z.png",
+      "notes": "Audit page and filter cues visible."
+    },
+    {
+      "id": "A11",
+      "name": "Admin Logout",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "",
+      "notes": "Post-logout URL: https://bus-alert-iota.vercel.app/login"
+    }
+  ],
+  "owner": [
+    {
+      "id": "O1",
+      "name": "Owner Login",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[type=\"tel\"]').first()\n"
+    },
+    {
+      "id": "O2",
+      "name": "Owner Dashboard",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/O2-owner-page-2026-05-05T09-54-54-826Z.png",
+      "notes": "Visited /owner/dashboard"
+    },
+    {
+      "id": "O3",
+      "name": "Wallet Page",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/O3-owner-page-2026-05-05T09-54-57-573Z.png",
+      "notes": "Visited /owner/wallet"
+    },
+    {
+      "id": "O4",
+      "name": "Operator Management",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/O4-owner-page-2026-05-05T09-55-00-656Z.png",
+      "notes": "Visited /owner/operators"
+    },
+    {
+      "id": "O8",
+      "name": "Trip Monitoring",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/O8-owner-page-2026-05-05T09-55-02-797Z.png",
+      "notes": "Visited /owner/trips"
+    },
+    {
+      "id": "O9",
+      "name": "Global Logs",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "docs/test-reports/screenshots/full-web/O9-owner-page-2026-05-05T09-55-05-055Z.png",
+      "notes": "Visited /owner/logs"
+    },
+    {
+      "id": "O10",
+      "name": "Settings",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/O10-owner-page-2026-05-05T09-55-07-544Z.png",
+      "notes": "Visited /owner/settings"
+    },
+    {
+      "id": "O5",
+      "name": "Add Operator",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[name=\"name\"], input[placeholder*=\"name\" i]').first()\n"
+    },
+    {
+      "id": "O6",
+      "name": "Duplicate Operator",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[name=\"name\"], input[placeholder*=\"name\" i]').first()\n"
+    },
+    {
+      "id": "O7",
+      "name": "Deactivate Operator",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "No activate/deactivate button found."
+    },
+    {
+      "id": "O11",
+      "name": "Access Control",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "",
+      "notes": "Redirect URL: https://bus-alert-iota.vercel.app/login"
+    },
+    {
+      "id": "O12",
+      "name": "Owner Logout",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "",
+      "notes": "URL: https://bus-alert-iota.vercel.app/login"
+    }
+  ],
+  "operator": [
+    {
+      "id": "P1",
+      "name": "Operator Login",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[type=\"tel\"]').first()\n"
+    },
+    {
+      "id": "P2",
+      "name": "Operator Dashboard",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P2-operator-page-2026-05-05T09-56-49-208Z.png",
+      "notes": "Visited /operator/dashboard"
+    },
+    {
+      "id": "P3",
+      "name": "Routes Page",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P3-operator-page-2026-05-05T09-56-51-524Z.png",
+      "notes": "Visited /operator/routes"
+    },
+    {
+      "id": "P7",
+      "name": "Templates Page",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P7-operator-page-2026-05-05T09-56-53-264Z.png",
+      "notes": "Visited /operator/templates"
+    },
+    {
+      "id": "P13",
+      "name": "Resources: Buses",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P13-operator-page-2026-05-05T09-56-55-576Z.png",
+      "notes": "Visited /operator/resources"
+    },
+    {
+      "id": "P15",
+      "name": "Live Monitor",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P15-operator-page-2026-05-05T09-56-58-070Z.png",
+      "notes": "Visited /operator/monitor"
+    },
+    {
+      "id": "P16",
+      "name": "Alert Logs",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "docs/test-reports/screenshots/full-web/P16-operator-page-2026-05-05T09-57-00-673Z.png",
+      "notes": "Visited /operator/logs"
+    },
+    {
+      "id": "P4",
+      "name": "Create Route",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P4-operator-manual-check-2026-05-05T09-57-01-001Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P5",
+      "name": "Add Stops with Map",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P5-operator-manual-check-2026-05-05T09-57-01-183Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P6",
+      "name": "Map Visualization",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P6-operator-manual-check-2026-05-05T09-57-01-402Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P8",
+      "name": "Create Template",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P8-operator-manual-check-2026-05-05T09-57-01-667Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P9",
+      "name": "Create Trip from Template",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P9-operator-manual-check-2026-05-05T09-57-01-867Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P10",
+      "name": "Create Trip from Scratch",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P10-operator-manual-check-2026-05-05T09-57-02-045Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P11",
+      "name": "Upload Passengers CSV",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P11-operator-manual-check-2026-05-05T09-57-02-231Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P12",
+      "name": "Invalid CSV",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P12-operator-manual-check-2026-05-05T09-57-02-399Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P14",
+      "name": "Resources: Staff",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "docs/test-reports/screenshots/full-web/P14-operator-manual-check-2026-05-05T09-57-02-619Z.png",
+      "notes": "Could not run fully deterministic automation for this flow in current script; manual replay needed using screenshot/context."
+    },
+    {
+      "id": "P17",
+      "name": "Access Control",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "",
+      "notes": "Redirect checks: admin=>true, owner=>true"
+    },
+    {
+      "id": "P18",
+      "name": "Operator Logout",
+      "status": "✅",
+      "passed": true,
+      "screenshot": "",
+      "notes": "URL: https://bus-alert-iota.vercel.app/login"
+    }
+  ],
+  "crossRole": [
+    {
+      "id": "CR1",
+      "name": "Shared Resources",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "Not fully automated in this run; requires coordinated create-then-verify across role-specific resource UIs."
+    },
+    {
+      "id": "CR2",
+      "name": "Trip Visibility",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "Not fully automated in this run; requires reliable trip create in operator flow first."
+    },
+    {
+      "id": "CR3",
+      "name": "Wallet Chain",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "Not fully automated in this run; depends on confirmed admin top-up mutation + owner wallet delta readback."
+    },
+    {
+      "id": "CR4",
+      "name": "Agency Deactivation",
+      "status": "❌",
+      "passed": false,
+      "screenshot": "",
+      "notes": "Not run automatically for safety; deactivating live agency could disrupt active production users."
+    }
+  ],
+  "consoleErrors": [
+    {
+      "message": "Failed to load resource: the server responded with a status of 404 ()",
+      "page": "https://bus-alert-iota.vercel.app/owner/operators/new",
+      "critical": "YES",
+      "section": "owner"
+    },
+    {
+      "message": "Failed to load resource: the server responded with a status of 404 ()",
+      "page": "https://bus-alert-iota.vercel.app/owner/operators/new",
+      "critical": "YES",
+      "section": "owner"
+    },
+    {
+      "message": "Failed to load resource: the server responded with a status of 404 ()",
+      "page": "https://bus-alert-iota.vercel.app/operator/templates",
+      "critical": "YES",
+      "section": "operator"
+    }
+  ],
+  "apiChecks": [
+    {
+      "check": "Health endpoint",
+      "status": "✅",
+      "note": "HTTP 200"
+    },
+    {
+      "check": "admin login API",
+      "status": "✅",
+      "note": "HTTP 200, user role: admin"
+    },
+    {
+      "check": "owner login API",
+      "status": "✅",
+      "note": "HTTP 200, user role: owner"
+    },
+    {
+      "check": "operator login API",
+      "status": "✅",
+      "note": "HTTP 200, user role: operator"
+    }
+  ],
+  "screenshots": [
+    {
+      "key": "A2-admin-dashboard",
+      "file": "docs/test-reports/screenshots/full-web/A2-admin-dashboard-2026-05-05T09-52-40-128Z.png"
+    },
+    {
+      "key": "A3-admin-agencies",
+      "file": "docs/test-reports/screenshots/full-web/A3-admin-agencies-2026-05-05T09-52-42-111Z.png"
+    },
+    {
+      "key": "A6-admin-wallet",
+      "file": "docs/test-reports/screenshots/full-web/A6-admin-wallet-2026-05-05T09-53-14-586Z.png"
+    },
+    {
+      "key": "A9-admin-health",
+      "file": "docs/test-reports/screenshots/full-web/A9-admin-health-2026-05-05T09-54-17-158Z.png"
+    },
+    {
+      "key": "A10-admin-audit",
+      "file": "docs/test-reports/screenshots/full-web/A10-admin-audit-2026-05-05T09-54-19-325Z.png"
+    },
+    {
+      "key": "O2-owner-page",
+      "file": "docs/test-reports/screenshots/full-web/O2-owner-page-2026-05-05T09-54-54-826Z.png"
+    },
+    {
+      "key": "O3-owner-page",
+      "file": "docs/test-reports/screenshots/full-web/O3-owner-page-2026-05-05T09-54-57-573Z.png"
+    },
+    {
+      "key": "O4-owner-page",
+      "file": "docs/test-reports/screenshots/full-web/O4-owner-page-2026-05-05T09-55-00-656Z.png"
+    },
+    {
+      "key": "O8-owner-page",
+      "file": "docs/test-reports/screenshots/full-web/O8-owner-page-2026-05-05T09-55-02-797Z.png"
+    },
+    {
+      "key": "O9-owner-page",
+      "file": "docs/test-reports/screenshots/full-web/O9-owner-page-2026-05-05T09-55-05-055Z.png"
+    },
+    {
+      "key": "O10-owner-page",
+      "file": "docs/test-reports/screenshots/full-web/O10-owner-page-2026-05-05T09-55-07-544Z.png"
+    },
+    {
+      "key": "P2-operator-page",
+      "file": "docs/test-reports/screenshots/full-web/P2-operator-page-2026-05-05T09-56-49-208Z.png"
+    },
+    {
+      "key": "P3-operator-page",
+      "file": "docs/test-reports/screenshots/full-web/P3-operator-page-2026-05-05T09-56-51-524Z.png"
+    },
+    {
+      "key": "P7-operator-page",
+      "file": "docs/test-reports/screenshots/full-web/P7-operator-page-2026-05-05T09-56-53-264Z.png"
+    },
+    {
+      "key": "P13-operator-page",
+      "file": "docs/test-reports/screenshots/full-web/P13-operator-page-2026-05-05T09-56-55-576Z.png"
+    },
+    {
+      "key": "P15-operator-page",
+      "file": "docs/test-reports/screenshots/full-web/P15-operator-page-2026-05-05T09-56-58-070Z.png"
+    },
+    {
+      "key": "P16-operator-page",
+      "file": "docs/test-reports/screenshots/full-web/P16-operator-page-2026-05-05T09-57-00-673Z.png"
+    },
+    {
+      "key": "P4-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P4-operator-manual-check-2026-05-05T09-57-01-001Z.png"
+    },
+    {
+      "key": "P5-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P5-operator-manual-check-2026-05-05T09-57-01-183Z.png"
+    },
+    {
+      "key": "P6-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P6-operator-manual-check-2026-05-05T09-57-01-402Z.png"
+    },
+    {
+      "key": "P8-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P8-operator-manual-check-2026-05-05T09-57-01-667Z.png"
+    },
+    {
+      "key": "P9-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P9-operator-manual-check-2026-05-05T09-57-01-867Z.png"
+    },
+    {
+      "key": "P10-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P10-operator-manual-check-2026-05-05T09-57-02-045Z.png"
+    },
+    {
+      "key": "P11-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P11-operator-manual-check-2026-05-05T09-57-02-231Z.png"
+    },
+    {
+      "key": "P12-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P12-operator-manual-check-2026-05-05T09-57-02-399Z.png"
+    },
+    {
+      "key": "P14-operator-manual-check",
+      "file": "docs/test-reports/screenshots/full-web/P14-operator-manual-check-2026-05-05T09-57-02-619Z.png"
+    }
+  ]
+}

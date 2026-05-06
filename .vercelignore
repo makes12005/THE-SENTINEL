@@ -1,0 +1,14 @@
+.git
+.turbo
+node_modules
+apps/mobile
+apps/backend
+docs/test-reports
+docs/stitch_bus_conductor_dashboard
+scratch
+scripts
+railway-mcp-server
+**/playwright-report
+**/test-results
+**/*.log
+**/*.tmp

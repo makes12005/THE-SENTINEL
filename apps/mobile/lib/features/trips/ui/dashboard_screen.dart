@@ -36,7 +36,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Future<void> _onLogout() async {
     await ref.read(authProvider.notifier).logout();
-    if (mounted) context.go(AppRoutes.login);
+    if (mounted) context.go(AppRoutes.welcome);
   }
 
   @override

@@ -85,7 +85,7 @@ class SocketService {
   // ── Instance API (used by driver screens) ────────────────────────────────
 
   /// Connect using instance (delegates to static).
-  Future<void> connect(String tripId) => SocketService.connect(tripId: tripId);
+  Future<void> connectToTrip(String tripId) => SocketService.connect(tripId: tripId);
 
   /// Subscribe to a Socket.IO event.
   void on(String event, Function(dynamic) handler) {

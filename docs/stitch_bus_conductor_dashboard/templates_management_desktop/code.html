@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Templates - Operator OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#434076",
+                    "surface-container-high": "#262a2f",
+                    "outline-variant": "#42474e",
+                    "on-surface-variant": "#c2c7ce",
+                    "secondary-fixed-dim": "#c4c0ff",
+                    "on-secondary": "#2d2a5e",
+                    "on-tertiary-fixed": "#321200",
+                    "surface": "#101418",
+                    "primary": "#cee5ff",
+                    "primary-fixed": "#cde5ff",
+                    "surface-container-lowest": "#0b0f12",
+                    "primary-container": "#a3cbf2",
+                    "tertiary-fixed-dim": "#ffb68b",
+                    "surface-dim": "#101418",
+                    "tertiary-container": "#ffb78d",
+                    "surface-container-low": "#181c20",
+                    "surface-container": "#1c2024",
+                    "on-surface": "#e0e3e8",
+                    "on-secondary-container": "#b3afed",
+                    "inverse-primary": "#396284",
+                    "surface-bright": "#363a3e",
+                    "secondary-fixed": "#e3dfff",
+                    "on-error": "#690005",
+                    "on-primary": "#003352",
+                    "surface-tint": "#a3cbf2",
+                    "inverse-on-surface": "#2d3135",
+                    "background": "#101418",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary": "#502405",
+                    "on-background": "#e0e3e8",
+                    "inverse-surface": "#e0e3e8",
+                    "error": "#ffb4ab",
+                    "surface-container-highest": "#31353a",
+                    "primary-fixed-dim": "#a3cbf2",
+                    "secondary": "#c4c0ff",
+                    "surface-variant": "#31353a",
+                    "tertiary": "#ffdcca",
+                    "on-tertiary-container": "#7a4523",
+                    "on-secondary-fixed": "#171348",
+                    "error-container": "#93000a",
+                    "on-primary-container": "#2d5678",
+                    "tertiary-fixed": "#ffdbc9",
+                    "on-secondary-fixed-variant": "#434076",
+                    "on-primary-fixed-variant": "#1f4a6b",
+                    "on-primary-fixed": "#001d32",
+                    "outline": "#8c9198",
+                    "on-tertiary-fixed-variant": "#6c3a19"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "384px",
+                    "gutter": "24px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "stack-lg": "48px",
+                    "stack-md": "32px"
+            },
+            "fontFamily": {
+                    "button-text": [
+                            "Manrope"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "display-xl": [
+                            "Manrope"
+                    ],
+                    "code-input": [
+                            "Monospace"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Manrope"
+                    ]
+            },
+            "fontSize": {
+                    "button-text": [
+                            "18px",
+                            {
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-xl": [
+                            "36px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "code-input": [
+                            "32px",
+                            {
+                                    "letterSpacing": "0.2em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-caps": [
+                            "10px",
+                            {
+                                    "lineHeight": "1.0",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .rugged-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+        }
+        .blueprint-grid {
+            background-image: linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glow-effect:focus-within {
+            box-shadow: 0 0 4px 0 rgba(206, 229, 255, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-lg text-body-lg flex blueprint-grid">
+<div class="rugged-overlay"></div>
+<nav class="bg-zinc-900 font-manrope tracking-widest text-[10px] uppercase font-bold fixed h-full left-0 w-64 border-r border-r border-white/10 shadow-xl shadow-black flex flex-col h-screen w-64 fixed left-0 top-0 z-40 hidden md:flex">
+<div class="p-6">
+<div class="text-lg font-black text-white mb-8">COMMAND_CENTER</div>
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img alt="System Node 01" class="w-full h-full object-cover" data-alt="A futuristic, slightly grainy avatar portrait suitable for a technical system interface. The lighting is dramatic and cool-toned, reflecting a 'Tactical Futurism' aesthetic. Deep shadows contrast with subtle blue highlights, creating a mysterious and professional operator look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB0p8R7icxPZbgVnrrfu6wfR5XeG7Dtx4jlJUs81VN--EdUiRdkLq7J-0fPQuXucAXmSkjsUC82nLiKfTnjw9mHDeVRgs0RMlPxbeG3XNTzg2B9vtsghI3gqeNkbV42AT9jpwxYRce5DacYYLOWJbaEe_COf4BzZe8yZdJVYYR1L-kVLC2TOMYe3TNjUUSnb5IP9AhrRVFDOI7ljb2DlCPbdpBNgUgZwcztxrve44DXWmVLlZ2XnbArmngncTIa9b4voiZYQevc76j"/>
+</div>
+<div>
+<div class="text-on-surface font-button-text text-button-text">System Node 01</div>
+<div class="text-on-surface-variant text-label-caps font-label-caps">Sector 7G - Active</div>
+</div>
+</div>
+<button class="w-full h-16 bg-primary-container text-primary font-button-text text-button-text rounded-DEFAULT shadow-xl shadow-black flex justify-center items-center gap-2 mb-8 hover:bg-primary-fixed transition-colors active:scale-95 duration-150">
+                NEW_TEMPLATE
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<a class="flex items-center gap-4 text-zinc-500 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+                Fleet
+            </a>
+<a class="flex items-center gap-4 text-zinc-500 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+                Schedules
+            </a>
+<a class="flex items-center gap-4 bg-sky-500/10 text-sky-300 border-l-4 border-sky-400 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">layers</span>
+                Templates
+            </a>
+<a class="flex items-center gap-4 text-zinc-500 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">sensors</span>
+                Dispatch
+            </a>
+<a class="flex items-center gap-4 text-zinc-500 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Analytics
+            </a>
+</div>
+<div class="mt-auto border-t border-white/10 p-4">
+<a class="flex items-center gap-4 text-zinc-500 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">help_center</span>
+                Support
+            </a>
+<a class="flex items-center gap-4 text-zinc-500 px-6 py-4 hover:bg-zinc-800 hover:text-zinc-200 transition-all active:bg-sky-900/20 duration-100" href="#">
+<span class="material-symbols-outlined">terminal</span>
+                Logs
+            </a>
+</div>
+</nav>
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<header class="bg-zinc-950/90 backdrop-blur-md font-manrope tracking-wider uppercase font-bold text-xs border-b border-white/5 shadow-[0_0_20px_rgba(0,0,0,0.8)] flex justify-between items-center h-16 px-6 w-full sticky top-0 z-50">
+<div class="text-xl font-black tracking-tighter text-sky-300 uppercase hidden md:block">OPERATOR_OS</div>
+<div class="flex items-center gap-6 ml-auto">
+<div class="relative hidden sm:block glow-effect">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="bg-surface-container-low border border-outline-variant/10 text-on-surface h-10 pl-10 pr-4 rounded-DEFAULT w-64 focus:outline-none focus:border-primary/50 text-body-lg font-body-lg placeholder:text-on-surface-variant" placeholder="Search operations..." type="text"/>
+</div>
+<button class="text-zinc-500 font-medium hover:text-sky-200 hover:bg-white/5 transition-all active:scale-95 duration-150 p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-zinc-500 font-medium hover:text-sky-200 hover:bg-white/5 transition-all active:scale-95 duration-150 p-2 rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden ml-2 border border-outline-variant/30">
+<img alt="Dispatcher Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a professional operator in a dimly lit environment. The lighting suggests the glow of computer monitors, fitting the 'Tactical Futurism' theme. The overall tone is serious, competent, and high-tech." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW02xYtT0qOTV7KgwqOwo1FAvpA2_wQj9WjfNtKORq5g9JMYCpQ9p0Lyf8Q3UrI9j7-bwBMSWqzVfAXky1CCO156XgnETsoevsf_u_u2aAqLANL4y7MZXQHdY4mPm9N_DBNcdmVJJ06IpaDsZC901GXkl9ce37gzbyIs_r9vxP-8LJZhIlRzaE5V1US6VJZd3QXbZHfLihdUnWj5n0LqZOLhlFA8Ch84PrN75WbERJDdV7CdsYBiqp93FO76feYB7S8psFlU5bNgR3"/>
+</div>
+</div>
+</header>
+<main class="flex-1 p-8 md:p-12 max-w-7xl mx-auto w-full">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-6 relative z-10">
+<div>
+<h1 class="text-display-xl font-display-xl text-on-surface mb-2">Templates</h1>
+<p class="text-on-surface-variant font-body-lg text-body-lg">Manage and deploy route configurations.</p>
+</div>
+<button class="h-16 px-8 bg-primary-container text-primary font-button-text text-button-text rounded-DEFAULT shadow-xl shadow-black flex justify-center items-center gap-2 hover:bg-primary-fixed transition-colors active:scale-95 duration-150 whitespace-nowrap">
+                    CREATE NEW TEMPLATE
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
+<!-- Template Card 1 -->
+<div class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-6 relative overflow-hidden group hover:border-primary/30 transition-colors">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">route</span>
+</div>
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">AHD → UNA Night</h3>
+<div class="text-label-caps font-label-caps text-on-surface-variant mt-1">ID: TPL-001</div>
+</div>
+</div>
+</div>
+<div class="space-y-4 mb-8">
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">ROUTE</span>
+<span class="text-on-surface font-body-lg text-body-lg">Ahmedabad → Una</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">DEFAULT TIME</span>
+<span class="text-on-surface font-code-input text-[20px] tracking-widest">22:30</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">BUS NUMBER</span>
+<span class="text-on-surface font-code-input text-[20px] tracking-widest text-secondary">GJ-01-XX-9999</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 h-12 bg-surface-container-high text-primary font-button-text text-sm uppercase tracking-widest rounded-DEFAULT hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+                            USE
+                            <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+<button class="w-12 h-12 border border-outline-variant/30 text-on-surface font-button-text rounded-DEFAULT hover:bg-white/5 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Template Card 2 -->
+<div class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-6 relative overflow-hidden group hover:border-primary/30 transition-colors">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">route</span>
+</div>
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">RJK → SUR Morning</h3>
+<div class="text-label-caps font-label-caps text-on-surface-variant mt-1">ID: TPL-002</div>
+</div>
+</div>
+</div>
+<div class="space-y-4 mb-8">
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">ROUTE</span>
+<span class="text-on-surface font-body-lg text-body-lg">Rajkot → Surat</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">DEFAULT TIME</span>
+<span class="text-on-surface font-code-input text-[20px] tracking-widest">06:00</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">BUS NUMBER</span>
+<span class="text-on-surface font-code-input text-[20px] tracking-widest text-secondary">GJ-03-YY-1111</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 h-12 bg-surface-container-high text-primary font-button-text text-sm uppercase tracking-widest rounded-DEFAULT hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+                            USE
+                            <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+<button class="w-12 h-12 border border-outline-variant/30 text-on-surface font-button-text rounded-DEFAULT hover:bg-white/5 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Template Card 3 -->
+<div class="bg-surface-container-low border border-outline-variant/10 rounded-lg p-6 relative overflow-hidden group hover:border-primary/30 transition-colors opacity-75">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">route</span>
+</div>
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">BVC → AHD Express</h3>
+<div class="text-label-caps font-label-caps text-on-surface-variant mt-1">ID: TPL-003</div>
+</div>
+</div>
+</div>
+<div class="space-y-4 mb-8">
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">ROUTE</span>
+<span class="text-on-surface font-body-lg text-body-lg">Bhavnagar → Ahmedabad</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">DEFAULT TIME</span>
+<span class="text-on-surface font-code-input text-[20px] tracking-widest">14:00</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-white/5">
+<span class="text-on-surface-variant font-label-caps text-label-caps">BUS NUMBER</span>
+<span class="text-on-surface-variant font-body-lg text-sm italic">Unassigned</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 h-12 bg-surface-container-high text-primary font-button-text text-sm uppercase tracking-widest rounded-DEFAULT hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+                            USE
+                            <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+<button class="w-12 h-12 border border-outline-variant/30 text-on-surface font-button-text rounded-DEFAULT hover:bg-white/5 transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Atmospheric Background Blur -->
+<div class="fixed bottom-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none -z-10 translate-x-1/3 translate-y-1/3"></div>
+<div class="fixed top-1/4 left-0 w-[500px] h-[500px] bg-secondary-container/5 rounded-full blur-[120px] pointer-events-none -z-10 -translate-x-1/2"></div>
+</main>
+</div>
+</body></html>

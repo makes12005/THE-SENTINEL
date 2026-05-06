@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Completed Trips - SENTINEL_OPS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#101418",
+                      "surface-container-highest": "#31353a",
+                      "primary": "#cee5ff",
+                      "secondary": "#c4c0ff",
+                      "on-error": "#690005",
+                      "on-error-container": "#ffdad6",
+                      "on-secondary-container": "#b3afed",
+                      "on-surface-variant": "#c2c7ce",
+                      "surface": "#101418",
+                      "tertiary-fixed": "#ffdbc9",
+                      "on-tertiary": "#502405",
+                      "inverse-surface": "#e0e3e8",
+                      "secondary-fixed": "#e3dfff",
+                      "surface-variant": "#31353a",
+                      "surface-container-low": "#181c20",
+                      "on-background": "#e0e3e8",
+                      "surface-container-high": "#262a2f",
+                      "inverse-primary": "#396284",
+                      "on-secondary": "#2d2a5e",
+                      "error-container": "#93000a",
+                      "background": "#101418",
+                      "on-tertiary-fixed": "#321200",
+                      "on-surface": "#e0e3e8",
+                      "on-primary-fixed": "#001d32",
+                      "error": "#ffb4ab",
+                      "primary-fixed": "#cde5ff",
+                      "surface-tint": "#a3cbf2",
+                      "tertiary-container": "#ffb78d",
+                      "primary-fixed-dim": "#a3cbf2",
+                      "surface-bright": "#363a3e",
+                      "primary-container": "#a3cbf2",
+                      "inverse-on-surface": "#2d3135",
+                      "outline": "#8c9198",
+                      "on-tertiary-fixed-variant": "#6c3a19",
+                      "on-primary-fixed-variant": "#1f4a6b",
+                      "tertiary": "#ffdcca",
+                      "secondary-fixed-dim": "#c4c0ff",
+                      "on-primary": "#003352",
+                      "on-primary-container": "#2d5678",
+                      "outline-variant": "#42474e",
+                      "on-secondary-fixed-variant": "#434076",
+                      "surface-container-lowest": "#0b0f12",
+                      "on-secondary-fixed": "#171348",
+                      "surface-container": "#1c2024",
+                      "tertiary-fixed-dim": "#ffb68b",
+                      "secondary-container": "#434076",
+                      "on-tertiary-container": "#7a4523"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "8px",
+                      "stack-lg": "48px",
+                      "stack-md": "32px",
+                      "container-max": "384px",
+                      "unit": "4px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "code-input": [
+                              "Monospace"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Manrope"
+                      ],
+                      "display-xl": [
+                              "Manrope"
+                      ],
+                      "button-text": [
+                              "Manrope"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "code-input": [
+                              "32px",
+                              {
+                                      "letterSpacing": "0.2em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-caps": [
+                              "10px",
+                              {
+                                      "lineHeight": "1.0",
+                                      "letterSpacing": "0.15em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-xl": [
+                              "36px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "button-text": [
+                              "18px",
+                              {
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        body {
+            background-color: #101418;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E"), linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: auto, 40px 40px, 40px 40px;
+        }
+        .glow-focus:focus-within {
+            box-shadow: 0 0 0 4px rgba(206, 229, 255, 0.15);
+        }
+    </style>
+</head>
+<body class="text-on-surface min-h-screen flex flex-col font-body-lg text-body-lg overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="bg-zinc-950/90 backdrop-blur-md flex justify-between items-center w-full px-6 h-16 fixed top-0 w-full z-50">
+<div class="flex items-center gap-4">
+<span class="text-xl font-black tracking-tighter text-blue-300">SENTINEL_OPS</span>
+</div>
+<div class="flex-1 max-w-md mx-8">
+<div class="relative bg-surface-container-low rounded-lg outline outline-1 outline-outline-variant flex items-center px-4 h-10 glow-focus">
+<span class="material-symbols-outlined text-outline mr-2 text-sm" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="bg-transparent border-none text-on-surface w-full focus:ring-0 font-label-caps text-label-caps placeholder:text-outline" placeholder="SEARCH SYSTEM..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6 text-zinc-500 font-manrope uppercase tracking-widest font-bold text-xs">
+<button class="hover:text-blue-100 transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button class="hover:text-blue-100 transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+<button class="hover:text-blue-100 transition-colors duration-200 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help_outline</span>
+</button>
+<img alt="Operator Profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A close-up, high-contrast portrait of a male operator with short hair, illuminated by cool blue screen light against a pitch-black background, fitting a tactical futurism aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwkeUpFmBzdP08gBN0fsm4gmDSu9Ra0gJlSgV4rcRTk8HZrBy69ZPL8C5FkgSRClxA6lpIQQhuftHudUKrDP-0JPHxkI3j3BztzMEYAVkdlYBlfHIlUBmS-kxDcF799UAktACK9deI2VvvpBxVItgPms_uNT-nEps7QxOaKcYjQS26XRnArkn_6p7h84lsxsmbcmm4Tg362g3yKRxudSstrUP8qfCy8PBkQTcrFcqNxNbN8lKxkC7q0iZDpJ0h7FY1MGHSvcinLnpv"/>
+</div>
+</nav>
+<div class="flex flex-1 pt-16">
+<!-- SideNavBar -->
+<aside class="bg-zinc-950 flex flex-col h-full py-8 border-r border-zinc-800/50 w-64 fixed left-0 h-screen z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<img alt="Tactical User Avatar" class="w-10 h-10 rounded-full border border-outline-variant opacity-80 grayscale" data-alt="A stylized, low-poly digital avatar head, rendered in grayscale with sharp geometric edges, set against a dark void, matching a rugged tactical system interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiNE3RLMgqtx_gv90vc_v_xgehjsXUETvqV2T4-dwWHFoK-mIj4mJUEKgDieN71j8ijk3wtgEd0ISnLYSY9ChnTkceGGXJlF66_kB2Cu1Y7lcPi4fBzEFW2y8XZSqj6RsbEzcUgy1DJ1k6tod2nbeQQUeGj5DETmCHuLBEnR1P2wX4-pjZy2TAJEXh5k1ieMmddtczWL5kzXOI4EchOvUxC2MebVwmfJ7GA8AK8vw2SHdEd-ynnPgf8c2b6OsQI2vVeOZkKrGn-vcz"/>
+<div>
+<h2 class="text-blue-300 font-label-caps text-label-caps">OPERATOR_ID</h2>
+<p class="text-outline text-[10px] font-bold tracking-widest uppercase">SECTOR_07_DISPATCH</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2 px-4">
+<a class="text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-200 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">grid_view</span>
+                    DASHBOARD
+                </a>
+<a class="text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-200 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">directions_bus</span>
+                    FLEET_STATUS
+                </a>
+<a class="text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-200 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">distance</span>
+                    ROUTE_MAP
+                </a>
+<a class="text-blue-300 border-l-4 border-blue-400 bg-blue-400/5 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">history</span>
+                    TRIP_HISTORY
+                </a>
+<a class="text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-200 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">monitoring</span>
+                    ANALYTICS
+                </a>
+</nav>
+<div class="px-4 flex flex-col gap-2 mt-auto border-t border-zinc-800/50 pt-4">
+<a class="text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-200 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">terminal</span>
+                    SYSTEM_LOGS
+                </a>
+<a class="text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-200 font-manrope text-[11px] font-bold tracking-[0.2em] flex items-center gap-4 px-4 py-3 rounded-md transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">logout</span>
+                    LOGOUT
+                </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 p-8 relative">
+<!-- Atmospheric Blur Backgrounds -->
+<div class="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="absolute bottom-0 right-0 w-[400px] h-[400px] bg-tertiary-container/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="max-w-7xl mx-auto relative z-10 flex flex-col gap-stack-lg">
+<!-- Header -->
+<header class="flex justify-between items-end border-b border-outline-variant pb-6">
+<div>
+<h1 class="font-display-xl text-display-xl text-primary">COMPLETED TRIPS</h1>
+<p class="text-outline font-label-caps text-label-caps mt-2">ARCHIVE // ALL SECTORS</p>
+</div>
+<button class="bg-primary-container text-primary font-button-text text-button-text uppercase px-8 h-16 rounded-DEFAULT flex items-center gap-3 shadow-xl hover:bg-primary-fixed transition-colors">
+                        EXPORT HISTORY
+                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">download</span>
+</button>
+</header>
+<!-- Summary Stats (Bento Grid Style) -->
+<section class="grid grid-cols-3 gap-6">
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+<h3 class="text-outline font-label-caps text-label-caps z-10">TOTAL COMPLETED (MONTH)</h3>
+<div class="flex items-baseline gap-2 z-10">
+<span class="font-code-input text-code-input text-on-surface">1,248</span>
+</div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary-container/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+<h3 class="text-outline font-label-caps text-label-caps z-10">ON-TIME PERFORMANCE</h3>
+<div class="flex items-baseline gap-2 z-10">
+<span class="font-code-input text-code-input text-on-surface">94.2%</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+<h3 class="text-outline font-label-caps text-label-caps z-10">TOTAL PASSENGERS CARRIED</h3>
+<div class="flex items-baseline gap-2 z-10">
+<span class="font-code-input text-code-input text-on-surface">48,902</span>
+</div>
+</div>
+</section>
+<!-- Search & Filter Bar -->
+<section class="flex gap-4 items-center bg-surface-container border border-outline-variant/50 p-4 rounded-lg">
+<div class="flex-1 relative bg-surface-container-lowest rounded outline outline-1 outline-outline-variant/50 flex items-center px-4 h-12 glow-focus">
+<span class="material-symbols-outlined text-outline mr-3 text-sm" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="bg-transparent border-none text-on-surface w-full focus:ring-0 font-label-caps text-label-caps placeholder:text-outline" placeholder="QUERY BUS NO. OR ROUTE ID..." type="text"/>
+</div>
+<div class="relative bg-surface-container-lowest rounded outline outline-1 outline-outline-variant/50 flex items-center px-4 h-12 glow-focus w-64 cursor-pointer">
+<span class="material-symbols-outlined text-outline mr-3 text-sm" style="font-variation-settings: 'FILL' 0;">calendar_month</span>
+<span class="text-on-surface font-label-caps text-label-caps">LAST 30 DAYS</span>
+<span class="material-symbols-outlined text-outline ml-auto text-sm" style="font-variation-settings: 'FILL' 0;">arrow_drop_down</span>
+</div>
+<button class="h-12 px-6 border border-outline-variant/50 rounded text-primary font-label-caps text-label-caps hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 0;">filter_list</span>
+                        FILTERS
+                    </button>
+</section>
+<!-- Trips Table -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/50 bg-surface-container-highest/50 font-label-caps text-label-caps text-outline">
+<th class="p-4 font-normal tracking-widest">BUS ID</th>
+<th class="p-4 font-normal tracking-widest">ROUTE</th>
+<th class="p-4 font-normal tracking-widest">DATE</th>
+<th class="p-4 font-normal tracking-widest">DEPARTURE</th>
+<th class="p-4 font-normal tracking-widest">ARRIVAL</th>
+<th class="p-4 font-normal tracking-widest">PAX</th>
+<th class="p-4 font-normal tracking-widest">STATUS</th>
+<th class="p-4 font-normal tracking-widest text-right">ACTION</th>
+</tr>
+</thead>
+<tbody class="font-body-lg text-sm font-medium divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="p-4 font-code-input text-[14px] text-primary">GJ01AB1234</td>
+<td class="p-4 text-on-surface">Ahmedabad → Una</td>
+<td class="p-4 text-on-surface-variant">Oct 24, 2023</td>
+<td class="p-4 text-on-surface-variant">08:00 AM</td>
+<td class="p-4 text-on-surface-variant">04:30 PM</td>
+<td class="p-4 text-on-surface-variant">42</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-variant text-outline font-label-caps text-[8px] tracking-[0.2em]">COMPLETED</span>
+</td>
+<td class="p-4 text-right">
+<a class="text-primary hover:text-primary-fixed font-label-caps text-label-caps flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" href="#">
+                                            DETAILS <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chevron_right</span>
+</a>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="p-4 font-code-input text-[14px] text-primary">MH04CD5678</td>
+<td class="p-4 text-on-surface">Mumbai → Pune</td>
+<td class="p-4 text-on-surface-variant">Oct 24, 2023</td>
+<td class="p-4 text-on-surface-variant">09:15 AM</td>
+<td class="p-4 text-on-surface-variant">01:00 PM</td>
+<td class="p-4 text-on-surface-variant">38</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-variant text-outline font-label-caps text-[8px] tracking-[0.2em]">COMPLETED</span>
+</td>
+<td class="p-4 text-right">
+<a class="text-primary hover:text-primary-fixed font-label-caps text-label-caps flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" href="#">
+                                            DETAILS <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chevron_right</span>
+</a>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="p-4 font-code-input text-[14px] text-primary">DL01EF9012</td>
+<td class="p-4 text-on-surface">Delhi → Jaipur</td>
+<td class="p-4 text-on-surface-variant">Oct 23, 2023</td>
+<td class="p-4 text-on-surface-variant">06:00 AM</td>
+<td class="p-4 text-on-surface-variant">11:45 AM</td>
+<td class="p-4 text-on-surface-variant">45</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-variant text-outline font-label-caps text-[8px] tracking-[0.2em]">COMPLETED</span>
+</td>
+<td class="p-4 text-right">
+<a class="text-primary hover:text-primary-fixed font-label-caps text-label-caps flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" href="#">
+                                            DETAILS <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chevron_right</span>
+</a>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="p-4 font-code-input text-[14px] text-primary">KA05GH3456</td>
+<td class="p-4 text-on-surface">Bangalore → Mysore</td>
+<td class="p-4 text-on-surface-variant">Oct 23, 2023</td>
+<td class="p-4 text-on-surface-variant">07:30 AM</td>
+<td class="p-4 text-on-surface-variant">10:30 AM</td>
+<td class="p-4 text-on-surface-variant">29</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-variant text-outline font-label-caps text-[8px] tracking-[0.2em]">COMPLETED</span>
+</td>
+<td class="p-4 text-right">
+<a class="text-primary hover:text-primary-fixed font-label-caps text-label-caps flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" href="#">
+                                            DETAILS <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chevron_right</span>
+</a>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="p-4 font-code-input text-[14px] text-primary">TN09IJ7890</td>
+<td class="p-4 text-on-surface">Chennai → Trichy</td>
+<td class="p-4 text-on-surface-variant">Oct 22, 2023</td>
+<td class="p-4 text-on-surface-variant">10:00 PM</td>
+<td class="p-4 text-on-surface-variant">05:00 AM</td>
+<td class="p-4 text-on-surface-variant">40</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2 py-1 rounded bg-surface-variant text-outline font-label-caps text-[8px] tracking-[0.2em]">COMPLETED</span>
+</td>
+<td class="p-4 text-right">
+<a class="text-primary hover:text-primary-fixed font-label-caps text-label-caps flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" href="#">
+                                            DETAILS <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 0;">chevron_right</span>
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

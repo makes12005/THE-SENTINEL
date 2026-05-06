@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add Conductor - Velox Fleet</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@400;600;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#e0e3e8",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "surface-container": "#1c2024",
+                        "on-secondary": "#2d2a5e",
+                        "tertiary-container": "#ffb78d",
+                        "surface": "#101418",
+                        "inverse-on-surface": "#2d3135",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-primary": "#003352",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#396284",
+                        "surface-variant": "#31353a",
+                        "surface-container-highest": "#31353a",
+                        "on-tertiary-container": "#7a4523",
+                        "surface-container-high": "#262a2f",
+                        "inverse-surface": "#e0e3e8",
+                        "surface-container-low": "#181c20",
+                        "primary-fixed": "#cde5ff",
+                        "background": "#101418",
+                        "primary": "#cee5ff",
+                        "on-secondary-fixed": "#171348",
+                        "secondary-container": "#434076",
+                        "primary-container": "#a3cbf2",
+                        "outline-variant": "#42474e",
+                        "surface-dim": "#101418",
+                        "on-secondary-container": "#b3afed",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-tertiary": "#502405",
+                        "surface-container-lowest": "#0b0f12",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "secondary": "#c4c0ff",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-primary-container": "#2d5678",
+                        "error-container": "#93000a",
+                        "surface-tint": "#a3cbf2",
+                        "on-secondary-fixed-variant": "#434076",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#ffdcca",
+                        "on-tertiary-fixed": "#321200",
+                        "on-surface": "#e0e3e8",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "secondary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary-fixed": "#ffdbc9",
+                        "surface-bright": "#363a3e",
+                        "outline": "#8c9198"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit-base": "4px",
+                        "section-internal": "1.25rem",
+                        "element-tight": "0.5rem",
+                        "page-padding": "1rem",
+                        "card-gap": "1rem"
+                    },
+                    "fontFamily": {
+                        "button-text": ["Inter"],
+                        "metadata-label": ["Inter"],
+                        "body-standard": ["Inter"],
+                        "header-title": ["Manrope"],
+                        "display-time": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "button-text": ["11px", { "letterSpacing": "0.1em", "fontWeight": "900" }],
+                        "metadata-label": ["10px", { "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-standard": ["0.875rem", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "header-title": ["1.125rem", { "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "display-time": ["1.5rem", { "lineHeight": "1.2", "fontWeight": "900" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Texture Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.02;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+        
+        /* High-Contrast Focus Styles for forms */
+        input:focus, select:focus {
+            outline: 2px solid theme('colors.primary');
+            outline-offset: -1px;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row relative selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (Mobile Anchor) -->
+<nav class="md:hidden fixed top-0 w-full h-14 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 flex justify-between items-center px-4 max-w-2xl mx-auto">
+<div class="font-header-title text-header-title text-xl font-black text-zinc-100 tracking-tighter uppercase">VELOX FLEET</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-zinc-500 hover:text-zinc-300 transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-zinc-500 hover:text-zinc-300 transition-colors" data-icon="settings">settings</span>
+</div>
+</nav>
+<!-- SideNavBar (Desktop Anchor) -->
+<aside class="fixed left-0 h-screen w-64 p-6 hidden lg:flex flex-col bg-zinc-950 border-r border-zinc-800 z-40">
+<div class="text-lg font-black text-zinc-100 mb-8 font-header-title text-header-title uppercase tracking-tighter">
+            VELOX NOIR
+            <div class="text-xs text-zinc-500 font-metadata-label text-metadata-label mt-1">V.2.04-STABLE</div>
+</div>
+<div class="flex flex-col h-full overflow-y-auto font-button-text text-button-text uppercase tracking-wider gap-2">
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-r-sm transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span> Operations
+            </a>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-r-sm transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="directions_bus">directions_bus</span> Fleet Monitor
+            </a>
+<a class="flex items-center gap-3 bg-zinc-900 text-blue-400 border-l-4 border-blue-400 px-4 py-3 rounded-r-sm active:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="badge">badge</span> Personnel
+            </a>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-r-sm transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span> Route Logic
+            </a>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-r-sm transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span> System Logs
+            </a>
+</div>
+<div class="mt-auto pt-6 border-t border-zinc-800/50">
+<button class="w-full bg-primary-container text-on-primary-container font-button-text text-button-text h-12 rounded flex justify-center items-center gap-2 mb-4 hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> ADD PERSONNEL
+            </button>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-r-sm transition-colors font-button-text text-button-text uppercase" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span> Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-2xl mx-auto pt-20 md:pt-10 pb-24 lg:pl-[17rem] px-page-padding md:px-section-internal lg:max-w-5xl">
+<!-- Header Section -->
+<div class="mb-section-internal">
+<a class="inline-flex items-center gap-2 text-primary font-button-text text-button-text mb-4 hover:text-primary-container transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+                BACK TO PERSONNEL
+            </a>
+<h1 class="font-display-time text-display-time text-on-background uppercase tracking-tight">Add New Conductor</h1>
+<p class="font-body-standard text-body-standard text-on-surface-variant mt-2">Enter verification details for new transit personnel.</p>
+</div>
+<!-- Form Card (Glassmorphism + Dark UI) -->
+<div class="bg-surface-container-low/80 backdrop-blur-sm border border-outline-variant/30 rounded-xl p-section-internal md:p-6 shadow-2xl">
+<form class="space-y-section-internal">
+<!-- Section 1: Personal Identity -->
+<div>
+<h2 class="font-button-text text-button-text text-tertiary-container uppercase border-b border-outline-variant/30 pb-2 mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">badge</span>
+                        Identity Verification
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="firstName">First Name</label>
+<input class="bg-surface-container-highest border-none text-on-background font-body-standard text-body-standard p-3 rounded focus:ring-0 w-full placeholder-outline-variant transition-colors" id="firstName" placeholder="e.g. Marcus" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="lastName">Last Name</label>
+<input class="bg-surface-container-highest border-none text-on-background font-body-standard text-body-standard p-3 rounded focus:ring-0 w-full placeholder-outline-variant transition-colors" id="lastName" placeholder="e.g. Vance" type="text"/>
+</div>
+</div>
+<div class="mt-4 flex flex-col gap-1">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="employeeId">Assigned ID (Auto-Generated)</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant text-sm">tag</span>
+</span>
+<input class="bg-surface-container border border-outline-variant/20 text-on-surface-variant font-body-standard text-body-standard p-3 pl-10 rounded focus:ring-0 w-full cursor-not-allowed opacity-70" id="employeeId" readonly="" type="text" value="CX-9042"/>
+</div>
+</div>
+</div>
+<!-- Section 2: Contact & Assignment -->
+<div class="pt-2">
+<h2 class="font-button-text text-button-text text-tertiary-container uppercase border-b border-outline-variant/30 pb-2 mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">contact_phone</span>
+                        Contact &amp; Routing
+                    </h2>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="phone">Primary Contact</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant text-sm">call</span>
+</span>
+<input class="bg-surface-container-highest border-none text-on-background font-body-standard text-body-standard p-3 pl-10 rounded focus:ring-0 w-full placeholder-outline-variant transition-colors" id="phone" placeholder="(555) 019-2834" type="tel"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="route">Initial Route Assignment</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant text-sm">route</span>
+</span>
+<select class="bg-surface-container-highest border-none text-on-background font-body-standard text-body-standard p-3 pl-10 rounded focus:ring-0 w-full appearance-none transition-colors" id="route">
+<option disabled="" selected="" value="">Select Primary Route</option>
+<option value="r1">North Corridor (Alpha)</option>
+<option value="r2">East Sector Transit</option>
+<option value="r3">Downtown Loop (Express)</option>
+<option value="unassigned">Unassigned / Reserve</option>
+</select>
+<span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline-variant">expand_more</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Alert/Notice Banner -->
+<div class="bg-surface-container-high border-l-4 border-tertiary-container p-4 rounded-r mt-6">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-tertiary-container">info</span>
+<div>
+<h3 class="font-button-text text-button-text text-tertiary-container uppercase">System Notice</h3>
+<p class="font-body-standard text-body-standard text-on-surface-variant mt-1">New conductors require a mandatory 12-hour system synchronization before active dispatch scheduling.</p>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="pt-6 mt-6 border-t border-outline-variant/20 flex flex-col sm:flex-row justify-end gap-4">
+<button class="bg-surface-container-highest text-on-surface font-button-text text-button-text h-12 px-6 rounded uppercase hover:bg-surface-bright transition-colors order-2 sm:order-1" type="button">
+                        Cancel
+                    </button>
+<button class="bg-primary-container text-on-primary-container font-button-text text-button-text h-12 px-8 rounded uppercase hover:bg-primary transition-colors flex items-center justify-center gap-2 order-1 sm:order-2 shadow-lg shadow-primary-container/20" type="submit">
+<span class="material-symbols-outlined text-sm">save</span>
+                        Register Conductor
+                    </button>
+</div>
+</form>
+</div>
+</main>
+</body></html>

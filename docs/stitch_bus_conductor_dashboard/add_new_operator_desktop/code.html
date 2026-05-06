@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;700;800&amp;family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#c4c0ff",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary": "#ffdcca",
+                        "surface-container": "#1c2024",
+                        "outline": "#8c9198",
+                        "primary-fixed": "#cde5ff",
+                        "primary-container": "#a3cbf2",
+                        "on-primary": "#003352",
+                        "inverse-surface": "#e0e3e8",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "on-secondary-fixed-variant": "#434076",
+                        "on-secondary-container": "#b3afed",
+                        "on-tertiary": "#502405",
+                        "on-tertiary-container": "#7a4523",
+                        "surface-dim": "#101418",
+                        "on-tertiary-fixed": "#321200",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-primary-container": "#2d5678",
+                        "secondary-fixed": "#e3dfff",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "tertiary-fixed": "#ffdbc9",
+                        "outline-variant": "#42474e",
+                        "inverse-on-surface": "#2d3135",
+                        "surface-container-low": "#181c20",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "error": "#ffb4ab",
+                        "secondary-container": "#434076",
+                        "surface-container-lowest": "#0b0f12",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#262a2f",
+                        "on-secondary": "#2d2a5e",
+                        "on-error": "#690005",
+                        "primary": "#cee5ff",
+                        "on-surface": "#e0e3e8",
+                        "inverse-primary": "#396284",
+                        "on-background": "#e0e3e8",
+                        "surface-tint": "#a3cbf2",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#ffb78d",
+                        "on-secondary-fixed": "#171348",
+                        "surface-variant": "#31353a",
+                        "surface-container-highest": "#31353a",
+                        "surface": "#101418",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "surface-bright": "#363a3e",
+                        "background": "#101418"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit-base": "4px",
+                        "page-padding": "1rem",
+                        "card-gap": "1rem",
+                        "section-internal": "1.25rem"
+                    },
+                    "fontFamily": {
+                        "metadata-label": ["Inter"],
+                        "button-text": ["Inter"],
+                        "header-title": ["Manrope"],
+                        "display-time": ["Manrope"],
+                        "body-standard": ["Inter"]
+                    },
+                    "fontSize": {
+                        "metadata-label": ["10px", {"letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "button-text": ["11px", {"letterSpacing": "0.1em", "fontWeight": "900"}],
+                        "header-title": ["1.125rem", {"letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "display-time": ["1.5rem", {"lineHeight": "1.2", "fontWeight": "900"}],
+                        "body-standard": ["0.875rem", {"lineHeight": "1.4", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .grain-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-standard selection:bg-primary selection:text-on-primary">
+<div class="grain-overlay"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full h-14 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 flex justify-between items-center px-4 max-w-full">
+<div class="font-manrope uppercase tracking-widest text-xs font-bold text-sky-300">
+<span class="text-xl font-black text-zinc-50 tracking-tighter">VELOX FLEET NOIR</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="cursor-pointer active:opacity-80 hover:bg-zinc-800/50 transition-colors p-2 rounded">
+<span class="material-symbols-outlined text-zinc-400">notifications</span>
+</div>
+<div class="cursor-pointer active:opacity-80 hover:bg-zinc-800/50 transition-colors p-2 rounded">
+<span class="material-symbols-outlined text-zinc-400">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Sidebar Integration -->
+<aside class="fixed left-0 top-0 h-screen w-64 pt-14 flex flex-col bg-zinc-900 border-r border-zinc-800 hidden md:flex">
+<div class="p-6">
+<h2 class="font-manrope uppercase tracking-wider text-[11px] font-semibold text-zinc-500">OPERATIONS</h2>
+<p class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">Transit Unit 04</p>
+</div>
+<nav class="flex flex-col h-full overflow-y-auto">
+<a class="text-zinc-500 hover:text-zinc-200 px-4 py-3 flex items-center gap-3 transition-all hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Fleet</span>
+</a>
+<a class="bg-zinc-800/50 text-sky-300 border-l-4 border-sky-400 px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">badge</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Operators</span>
+</a>
+<a class="text-zinc-500 hover:text-zinc-200 px-4 py-3 flex items-center gap-3 transition-all hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">alt_route</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Routes</span>
+</a>
+<a class="text-zinc-500 hover:text-zinc-200 px-4 py-3 flex items-center gap-3 transition-all hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">event_note</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Schedules</span>
+</a>
+<a class="text-zinc-500 hover:text-zinc-200 px-4 py-3 flex items-center gap-3 transition-all hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Logs</span>
+</a>
+<div class="mt-auto border-t border-zinc-800 py-4">
+<a class="text-zinc-500 hover:text-zinc-200 px-4 py-3 flex items-center gap-3 transition-all hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Settings</span>
+</a>
+<a class="text-zinc-500 hover:text-zinc-200 px-4 py-3 flex items-center gap-3 transition-all hover:bg-zinc-800/30" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-manrope uppercase tracking-wider text-[11px] font-semibold">Support</span>
+</a>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:pl-64 pt-14 min-h-screen flex flex-col">
+<div class="flex-grow max-w-2xl mx-auto w-full px-page-padding py-8">
+<!-- Header Section -->
+<div class="mb-8">
+<div class="flex items-center gap-2 mb-2 text-primary-container">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span class="font-metadata-label text-metadata-label">BACK TO OPERATORS</span>
+</div>
+<h1 class="font-header-title text-header-title text-on-surface mb-1">Create Operator</h1>
+<p class="font-body-standard text-on-surface-variant opacity-70">Register a new transit operator to Unit 04 operational stack.</p>
+</div>
+<!-- Form Container -->
+<div class="space-y-card-gap">
+<!-- Operator Identity Section -->
+<section class="bg-surface-container-low border border-outline-variant/10 p-section-internal rounded-lg">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-1 h-6 bg-primary"></div>
+<h2 class="font-metadata-label text-metadata-label text-on-surface">OPERATOR IDENTITY</h2>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<div class="space-y-2">
+<label class="font-metadata-label text-metadata-label text-outline block">FULL NAME *</label>
+<input class="w-full h-12 bg-surface-container-high border border-outline-variant rounded focus:border-primary-container focus:ring-1 focus:ring-primary-container text-on-surface font-body-standard px-4 placeholder:text-zinc-600 transition-all" placeholder="e.g. Marcus Thorne" type="text"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-metadata-label text-metadata-label text-outline block">PHONE NUMBER *</label>
+<input class="w-full h-12 bg-surface-container-high border border-outline-variant rounded focus:border-primary-container focus:ring-1 focus:ring-primary-container text-on-surface font-body-standard px-4 placeholder:text-zinc-600 transition-all" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+<div class="space-y-2">
+<label class="font-metadata-label text-metadata-label text-outline block">EMAIL ADDRESS</label>
+<input class="w-full h-12 bg-surface-container-high border border-outline-variant rounded focus:border-primary-container focus:ring-1 focus:ring-primary-container text-on-surface font-body-standard px-4 placeholder:text-zinc-600 transition-all" placeholder="m.thorne@velox.com" type="email"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Notes Section -->
+<section class="bg-surface-container-low border border-outline-variant/10 p-section-internal rounded-lg">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-1 h-6 bg-tertiary"></div>
+<h2 class="font-metadata-label text-metadata-label text-on-surface">OPERATIONAL NOTES</h2>
+</div>
+<div class="space-y-2">
+<label class="font-metadata-label text-metadata-label text-outline block">CERTIFICATIONS &amp; INSTRUCTIONS</label>
+<textarea class="w-full bg-surface-container-high border border-outline-variant rounded focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container text-on-surface font-body-standard p-4 placeholder:text-zinc-600 transition-all resize-none" placeholder="Mention heavy-duty vehicle certifications or route-specific clearances..." rows="4"></textarea>
+</div>
+</section>
+<!-- Login Access Section -->
+<section class="bg-surface-container-low border border-outline-variant/10 p-section-internal rounded-lg">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-1 h-6 bg-secondary"></div>
+<h2 class="font-metadata-label text-metadata-label text-on-surface">LOGIN ACCESS PROTOCOL</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<label class="relative flex items-start p-4 cursor-pointer bg-surface-container-highest border border-outline-variant/30 rounded-lg hover:border-secondary transition-all group">
+<input checked="" class="mt-1 h-4 w-4 text-secondary bg-surface-container border-outline-variant focus:ring-secondary" name="access_method" type="radio"/>
+<div class="ml-4">
+<span class="block font-button-text text-button-text text-on-surface">GENERATE INVITE CODE</span>
+<span class="block text-[10px] text-zinc-500 mt-1 uppercase tracking-tight">Generate a one-time manual bypass key.</span>
+</div>
+</label>
+<label class="relative flex items-start p-4 cursor-pointer bg-surface-container-highest border border-outline-variant/30 rounded-lg hover:border-secondary transition-all group">
+<input class="mt-1 h-4 w-4 text-secondary bg-surface-container border-outline-variant focus:ring-secondary" name="access_method" type="radio"/>
+<div class="ml-4">
+<span class="block font-button-text text-button-text text-on-surface">SEND VIA SMS</span>
+<span class="block text-[10px] text-zinc-500 mt-1 uppercase tracking-tight">Direct automated credential dispatch.</span>
+</div>
+</label>
+</div>
+</section>
+<!-- Bottom Actions -->
+<div class="flex flex-col md:flex-row-reverse items-center justify-between gap-4 pt-8">
+<button class="w-full md:w-auto h-12 px-8 bg-primary-container text-on-primary-container font-button-text text-button-text uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-primary-container/10">
+                        CREATE OPERATOR
+                    </button>
+<button class="w-full md:w-auto px-6 py-3 text-zinc-500 hover:text-zinc-200 font-button-text text-button-text uppercase tracking-widest transition-colors">
+                        CANCEL
+                    </button>
+</div>
+</div>
+<!-- Contextual Illustration/Hint -->
+<div class="mt-16 bg-surface-container-lowest border border-outline-variant/10 rounded-xl overflow-hidden flex flex-col md:flex-row items-center">
+<div class="w-full md:w-48 h-48 bg-zinc-900 flex-shrink-0">
+<img class="w-full h-full object-cover grayscale opacity-50 contrast-125" data-alt="A professional close-up of a high-tech modern transit dashboard showing digital readouts and glowing interfaces in a dark, atmospheric cabin. The lighting is dominated by deep blues and vibrant teals, casting sharp highlights on industrial-grade controls and sleek, matte surfaces. The mood is precise, authoritative, and mission-ready, reflecting a tech-noir aesthetic of modern logistics management." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIsayCPwpK2vel4JMk2lfStiUBW4cdxQG7DdxgJbW13G6RgpeBoPJyjc2gVA2Sbd1eIPBlbWYiF3cwJp3CsgSNXOw47nCZ_lUqq47pJU6Ew5kUcJI2dpA1wyW8VekWeII2YWjPtK-4vmVQ-gWg-ryPvrV_pD-OHGKkQm3AsSnD8N6wIR3rhYmWV0Kyy8HZOi3EbkzOmqsP9ngdZAR2tq958KIBar3ZesZ9b00kXedulLC3nqZwDHwTe-Vojp0NceGEpq7cvotRx_rA"/>
+</div>
+<div class="p-6">
+<h3 class="font-metadata-label text-metadata-label text-primary-container mb-2">OPERATOR SECURITY CLEARANCE</h3>
+<p class="text-[11px] leading-relaxed text-zinc-500 uppercase tracking-tight">All new operators are subject to the Velox Systems background check protocol. Credentials will be valid for 24 hours until first mission login. Ensure all identity data matches certified government ID for audit compliance.</p>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="w-full py-4 mt-auto bg-zinc-950 border-t border-zinc-900 flex justify-between items-center px-8 w-full">
+<div class="font-manrope text-[10px] uppercase tracking-widest text-zinc-500">
+                © 2024 VELOX SYSTEMS. MISSION CRITICAL READY.
+            </div>
+<div class="flex gap-6">
+<a class="font-manrope text-[10px] uppercase tracking-widest text-zinc-600 hover:text-zinc-300 transition-colors" href="#">Privacy Protocol</a>
+<a class="font-manrope text-[10px] uppercase tracking-widest text-zinc-600 hover:text-zinc-300 transition-colors" href="#">Security Audit</a>
+<span class="font-manrope text-[10px] uppercase tracking-widest text-zinc-700">v2.4.0-stable</span>
+</div>
+</footer>
+</main>
+</body></html>

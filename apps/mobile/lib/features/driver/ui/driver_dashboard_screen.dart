@@ -226,7 +226,7 @@ class _DriverTripCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          needsTakeover ? Icons.wifi_off_rounded : Icons.person_check_outlined,
+                          needsTakeover ? Icons.wifi_off_rounded : Icons.verified_user_outlined,
                           color: needsTakeover ? AppColors.tertiary : AppColors.onSurfaceVariant,
                           size: 14,
                         ),

@@ -11,7 +11,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/auth.middleware';
 import { db } from '../../db';
 import {
-  trips, tripPassengers, alertLogs, users, agencies,
+  trips, tripPassengers, alertLogs, users, agencies, agencyWallets, routes, stops,
 } from '../../db/schema';
 import {
   eq, and, gte, sql, count, desc, or, inArray,
@@ -84,6 +84,11 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
         let totalPassengersToday = 0;
         let alertsSentToday = 0;
         let failedAlertsToday = 0;
+        const [wallet] = await db
+          .select({ trips_remaining: agencyWallets.trips_remaining })
+          .from(agencyWallets)
+          .where(eq(agencyWallets.agency_id, agencyId))
+          .limit(1);
 
         if (todayTripIds.length > 0) {
           const [passRow] = await db
@@ -122,6 +127,7 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
             total_passengers_today:  totalPassengersToday,
             alerts_sent_today:       alertsSentToday,
             failed_alerts_today:     failedAlertsToday,
+            trips_remaining:         Number(wallet?.trips_remaining ?? 0),
           },
           meta: { timestamp: new Date().toISOString() },
         });
@@ -233,12 +239,15 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
         ];
         if (query.channel) conditions.push(eq(alertLogs.channel, query.channel) as any);
         if (query.status)  conditions.push(eq(alertLogs.status, query.status) as any);
-        if (query.date) {
-          const start = new Date(query.date);
+        if (query.date_from || query.date) {
+          const start = new Date(query.date_from ?? query.date);
           start.setUTCHours(0, 0, 0, 0);
-          const end = new Date(start);
-          end.setUTCDate(end.getUTCDate() + 1);
           conditions.push(gte(alertLogs.attempted_at, start) as any);
+        }
+        if (query.date_to) {
+          const end = new Date(query.date_to);
+          end.setUTCHours(23, 59, 59, 999);
+          conditions.push(sql`${alertLogs.attempted_at} <= ${end}` as any);
         }
 
         // 4. Count + paginated fetch
@@ -259,9 +268,14 @@ export default async function operatorRoutes(fastify: FastifyInstance) {
             passenger_name:   tripPassengers.passenger_name,
             passenger_phone:  tripPassengers.passenger_phone,
             trip_id:          tripPassengers.trip_id,
+            trip_name:        routes.name,
+            stop_name:        stops.name,
           })
           .from(alertLogs)
           .innerJoin(tripPassengers, eq(alertLogs.trip_passenger_id, tripPassengers.id))
+          .innerJoin(trips, eq(trips.id, tripPassengers.trip_id))
+          .innerJoin(routes, eq(routes.id, trips.route_id))
+          .leftJoin(stops, eq(stops.id, tripPassengers.stop_id))
           .where(and(...conditions as any[]))
           .orderBy(desc(alertLogs.attempted_at))
           .limit(PAGE_SIZE)

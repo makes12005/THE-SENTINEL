@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Velox Fleet - Add Personnel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@400;600;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#e0e3e8",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "surface-container": "#1c2024",
+                        "on-secondary": "#2d2a5e",
+                        "tertiary-container": "#ffb78d",
+                        "surface": "#101418",
+                        "inverse-on-surface": "#2d3135",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-primary": "#003352",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#396284",
+                        "surface-variant": "#31353a",
+                        "surface-container-highest": "#31353a",
+                        "on-tertiary-container": "#7a4523",
+                        "surface-container-high": "#262a2f",
+                        "inverse-surface": "#e0e3e8",
+                        "surface-container-low": "#181c20",
+                        "primary-fixed": "#cde5ff",
+                        "background": "#101418",
+                        "primary": "#cee5ff",
+                        "on-secondary-fixed": "#171348",
+                        "secondary-container": "#434076",
+                        "primary-container": "#a3cbf2",
+                        "outline-variant": "#42474e",
+                        "surface-dim": "#101418",
+                        "on-secondary-container": "#b3afed",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-tertiary": "#502405",
+                        "surface-container-lowest": "#0b0f12",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "secondary": "#c4c0ff",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-primary-container": "#2d5678",
+                        "error-container": "#93000a",
+                        "surface-tint": "#a3cbf2",
+                        "on-secondary-fixed-variant": "#434076",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#ffdcca",
+                        "on-tertiary-fixed": "#321200",
+                        "on-surface": "#e0e3e8",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "secondary-fixed": "#e3dfff",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary-fixed": "#ffdbc9",
+                        "surface-bright": "#363a3e",
+                        "outline": "#8c9198"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit-base": "4px",
+                        "section-internal": "1.25rem",
+                        "element-tight": "0.5rem",
+                        "page-padding": "1rem",
+                        "card-gap": "1rem"
+                    },
+                    "fontFamily": {
+                        "button-text": ["Inter"],
+                        "metadata-label": ["Inter"],
+                        "body-standard": ["Inter"],
+                        "header-title": ["Manrope"],
+                        "display-time": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "button-text": ["11px", { "letterSpacing": "0.1em", "fontWeight": "900" }],
+                        "metadata-label": ["10px", { "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "body-standard": ["0.875rem", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "header-title": ["1.125rem", { "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "display-time": ["1.5rem", { "lineHeight": "1.2", "fontWeight": "900" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Global noise overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.02;
+        }
+        
+        /* Grid pattern background for tactical feel */
+        .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(66, 71, 78, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(66, 71, 78, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-standard antialiased min-h-screen flex flex-col md:flex-row">
+<!-- TopNavBar (Mobile Only) -->
+<nav class="md:hidden fixed top-0 w-full h-14 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800 text-blue-300 dark:text-blue-200 font-manrope font-bold uppercase tracking-widest text-sm flex justify-between items-center px-4 max-w-2xl mx-auto flat no shadows">
+<div class="text-xl font-black text-zinc-100 tracking-tighter">VELOX FLEET</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-zinc-800/50 p-2 rounded-full active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-zinc-800/50 p-2 rounded-full active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="Dispatcher avatar" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="A small circular avatar image of a professional male dispatcher in a modern transit control room. The lighting is low and cool, with subtle blue rim light reflecting off his headset. The style is hyper-realistic and high-contrast, fitting a technical dashboard interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfyQP_Oej-sSo7v2O1CKTpo4V0dej-iwmLsY_VQZEY-g94ndxBqEUQFz4W489GderrAxHjbQ11tEyUxh81r19Su1p8p37uC66uLuDLg2juAot05ibHWjOY7IzR_BGjizhDLuwljAp1Cdw5eItA_6x43d7MQsTzSAz91c3r6VesfD9GkBUp_dEK1bdn0jUwoO7f7-Rtb1DYD_THfqTRug7W4gYsBpPXqsZnrvrczo50GeEvvtXKC3CnM0DLrbv7BJj5JlDOxN1OAq3H"/>
+</div>
+</nav>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="fixed left-0 h-screen w-64 p-6 hidden md:flex flex-col border-r border-zinc-800 bg-zinc-950 text-blue-300 font-manrope font-semibold uppercase text-xs tracking-wider flat no shadows tonal-layering z-40">
+<div class="mb-8">
+<div class="text-lg font-black text-zinc-100">VELOX NOIR</div>
+<div class="text-[10px] text-zinc-500 mt-1">V.2.04-STABLE</div>
+</div>
+<div class="flex flex-col h-full overflow-y-auto gap-2">
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-sm transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Operations
+            </a>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-sm transition-colors" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+                Fleet Monitor
+            </a>
+<a class="flex items-center gap-3 bg-zinc-900 text-blue-400 border-l-4 border-blue-400 px-4 py-3 rounded-r-sm active:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">badge</span>
+                Personnel
+            </a>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-sm transition-colors" href="#">
+<span class="material-symbols-outlined">hub</span>
+                Route Logic
+            </a>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-zinc-200 hover:bg-zinc-900/50 rounded-sm transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+                System Logs
+            </a>
+</div>
+<div class="mt-auto pt-6 border-t border-zinc-800">
+<button class="w-full flex items-center justify-center gap-2 bg-primary-container text-on-primary-container hover:bg-surface-tint py-3 rounded-DEFAULT font-button-text text-button-text transition-colors mb-4">
+<span class="material-symbols-outlined text-sm">add</span>
+                Add Personnel
+            </button>
+<a class="flex items-center gap-3 text-zinc-500 px-4 py-3 hover:text-error hover:bg-zinc-900/50 rounded-sm transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-2xl mx-auto md:ml-64 pt-20 md:pt-8 px-page-padding pb-20 md:pb-8 bg-grid-pattern relative">
+<!-- Header Section -->
+<header class="mb-section-internal">
+<div class="flex items-center gap-2 text-on-surface-variant font-metadata-label text-metadata-label mb-2">
+<span class="material-symbols-outlined text-[14px]">badge</span>
+<span>PERSONNEL REGISTRY / NEW ENTRY</span>
+</div>
+<h1 class="font-header-title text-header-title text-on-surface">Add New Conductor</h1>
+</header>
+<!-- Stepper -->
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-lg p-section-internal mb-card-gap flex items-center justify-between relative">
+<!-- Connecting Line -->
+<div class="absolute top-1/2 left-[10%] right-[10%] h-[1px] bg-outline-variant/30 -z-10"></div>
+<!-- Step 1: Active -->
+<div class="flex flex-col items-center gap-2 bg-surface-container-low px-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-button-text text-button-text border-2 border-surface-container-low ring-2 ring-primary-container z-10 shadow-[0_0_15px_rgba(163,203,242,0.3)]">
+                    1
+                </div>
+<span class="font-metadata-label text-metadata-label text-primary-fixed">BASIC INFO</span>
+</div>
+<!-- Step 2: Pending -->
+<div class="flex flex-col items-center gap-2 bg-surface-container-low px-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-button-text text-button-text border border-outline-variant/50 z-10">
+                    2
+                </div>
+<span class="font-metadata-label text-metadata-label text-on-surface-variant">DOCUMENTATION</span>
+</div>
+<!-- Step 3: Pending -->
+<div class="flex flex-col items-center gap-2 bg-surface-container-low px-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-button-text text-button-text border border-outline-variant/50 z-10">
+                    3
+                </div>
+<span class="font-metadata-label text-metadata-label text-on-surface-variant">ASSIGNMENTS</span>
+</div>
+</div>
+<!-- Form Card (Bento Style) -->
+<div class="bg-surface-container-low border border-outline-variant/30 rounded-lg p-section-internal relative overflow-hidden">
+<!-- Subtle accent border -->
+<div class="absolute top-0 left-0 w-1 h-full bg-primary-container"></div>
+<h2 class="font-header-title text-[1rem] text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">person</span>
+                Conductor Identity Profile
+            </h2>
+<form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Full Name -->
+<div class="md:col-span-2 space-y-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant flex justify-between">
+<span>LEGAL FULL NAME</span>
+<span class="text-error">*REQUIRED</span>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">badge</span>
+<input class="w-full bg-surface-container-highest border border-outline-variant/50 rounded-DEFAULT py-3 pl-10 pr-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors placeholder:text-outline/50 font-body-standard text-body-standard outline-none" placeholder="e.g. Johnathan Doe" type="text"/>
+</div>
+</div>
+<!-- ID Number -->
+<div class="space-y-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant">EMPLOYEE ID / BADGE #</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">tag</span>
+<input class="w-full bg-surface border border-outline-variant/30 rounded-DEFAULT py-3 pl-10 pr-3 text-on-surface-variant opacity-70 cursor-not-allowed font-body-standard text-body-standard outline-none" readonly="" type="text" value="AUTOGEN-VNC-8492"/>
+</div>
+<p class="text-[10px] text-outline-variant mt-1">Auto-generated by system.</p>
+</div>
+<!-- Date of Birth -->
+<div class="space-y-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant">DATE OF BIRTH</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">calendar_month</span>
+<input class="w-full bg-surface-container-highest border border-outline-variant/50 rounded-DEFAULT py-3 pl-10 pr-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors font-body-standard text-body-standard outline-none [color-scheme:dark]" type="date"/>
+</div>
+</div>
+<!-- Contact Grid -->
+<div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+<!-- Phone -->
+<div class="space-y-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant">PRIMARY CONTACT</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">call</span>
+<input class="w-full bg-surface-container-highest border border-outline-variant/50 rounded-DEFAULT py-3 pl-10 pr-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors placeholder:text-outline/50 font-body-standard text-body-standard outline-none" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+</div>
+<!-- Email -->
+<div class="space-y-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant">OPERATIONAL EMAIL</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">mail</span>
+<input class="w-full bg-surface-container-highest border border-outline-variant/50 rounded-DEFAULT py-3 pl-10 pr-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors placeholder:text-outline/50 font-body-standard text-body-standard outline-none" placeholder="conductor@velox.net" type="email"/>
+</div>
+</div>
+</div>
+</form>
+</div>
+<!-- Action Area -->
+<div class="mt-8 flex justify-end items-center gap-4 border-t border-outline-variant/20 pt-6">
+<button class="px-6 py-3 bg-surface-container-highest text-on-surface-variant rounded-DEFAULT font-button-text text-button-text hover:bg-surface-variant transition-colors border border-outline-variant/30 flex items-center gap-2">
+                CANCEL
+            </button>
+<button class="px-8 py-3 bg-primary-container text-on-primary-container rounded-DEFAULT font-button-text text-button-text hover:bg-surface-tint transition-colors flex items-center gap-2 shadow-[0_4px_14px_rgba(163,203,242,0.15)]">
+                PROCEED TO DOCUMENTATION
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</main>
+</body></html>

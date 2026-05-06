@@ -43,9 +43,9 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-[#101418]">
+    <div className="flex min-h-screen bg-[#0F172A]">
       <OwnerSidebar />
-      <main className="ml-64 flex-1 min-h-screen">
+      <main className="ml-52 flex-1 min-h-screen">
         {children}
       </main>
     </div>

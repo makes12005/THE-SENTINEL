@@ -115,6 +115,8 @@ export type CreateStopRequest = z.infer<typeof CreateStopSchema>;
 
 export const CreateTripSchema = z
   .object({
+    template_id: z.string().uuid().optional(),
+    templateId: z.string().uuid().optional(),
     route_id: z.string().uuid().optional(),
     routeId: z.string().uuid().optional(),
     conductor_id: z.string().uuid().optional(),
@@ -127,19 +129,40 @@ export const CreateTripSchema = z
     assignedOperatorId: z.string().uuid().nullable().optional(),
     scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
     scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+    scheduled_time: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional(),
+    scheduledTime: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional(),
   })
   .transform((data) => ({
+    template_id: data.template_id ?? data.templateId,
     route_id: data.route_id ?? data.routeId ?? '',
     conductor_id: data.conductor_id ?? data.conductorId ?? '',
     driver_id: data.driver_id ?? data.driverId,
     bus_id: data.bus_id ?? data.busId,
     assigned_operator_id: data.assigned_operator_id ?? data.assignedOperatorId,
     scheduled_date: data.scheduled_date ?? data.scheduledDate ?? '',
+    scheduled_time: data.scheduled_time ?? data.scheduledTime,
   }))
-  .refine((data) => Boolean(data.route_id && data.conductor_id && data.scheduled_date), {
-    message: 'route_id/conductor_id/scheduled_date are required',
-  });
+  .refine(
+    (data) =>
+      // Either template_id + scheduled_date OR all three manual fields
+      Boolean(data.template_id && data.scheduled_date) ||
+      Boolean(data.route_id && data.conductor_id && data.scheduled_date),
+    { message: 'route_id/conductor_id/scheduled_date are required (or template_id + scheduled_date)' }
+  );
 export type CreateTripRequest = z.infer<typeof CreateTripSchema>;
+
+export const CreateTemplateSchema = z.object({
+  name: z.string().min(1).max(255),
+  route_id: z.string().uuid(),
+  bus_id: z.string().uuid().optional().nullable(),
+  conductor_id: z.string().uuid().optional().nullable(),
+  driver_id: z.string().uuid().optional().nullable(),
+  departure_time: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional().nullable(),
+  arrival_time: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional().nullable(),
+  notes: z.string().max(1000).optional().nullable(),
+});
+export type CreateTemplateRequest = z.infer<typeof CreateTemplateSchema>;
+
 
 export const AddPassengerSchema = z.object({
   passenger_name: z.string().min(1).max(255),
@@ -149,6 +172,11 @@ export const AddPassengerSchema = z.object({
   stop_id: z.string().uuid(),
 });
 export type AddPassengerRequest = z.infer<typeof AddPassengerSchema>;
+
+export const BatchAddPassengersSchema = z.object({
+  passengers: z.array(AddPassengerSchema).max(100),
+});
+export type BatchAddPassengersRequest = z.infer<typeof BatchAddPassengersSchema>;
 
 export const PassengerRowSchema = z.object({
   name: z.string().min(1, 'name is required').max(255),
@@ -181,6 +209,7 @@ export interface TripStatusResponse {
   id: string;
   status: TripStatus;
   scheduled_date: string;
+  scheduled_time?: string | null;
   started_at: string | null;
   completed_at: string | null;
   current_location: {

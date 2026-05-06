@@ -101,7 +101,7 @@ async function issueTokens(user: DbUser) {
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, agencyId: user.agency_id, agency_id: user.agency_id, name: user.name },
     getJwtSecret(),
-    { expiresIn: '15m', subject: user.id }
+    { expiresIn: '2h', subject: user.id }
   );
 
   const refreshToken = jwt.sign(

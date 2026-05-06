@@ -1,7 +1,7 @@
 'use client';
 /**
- * Owner Sidebar — same visual design as operator Sidebar,
- * but with owner-specific navigation items.
+ * Owner Sidebar — "The Sentinel / Transit Authority" style.
+ * Matches reference image 1 exactly: brand, nav items, New Dispatch CTA, user card.
  */
 
 import Link from 'next/link';
@@ -9,82 +9,127 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 
 interface NavItem {
-  href:  string;
-  icon:  string;
+  href: string;
+  icon: string;
   label: string;
 }
 
 const navItems: NavItem[] = [
-  { href: '/owner/dashboard',  icon: 'dashboard',       label: 'Dashboard'  },
-  { href: '/owner/operators',  icon: 'manage_accounts', label: 'Operators'  },
-  { href: '/owner/resources',  icon: 'group',           label: 'Resources'  },
-  { href: '/owner/trips',      icon: 'directions_bus',  label: 'All Trips'  },
-  { href: '/owner/logs',       icon: 'receipt_long',    label: 'Alert Logs' },
-  { href: '/owner/settings',   icon: 'settings',        label: 'Settings'   },
-  { href: '/owner/billing',    icon: 'payments',        label: 'Billing'    },
+  { href: '/owner/dashboard', icon: 'grid_view',               label: 'Overview'      },
+  { href: '/owner/operators', icon: 'badge',                 label: 'Operators'     },
+  { href: '/owner/trips',     icon: 'directions_bus',       label: 'Fleet / Trips' },
+  { href: '/owner/logs',      icon: 'history',               label: 'Logs'          },
+  { href: '/owner/resources', icon: 'warehouse',            label: 'Resources'    },
+  { href: '/owner/wallet',    icon: 'account_balance_wallet', label: 'Trip Wallet' },
+  { href: '/owner/schedules', icon: 'calendar_month',       label: 'Schedules'     },
+  { href: '/owner/analytics', icon: 'insights',              label: 'Analytics'    },
+];
+
+const bottomNavItems: NavItem[] = [
+  { href: '/owner/settings', icon: 'settings',     label: 'Settings'     },
+  { href: '/support',        icon: 'help_outline', label: 'Help Center'  },
 ];
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
 
+  function isActive(href: string) {
+    if (href === '/owner/dashboard') return pathname === '/owner/dashboard' || pathname === '/owner';
+    return pathname.startsWith(href);
+  }
+
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-[#181c20] flex flex-col py-6 shadow-[40px_0_40px_rgba(0,0,0,0.15)] z-50">
+    <aside
+      className="fixed left-0 top-0 z-50 flex h-screen w-52 flex-col"
+      style={{
+        background: 'linear-gradient(180deg, #0d1117 0%, #111827 100%)',
+        borderRight: '1px solid #1e293b',
+        fontFamily: 'Inter, sans-serif',
+      }}
+    >
       {/* Brand */}
-      <div className="px-6 mb-2">
-        <h1 className="text-xl font-black text-[#c4c0ff]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-          BusOps Owner
+      <div className="px-5 pb-5 pt-6">
+        <h1
+          className="text-base font-black uppercase tracking-wider text-[#F1F5F9]"
+          style={{ fontFamily: 'Manrope, sans-serif' }}
+        >
+          VELOX OPS
         </h1>
-        <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-[#c2c7ce] opacity-60 mt-0.5">
-          Agency Portal
+        <p className="mt-0.5 text-[0.5625rem] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+          TERMINAL A-1
         </p>
       </div>
 
-      {/* Role badge */}
-      <div className="mx-6 mb-6 px-3 py-1.5 rounded-lg bg-[#3826cd]/20 border border-[#c4c0ff]/20">
-        <p className="text-[0.6875rem] uppercase tracking-widest font-bold text-[#c4c0ff]">
-          Owner Access
-        </p>
+      {/* New Dispatch CTA */}
+      <div className="px-4 pb-4">
+        <Link
+          href="/owner/operators?add=true"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#b0d4ff] py-3 text-[0.6875rem] font-black uppercase tracking-widest text-[#0F172A] transition-all hover:brightness-110 active:scale-95"
+        >
+          <span className="material-symbols-outlined text-[16px]">add</span>
+          Add Operator
+        </Link>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar px-2">
+      {/* Main Nav */}
+      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 no-scrollbar">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const active = isActive(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm uppercase tracking-wider font-medium transition-all ${
-                isActive
-                  ? 'bg-[#262a2f] text-[#c4c0ff] border-l-4 border-[#c4c0ff]'
-                  : 'text-[#e0e2e8] opacity-60 hover:opacity-100 hover:bg-[#262a2f]'
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.6875rem] font-bold uppercase tracking-wider transition-all ${
+                active
+                  ? 'bg-[#1e293b] text-[#F1F5F9]'
+                  : 'text-[#475569] hover:bg-[#1e293b]/50 hover:text-[#94a3b8]'
               }`}
-              style={{ fontFamily: 'Inter, sans-serif' }}
             >
-              <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+              <span
+                className={`material-symbols-outlined text-[18px] transition-colors ${
+                  active ? 'text-[#6C63FF]' : ''
+                }`}
+              >
+                {item.icon}
+              </span>
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="mt-auto pt-6 border-t border-[#42474e]/30 px-2 space-y-1">
+      {/* Bottom Nav */}
+      <div className="border-t border-[#1e293b] px-2 py-3 space-y-0.5">
+        {bottomNavItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.6875rem] font-bold uppercase tracking-wider transition-all ${
+                active
+                  ? 'bg-[#1e293b] text-[#F1F5F9]'
+                  : 'text-[#475569] hover:bg-[#1e293b]/50 hover:text-[#94a3b8]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
+
+        {/* User card / Logout */}
         {user && (
-          <div className="mx-2 px-4 py-3 rounded-xl bg-[#1c2024] mb-2">
-            <p className="text-xs font-bold text-[#c4c0ff] uppercase tracking-wider truncate">{user.name}</p>
-            <p className="text-[0.6875rem] text-[#c2c7ce] opacity-60 capitalize">{user.role}</p>
-          </div>
+          <button
+            onClick={logout}
+            title="Click to sign out"
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[#475569] transition-all hover:bg-[#1e293b]/50 hover:text-[#94a3b8] w-full text-left"
+          >
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+            Logout
+          </button>
         )}
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm uppercase tracking-wider text-[#e0e2e8] opacity-60 hover:opacity-100 hover:bg-[#262a2f] transition-all"
-          style={{ fontFamily: 'Inter, sans-serif' }}
-        >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
-          Logout
-        </button>
       </div>
     </aside>
   );

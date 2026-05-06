@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssignTripSchema = exports.ToggleAgencyMemberSchema = exports.CreateAgencyMemberSchema = exports.UpdateBusSchema = exports.CreateBusSchema = exports.ListTripsQuerySchema = exports.LocationUpdateSchema = exports.PassengerRowSchema = exports.AddPassengerSchema = exports.CreateTripSchema = exports.CreateStopSchema = exports.CreateRouteSchema = exports.CoordinatesSchema = exports.AlertChannelEnum = exports.AlertStatusEnum = exports.TripStatusEnum = exports.LoginRequestSchema = exports.PhoneSchema = exports.UserRole = void 0;
+exports.AssignTripSchema = exports.ToggleAgencyMemberSchema = exports.CreateAgencyMemberSchema = exports.UpdateBusSchema = exports.CreateBusSchema = exports.ListTripsQuerySchema = exports.LocationUpdateSchema = exports.PassengerRowSchema = exports.BatchAddPassengersSchema = exports.AddPassengerSchema = exports.CreateTemplateSchema = exports.CreateTripSchema = exports.CreateStopSchema = exports.CreateRouteSchema = exports.CoordinatesSchema = exports.AlertChannelEnum = exports.AlertStatusEnum = exports.TripStatusEnum = exports.LoginRequestSchema = exports.PhoneSchema = exports.UserRole = void 0;
 const zod_1 = require("zod");
 var UserRole;
 (function (UserRole) {
@@ -63,6 +63,8 @@ exports.CreateStopSchema = zod_1.z
 });
 exports.CreateTripSchema = zod_1.z
     .object({
+    template_id: zod_1.z.string().uuid().optional(),
+    templateId: zod_1.z.string().uuid().optional(),
     route_id: zod_1.z.string().uuid().optional(),
     routeId: zod_1.z.string().uuid().optional(),
     conductor_id: zod_1.z.string().uuid().optional(),
@@ -75,17 +77,32 @@ exports.CreateTripSchema = zod_1.z
     assignedOperatorId: zod_1.z.string().uuid().nullable().optional(),
     scheduled_date: zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
     scheduledDate: zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+    scheduled_time: zod_1.z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional(),
+    scheduledTime: zod_1.z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional(),
 })
     .transform((data) => ({
+    template_id: data.template_id ?? data.templateId,
     route_id: data.route_id ?? data.routeId ?? '',
     conductor_id: data.conductor_id ?? data.conductorId ?? '',
     driver_id: data.driver_id ?? data.driverId,
     bus_id: data.bus_id ?? data.busId,
     assigned_operator_id: data.assigned_operator_id ?? data.assignedOperatorId,
     scheduled_date: data.scheduled_date ?? data.scheduledDate ?? '',
+    scheduled_time: data.scheduled_time ?? data.scheduledTime,
 }))
-    .refine((data) => Boolean(data.route_id && data.conductor_id && data.scheduled_date), {
-    message: 'route_id/conductor_id/scheduled_date are required',
+    .refine((data) => 
+// Either template_id + scheduled_date OR all three manual fields
+Boolean(data.template_id && data.scheduled_date) ||
+    Boolean(data.route_id && data.conductor_id && data.scheduled_date), { message: 'route_id/conductor_id/scheduled_date are required (or template_id + scheduled_date)' });
+exports.CreateTemplateSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255),
+    route_id: zod_1.z.string().uuid(),
+    bus_id: zod_1.z.string().uuid().optional().nullable(),
+    conductor_id: zod_1.z.string().uuid().optional().nullable(),
+    driver_id: zod_1.z.string().uuid().optional().nullable(),
+    departure_time: zod_1.z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional().nullable(),
+    arrival_time: zod_1.z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm').optional().nullable(),
+    notes: zod_1.z.string().max(1000).optional().nullable(),
 });
 exports.AddPassengerSchema = zod_1.z.object({
     passenger_name: zod_1.z.string().min(1).max(255),
@@ -93,6 +110,9 @@ exports.AddPassengerSchema = zod_1.z.object({
         .string()
         .regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
     stop_id: zod_1.z.string().uuid(),
+});
+exports.BatchAddPassengersSchema = zod_1.z.object({
+    passengers: zod_1.z.array(exports.AddPassengerSchema).max(100),
 });
 exports.PassengerRowSchema = zod_1.z.object({
     name: zod_1.z.string().min(1, 'name is required').max(255),

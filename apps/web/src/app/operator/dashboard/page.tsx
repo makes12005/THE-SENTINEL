@@ -3,13 +3,14 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { get } from '@/lib/api';
-import { CardSkeleton, TableSkeleton, PageHeader, StatusBadge } from '@/components/ui';
+import { TableSkeleton } from '@/components/ui';
 
 interface Summary {
   active_trips: number;
   total_passengers_today: number;
   alerts_sent_today: number;
   failed_alerts_today: number;
+  trips_remaining: number;
 }
 
 interface Trip {
@@ -19,14 +20,9 @@ interface Trip {
   started_at: string | null;
   route: { name: string; from_city: string; to_city: string };
   conductor: { name: string };
+  bus?: { registration_number: string };
+  passenger_count: number;
 }
-
-const STAT_CARDS = (s: Summary) => [
-  { label: 'Active Trips',         value: s.active_trips,           color: 'border-[#a3cbf2]', textColor: 'text-[#a3cbf2]' },
-  { label: 'Passengers Today',     value: s.total_passengers_today, color: 'border-[#c4c0ff]', textColor: 'text-[#c4c0ff]' },
-  { label: 'Alerts Sent',          value: s.alerts_sent_today,      color: 'border-[#ffb68b]', textColor: 'text-[#ffb68b]' },
-  { label: 'Failed Alerts',        value: s.failed_alerts_today,    color: 'border-[#ffb4ab]', textColor: 'text-[#ffb4ab]' },
-];
 
 export default function DashboardPage() {
   const { data: summary, isLoading: summaryLoading } = useQuery<Summary>({
@@ -41,156 +37,164 @@ export default function DashboardPage() {
     refetchInterval: 30_000,
   });
 
+  const tripsRemaining = summary?.trips_remaining ?? 0;
+  const walletLow = tripsRemaining > 0 && tripsRemaining <= 5;
+  const walletEmpty = tripsRemaining === 0;
+
   return (
-    <div>
-      {/* Top bar */}
-      <header className="sticky top-0 z-40 flex justify-between items-center px-8 h-16 bg-gradient-to-b from-[#181c20] to-transparent backdrop-blur-sm">
-        <PageHeader title="Dashboard" subtitle="Operations Overview" />
-        <Link
-          href="/operator/trips?modal=create"
-          className="flex items-center gap-2 bg-[#a3cbf2] text-[#003353] font-bold text-xs uppercase tracking-widest px-5 py-2.5 rounded-xl hover:brightness-110 active:scale-95 transition-all"
-          style={{ fontFamily: 'Manrope, sans-serif' }}
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Create Trip
-        </Link>
+    <div className="bg-[#101418] min-h-screen text-[#e0e2e8] pb-10">
+      {/* Top Header */}
+      <header className="sticky top-0 z-40 flex justify-between items-center px-8 h-20 border-b border-[#ffffff0a] bg-[#12161a]">
+        <div>
+          <h1 className="text-xl font-bold text-[#a3cbf2] tracking-wide" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            Operator Dashboard
+          </h1>
+        </div>
+        <div className="flex-1 max-w-md ml-12">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#8c9198] text-[18px]">
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search routes, buses, passenge"
+              className="w-full bg-[#1c2024] text-sm text-[#e0e2e8] placeholder-[#8c9198] rounded-full pl-11 pr-4 py-2.5 outline-none focus:ring-1 focus:ring-[#a3cbf2] border border-transparent focus:border-[#a3cbf2]/30 transition-all"
+            />
+          </div>
+        </div>
       </header>
 
-      <div className="p-8 space-y-8">
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {summaryLoading
-            ? Array(4).fill(0).map((_, i) => <CardSkeleton key={i} />)
-            : summary && STAT_CARDS(summary).map((card) => (
-              <div
-                key={card.label}
-                className={`bg-[#181c20] p-6 rounded-xl border-l-4 ${card.color} hover:scale-[1.01] transition-transform`}
-              >
-                <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-2">
-                  {card.label}
-                </p>
-                <p className={`text-4xl font-black ${card.textColor}`} style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  {String(card.value).padStart(2, '0')}
-                </p>
-              </div>
-            ))}
-        </div>
-
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Action required */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold text-[#e0e2e8]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              Action Required
-            </h2>
-            {summary && summary.failed_alerts_today > 0 && (
-              <div className="bg-[#262a2f] p-6 rounded-xl flex justify-between items-center hover:scale-[1.01] transition-transform">
-                <div className="flex gap-4 items-center">
-                  <div className="h-12 w-12 rounded-full bg-[#93000a] flex items-center justify-center text-[#ffdad6]">
-                    <span className="material-symbols-outlined">warning</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-[#e0e2e8]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      {summary.failed_alerts_today} failed alert{summary.failed_alerts_today !== 1 ? 's' : ''}
-                    </h3>
-                    <p className="text-sm text-[#c2c7ce] opacity-70">Passengers may not have been notified</p>
-                  </div>
-                </div>
-                <Link
-                  href="/operator/logs"
-                  className="bg-[#ffb4ab] text-[#690005] px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
-                >
-                  View Logs
-                </Link>
-              </div>
-            )}
-            {summary && summary.active_trips === 0 && (
-              <div className="bg-[#262a2f] p-6 rounded-xl text-center py-10 text-[#8c9198]">
-                <span className="material-symbols-outlined text-4xl mb-2 block opacity-40">directions_bus</span>
-                <p className="text-sm">No active trips right now.</p>
-              </div>
-            )}
+      <div className="p-8 space-y-10 max-w-7xl mx-auto">
+        {/* Stat Cards Row */}
+        <div className="flex flex-col lg:flex-row gap-5">
+          {/* Card 1 */}
+          <div className="flex-1 bg-[#1c2024] p-5 rounded-xl border border-[#ffffff0a] relative overflow-hidden flex flex-col justify-between min-h-[120px]">
+            <span className="material-symbols-outlined absolute right-4 top-4 text-6xl text-[#ffffff05]">calendar_today</span>
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#8c9198] z-10">
+              ACTIVE TRIPS
+            </p>
+            <p className="text-4xl font-black text-[#e0e2e8] z-10" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              {summaryLoading ? '-' : (summary?.active_trips ?? 0)}
+            </p>
           </div>
 
-          {/* Quick create CTA */}
-          <div className="relative overflow-hidden rounded-xl bg-[#0b3c5d] p-8 flex flex-col items-center justify-center text-center gap-5 group">
-            <div className="absolute inset-0 opacity-10 pointer-events-none bg-gradient-to-tr from-[#a3cbf2] to-[#c4c0ff]" />
-            <div className="h-20 w-20 rounded-full bg-[#a3cbf2]/20 flex items-center justify-center text-[#a3cbf2] group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-5xl">add_road</span>
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-[#7fa7cd] tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                Create New Trip
-              </h2>
-              <p className="text-sm text-[#7fa7cd]/70 mt-1">Assign route, conductor & passengers</p>
-            </div>
-            <Link
-              href="/operator/trips?modal=create"
-              className="w-full bg-[#a3cbf2] text-[#003353] py-4 rounded-xl font-bold text-sm uppercase tracking-[0.15em] shadow-xl hover:brightness-110 active:scale-95 transition-all"
-              style={{ fontFamily: 'Manrope, sans-serif' }}
-            >
-              + Create Trip
-            </Link>
+          {/* Card 2 */}
+          <div className="flex-1 bg-[#1c2024] p-5 rounded-xl border border-[#ffffff0a] relative overflow-hidden flex flex-col justify-between min-h-[120px]">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#a3cbf2]" />
+            <span className="material-symbols-outlined absolute right-4 top-4 text-6xl text-[#ffffff05]">directions_bus</span>
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#8c9198] z-10 pl-2">
+              PASSENGERS TODAY
+            </p>
+            <p className="text-4xl font-black text-[#a3cbf2] z-10 pl-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              {summaryLoading ? '-' : (summary?.total_passengers_today ?? 0)}
+            </p>
           </div>
+
+          {/* Card 3 */}
+          <div className="flex-1 bg-[#1c2024] p-5 rounded-xl border border-[#ffffff0a] relative overflow-hidden flex flex-col justify-between min-h-[120px]">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ffb68b]" />
+            <span className="material-symbols-outlined absolute right-4 top-4 text-6xl text-[#ffb68b08]">cloud_upload</span>
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#ffb68b] z-10 pl-2">
+              ALERTS SENT
+            </p>
+            <p className="text-4xl font-black text-[#ffb68b] z-10 pl-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              {summaryLoading ? '-' : (summary?.alerts_sent_today ?? 0)}
+            </p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="flex-1 bg-[#1c2024] p-5 rounded-xl border border-[#ffffff0a] relative overflow-hidden flex flex-col justify-between min-h-[120px]">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#42474e]" />
+            <span className="material-symbols-outlined absolute right-4 top-4 text-6xl text-[#ffffff05]">warning</span>
+            <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#8c9198] z-10 pl-2">
+              FAILED ALERTS
+            </p>
+            <p className="text-4xl font-black text-[#e0e2e8] z-10 pl-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              {summaryLoading ? '-' : (summary?.failed_alerts_today ?? 0)}
+            </p>
+          </div>
+
+          {/* Create Trip Action */}
+          <Link
+            href="/operator/trips?modal=create"
+            className="flex-1 bg-[#0b3c5d] hover:bg-[#0f4a73] p-5 rounded-xl relative overflow-hidden flex flex-col items-center justify-center min-h-[120px] transition-colors group cursor-pointer border border-[#a3cbf2]/20 shadow-lg"
+          >
+            <div className="h-10 w-10 rounded-full bg-[#a3cbf2]/20 flex items-center justify-center text-[#a3cbf2] mb-2 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-[24px]">add</span>
+            </div>
+            <p className="text-sm font-bold text-[#a3cbf2] uppercase tracking-wider" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              CREATE TRIP
+            </p>
+          </Link>
         </div>
 
-        {/* Recent trips table */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-end">
-            <h2 className="text-xl font-bold text-[#e0e2e8]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              Recent Trips
+        {(walletLow || walletEmpty) && (
+          <div className={`rounded-xl border p-5 relative overflow-hidden ${walletEmpty ? 'bg-[#2a1414] border-[#ffb4ab]/40' : 'bg-[#1c2024] border-[#ffb68b]/20'}`}>
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${walletEmpty ? 'bg-[#ffb4ab]' : 'bg-[#ffb68b]'}`} />
+            <p className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-[#e0e2e8] mb-1 pl-3">
+              Wallet Warning
+            </p>
+            <p className={`text-sm pl-3 ${walletEmpty ? 'text-[#ffb4ab]' : 'text-[#ffb68b]'}`}>
+              {walletEmpty ? 'No trips remaining. Contact owner.' : `Low trips remaining: ${tripsRemaining} trips left`}
+            </p>
+          </div>
+        )}
+
+        {/* Live Route Feed Table */}
+        <div className="bg-[#12161a] rounded-xl border border-[#ffffff0a] overflow-hidden">
+          <div className="p-5 flex justify-between items-center border-b border-[#ffffff0a]">
+            <h2 className="text-sm font-bold text-[#e0e2e8]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              Live Route Feed
             </h2>
-            <Link href="/operator/trips" className="text-xs text-[#a3cbf2] uppercase tracking-widest hover:underline">
-              View all
+            <Link href="/operator/trips" className="text-xs text-[#a3cbf2] hover:underline flex items-center gap-1 font-medium">
+              View All <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
             </Link>
           </div>
 
           {tripsLoading ? (
-            <TableSkeleton rows={4} />
+            <div className="p-5">
+              <TableSkeleton rows={4} />
+            </div>
           ) : (
             <div className="overflow-x-auto no-scrollbar">
-              <table className="w-full border-separate border-spacing-y-2">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="text-left text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce]/60">
-                    <th className="px-6 pb-2">Route</th>
-                    <th className="px-6 pb-2">Conductor</th>
-                    <th className="px-6 pb-2">Date</th>
-                    <th className="px-6 pb-2">Status</th>
-                    <th className="px-6 pb-2 text-right">Action</th>
+                  <tr className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#8c9198] border-b border-[#ffffff0a]">
+                    <th className="px-6 py-4 font-semibold">BUS #</th>
+                    <th className="px-6 py-4 font-semibold">ROUTE</th>
+                    <th className="px-6 py-4 font-semibold">DEPARTURE</th>
+                    <th className="px-6 py-4 font-semibold">MANIFEST</th>
+                    <th className="px-6 py-4 font-semibold">STATUS</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {(tripsList ?? []).slice(0, 8).map((trip) => (
-                    <tr
-                      key={trip.id}
-                      className="bg-[#181c20] hover:bg-[#1c2024] transition-colors"
-                    >
-                      <td className="px-6 py-4 rounded-l-xl font-bold text-[#e0e2e8] text-sm">
-                        {trip.route?.from_city} → {trip.route?.to_city}
+                <tbody className="text-sm divide-y divide-[#ffffff0a]">
+                  {tripsList && tripsList.length > 0 && tripsList.slice(0, 8).map((trip) => (
+                    <tr key={trip.id} className="hover:bg-[#1c2024] transition-colors group">
+                      <td className="px-6 py-4 font-mono font-bold text-[#e0e2e8] text-xs">
+                        {trip.bus?.registration_number || 'UNASSIGNED'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#c2c7ce]">
-                        {trip.conductor?.name ?? '—'}
+                      <td className="px-6 py-4 text-[#e0e2e8]">
+                        {trip.route?.from_city} <span className="text-[#8c9198] text-[10px] mx-1">→</span> {trip.route?.to_city}
                       </td>
-                      <td className="px-6 py-4 text-xs font-mono text-[#8c9198]">
-                        {trip.scheduled_date}
+                      <td className="px-6 py-4 font-mono text-xs text-[#c2c7ce]">
+                        {trip.scheduled_date.split('T')[1]?.slice(0, 5) || trip.scheduled_date}
                       </td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={trip.status} />
+                        <span className="inline-flex px-2.5 py-1 rounded-md bg-[#262a2f] text-[#8c9198] text-[0.625rem] font-bold tracking-widest uppercase border border-[#ffffff0a]">
+                          {trip.passenger_count > 0 ? 'UPLOADED' : 'MISSING'}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 rounded-r-xl text-right">
-                        <Link
-                          href={`/operator/trips/${trip.id}`}
-                          className="text-xs text-[#a3cbf2] hover:underline uppercase tracking-wider"
-                        >
-                          View →
-                        </Link>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex px-2.5 py-1 rounded-md bg-[#262a2f] text-[#8c9198] text-[0.625rem] font-bold tracking-widest uppercase border border-[#ffffff0a]">
+                          {trip.status}
+                        </span>
                       </td>
                     </tr>
                   ))}
-                  {!tripsList?.length && (
+                  {(!tripsList || tripsList.length === 0) && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-[#8c9198] text-sm rounded-xl bg-[#181c20]">
-                        No trips yet. Create your first one!
+                      <td colSpan={5} className="px-6 py-10 text-center text-sm text-[#8c9198]">
+                        No recent trips found.
                       </td>
                     </tr>
                   )}

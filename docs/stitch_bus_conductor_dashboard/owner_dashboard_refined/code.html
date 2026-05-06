@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sentinel Ops - Owner Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#31353a",
+                        "tertiary-container": "#602a00",
+                        "surface": "#101418",
+                        "primary": "#a3cbf2",
+                        "on-secondary-container": "#b4b0ff",
+                        "on-secondary-fixed": "#100069",
+                        "tertiary-fixed": "#ffdbc8",
+                        "on-tertiary-fixed-variant": "#753400",
+                        "surface-container-low": "#181c20",
+                        "on-secondary": "#2000a4",
+                        "on-surface-variant": "#c2c7ce",
+                        "surface-container": "#1c2024",
+                        "surface-tint": "#a3cbf2",
+                        "on-primary-fixed": "#001d32",
+                        "surface-container-highest": "#31353a",
+                        "surface-container-lowest": "#0b0f13",
+                        "on-tertiary-fixed": "#321200",
+                        "surface-bright": "#363a3e",
+                        "error-container": "#93000a",
+                        "secondary-fixed": "#e3dfff",
+                        "tertiary": "#ffb68b",
+                        "primary-container": "#0b3c5d",
+                        "background": "#101418",
+                        "secondary-container": "#3826cd",
+                        "on-error": "#690005",
+                        "on-primary-fixed-variant": "#1f4a6c",
+                        "on-surface": "#e0e2e8",
+                        "primary-fixed": "#cee5ff",
+                        "surface-dim": "#101418",
+                        "on-tertiary-container": "#ff801d",
+                        "on-background": "#e0e2e8",
+                        "inverse-surface": "#e0e2e8",
+                        "secondary": "#c4c0ff",
+                        "outline": "#8c9198",
+                        "on-primary": "#003353",
+                        "inverse-on-surface": "#2d3135",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#396285",
+                        "on-secondary-fixed-variant": "#3622ca",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#7fa7cd",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-tertiary": "#522300",
+                        "surface-container-high": "#262a2f",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "outline-variant": "#42474e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#101418] dark:bg-[#101418] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<span class="text-xl font-black text-[#a3cbf2] tracking-tighter font-headline">Sentinel Ops</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-slate-400 hover:bg-[#181c20] p-2 rounded-lg cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-slate-400 hover:bg-[#181c20] p-2 rounded-lg cursor-pointer transition-colors" data-icon="settings">settings</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="Conductor Profile" data-alt="Close-up professional portrait of a tech-savvy fleet manager in a modern office with soft ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDU3gB7RlX8pL9GcLi8MerC7lJvLvSaf-V2FL4hbr4vb7nlMdlcaxH_kHnN0cx-84VzZmRSBdgXMVEVhYij22nYbkwsPtiYlE1kbvhf9KJNHqTMmIgHlX3XWw42klFbxpgTAICCZuE06aWyx7M5Gn1O5souiAMYzU4QKFnSmzco6-nP9d9dDzlO7hr-y2iTefL0X_L_icam8xPO4Y33YhEXEWv1YAlDugFC48UW2OxRTt1dHGY0lECgtOnRK4wkgo_PgdfzNoByl6w"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 h-full w-64 z-40 bg-[#101418] flex flex-col gap-2 pt-20 px-4">
+<div class="mb-6 px-4">
+<h2 class="font-headline font-bold text-[#a3cbf2] text-sm uppercase tracking-widest">Command Center</h2>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Active Session</p>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="bg-[#262a2f] text-[#a3cbf2] rounded-xl flex items-center gap-3 px-4 py-3 scale-95 active:scale-100 transition-transform font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Fleet Overview
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-4 py-3 hover:bg-[#181c20] hover:text-slate-200 transition-all font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+                Live Routes
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-4 py-3 hover:bg-[#181c20] hover:text-slate-200 transition-all font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Personnel
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-4 py-3 hover:bg-[#181c20] hover:text-slate-200 transition-all font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+                Revenue
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-4 py-3 hover:bg-[#181c20] hover:text-slate-200 transition-all font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                System Logs
+            </a>
+</nav>
+<div class="mt-auto pb-8 flex flex-col gap-1">
+<button class="mb-4 mx-2 bg-tertiary-container text-on-tertiary-container py-3 rounded-xl font-bold text-[10px] uppercase tracking-tighter flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="campaign">campaign</span>
+                Emergency Broadcast
+            </button>
+<a class="text-slate-500 flex items-center gap-3 px-4 py-3 hover:bg-[#181c20] font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                Support
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-4 py-3 hover:bg-[#181c20] font-['Inter'] font-semibold text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 pt-24 pb-12 px-8 min-h-screen">
+<!-- 1. Top Section: Summary Cards -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-primary shadow-sm">
+<p class="text-slate-400 font-label text-[10px] uppercase tracking-widest font-bold mb-2">Total Revenue Today</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-surface">$12,482.00</h3>
+<div class="mt-2 flex items-center gap-1 text-primary text-xs font-semibold">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+                    8.4% vs yesterday
+                </div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-secondary shadow-sm">
+<p class="text-slate-400 font-label text-[10px] uppercase tracking-widest font-bold mb-2">Total Trips Today</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-surface">142</h3>
+<p class="mt-2 text-slate-500 text-xs font-medium">92% Completion rate</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-primary-container shadow-sm">
+<p class="text-slate-400 font-label text-[10px] uppercase tracking-widest font-bold mb-2">Active Trips</p>
+<h3 class="text-3xl font-headline font-extrabold text-on-surface">24</h3>
+<p class="mt-2 text-slate-500 text-xs font-medium">Across 8 active routes</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-tertiary shadow-sm">
+<p class="text-slate-400 font-label text-[10px] uppercase tracking-widest font-bold mb-2">Alerts Breakdown</p>
+<div class="flex flex-col gap-1 mt-1">
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface font-medium">Passenger list missing</span>
+<span class="text-tertiary font-bold text-sm">03</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface font-medium">Conductor offline</span>
+<span class="text-tertiary font-bold text-sm">01</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 2. Side-by-Side: Issues & Actions -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+<!-- Critical Issues Overview -->
+<div class="bg-surface-container-high rounded-xl p-8 flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline font-bold text-lg text-on-surface">Critical Issues Overview</h2>
+<button class="text-[10px] font-bold text-primary tracking-widest uppercase hover:underline">View All Issues</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-error-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">Trips not started</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter">Requires immediate dispatch</p>
+</div>
+</div>
+<span class="text-lg font-bold text-error">02</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" data-icon="person_off">person_off</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">Passenger list missing</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter">Manifest synchronization error</p>
+</div>
+</div>
+<span class="text-lg font-bold text-tertiary">03</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" data-icon="wifi_off">wifi_off</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">Conductor offline</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter">Device #402 - Route A</p>
+</div>
+</div>
+<span class="text-lg font-bold text-tertiary">01</span>
+</div>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline font-bold text-lg text-on-surface ml-2">Quick Actions</h2>
+<div class="grid grid-cols-1 gap-4">
+<button class="group bg-surface-container-high hover:bg-primary-container p-6 rounded-xl flex items-center justify-between transition-all duration-200">
+<div class="flex items-center gap-6">
+<div class="w-12 h-12 bg-surface-container-highest rounded-xl flex items-center justify-center group-hover:bg-primary/20">
+<span class="material-symbols-outlined text-primary" data-icon="business">business</span>
+</div>
+<div class="text-left">
+<p class="text-base font-bold text-on-surface group-hover:text-primary">View Agencies</p>
+<p class="text-xs text-slate-500">Manage 12 connected transport partners</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="group bg-surface-container-high hover:bg-secondary-container p-6 rounded-xl flex items-center justify-between transition-all duration-200">
+<div class="flex items-center gap-6">
+<div class="w-12 h-12 bg-surface-container-highest rounded-xl flex items-center justify-center group-hover:bg-secondary/20">
+<span class="material-symbols-outlined text-secondary" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<div class="text-left">
+<p class="text-base font-bold text-on-surface group-hover:text-secondary">Billing Overview</p>
+<p class="text-xs text-slate-500">Next settlement due in 3 days</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="group bg-surface-container-high hover:bg-tertiary-container p-6 rounded-xl flex items-center justify-between transition-all duration-200">
+<div class="flex items-center gap-6">
+<div class="w-12 h-12 bg-surface-container-highest rounded-xl flex items-center justify-center group-hover:bg-tertiary/20">
+<span class="material-symbols-outlined text-tertiary" data-icon="database">database</span>
+</div>
+<div class="text-left">
+<p class="text-base font-bold text-on-surface group-hover:text-tertiary">Logs &amp; Alerts</p>
+<p class="text-xs text-slate-500">Review 1,240 system events today</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-600 group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 3. Middle Section: Performance -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+<!-- Top Performing Routes -->
+<div class="bg-surface-container p-8 rounded-xl shadow-sm">
+<h2 class="font-headline font-bold text-lg text-on-surface mb-6">Top Performing Routes</h2>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<span class="w-8 h-8 rounded bg-primary-container text-primary flex items-center justify-center font-bold text-xs">#1</span>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<span class="text-sm font-semibold text-on-surface">Route A-12 (Downtown Express)</span>
+<span class="text-sm font-bold text-primary">$4,200</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[85%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="w-8 h-8 rounded bg-surface-container-highest text-slate-400 flex items-center justify-center font-bold text-xs">#2</span>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<span class="text-sm font-semibold text-on-surface">Route B-08 (Industrial Ring)</span>
+<span class="text-sm font-bold text-primary">$3,840</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[72%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="w-8 h-8 rounded bg-surface-container-highest text-slate-400 flex items-center justify-center font-bold text-xs">#3</span>
+<div class="flex-1">
+<div class="flex justify-between mb-1">
+<span class="text-sm font-semibold text-on-surface">Route C-05 (North-South Connector)</span>
+<span class="text-sm font-bold text-primary">$2,910</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[55%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Top Operators -->
+<div class="bg-surface-container p-8 rounded-xl shadow-sm">
+<h2 class="font-headline font-bold text-lg text-on-surface mb-6">Top Operators</h2>
+<div class="grid grid-cols-1 gap-4">
+<div class="flex items-center justify-between p-3 border-b border-surface-container-highest last:border-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden">
+<img alt="Operator A" data-alt="Close-up of a smiling male bus operator in a professional blue uniform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpKpC9uVqMBCzTHJVKz08uYaNfVpALspPEa_w2Z9YHWexSYapb1TEWuFID2yN6GmRfmto6fBpSuLHxgQs71dUolu28dDRsuTaN7PapVblmtToktmP_vg5XxZm9IVhPqm-hYJDo_uMIVa-Im8caMCDSrTZvMZI5AMvGePNUihrU33cMLIh-acEg0DiV3n4tspjKZ_vPauCOW-cZ8e_TAUPYH_Y-Hi9uoYmh101ylRY8F_uqiSHeehycxbJfhEfbRrVIpdUh5s_Ka1LN"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Michael Rodriguez</p>
+<p class="text-[10px] text-slate-500 uppercase">98% On-Time Record</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-secondary">22 Trips</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter">This Week</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 border-b border-surface-container-highest last:border-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden">
+<img alt="Operator B" data-alt="Portrait of a female transport supervisor looking professional and confident" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2S708tk4HOtrhTtT84vvY-zE7BIWoc_hadKf2uUacpYwo5CSW7fwPYJEEBdnwIqwyFfQo-h1ZxHw3yc-rNTFgJBUYduuwdxuB8_U-WNW9sfmxNFtPOp3Po2jmdZlkKYHHJx_4zUAhsW0CpbdFr_c4QehB3g-uBKFniak5s9PVcNrAsz0xnotHT9lm-gBmfHB0tPlAnWQz09fJnTnAYvbynICV5UooRNqwm1V4eBGaYznUixrfkZJAh1pIC2bRr7m6D9TJe8p0ktdh"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Sarah Chen</p>
+<p class="text-[10px] text-slate-500 uppercase">95% On-Time Record</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-secondary">19 Trips</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter">This Week</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 border-b border-surface-container-highest last:border-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden">
+<img alt="Operator C" data-alt="Headshot of a senior transit operator in a dark grey uniform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAooGfye_D5ibP7BX2bjgVtNF0bzXrkPrr7whzhMv-RJNvogvVFUIiQrBtHT5mRP2LpL_NPWvftiAkldyF1Cx-8Df5b0IDsLV5tyGGdFDbNT0COeAVY4os8NliHejG2ABuCXMCxPG162_xmjyjv8tah8SQCzGOFwICSdk5dKqoUg6jZIM5O3TyCwlUW159aPcE1wJLRtvB7pCFwisuxsrQx_WxtZvZOWHvbsjzeQBedVqxRuAmbfn-8f-xO14Oerv5AjtQ-doXeZnJw"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">David Abiodun</p>
+<p class="text-[10px] text-slate-500 uppercase">94% On-Time Record</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-secondary">18 Trips</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-tighter">This Week</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Bottom Section: Live Trips Preview -->
+<section class="bg-surface-container-high rounded-xl p-8">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h2 class="font-headline font-bold text-lg text-on-surface">Live Trips Preview</h2>
+<p class="text-xs text-slate-500 mt-1">Real-time status of active fleet operations</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-primary-fixed transition-colors">
+                    View All Trips
+                </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-container-highest">
+<th class="pb-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4">Bus Number</th>
+<th class="pb-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4">Route</th>
+<th class="pb-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 text-center">Status</th>
+<th class="pb-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 text-right">Last Checkpoint</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-highest">
+<tr class="group hover:bg-surface-container transition-colors">
+<td class="py-5 px-4 font-bold text-on-surface">#2204-A</td>
+<td class="py-5 px-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-on-surface">Downtown Loop</span>
+<span class="text-[10px] text-slate-500">Conductor: James W.</span>
+</div>
+</td>
+<td class="py-5 px-4 text-center">
+<span class="bg-secondary-container/20 text-on-secondary-container text-[10px] font-bold uppercase tracking-widest py-1 px-3 rounded-full">Active</span>
+</td>
+<td class="py-5 px-4 text-right text-xs text-slate-400">Terminal 1 (On Time)</td>
+</tr>
+<tr class="group hover:bg-surface-container transition-colors">
+<td class="py-5 px-4 font-bold text-on-surface">#1189-B</td>
+<td class="py-5 px-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-on-surface">North Suburban</span>
+<span class="text-[10px] text-slate-500">Conductor: Anna K.</span>
+</div>
+</td>
+<td class="py-5 px-4 text-center">
+<span class="bg-tertiary-container/20 text-on-tertiary-container text-[10px] font-bold uppercase tracking-widest py-1 px-3 rounded-full">Delayed</span>
+</td>
+<td class="py-5 px-4 text-right text-xs text-tertiary">+12m at North Gate</td>
+</tr>
+<tr class="group hover:bg-surface-container transition-colors">
+<td class="py-5 px-4 font-bold text-on-surface">#3301-C</td>
+<td class="py-5 px-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-on-surface">Coastal Route</span>
+<span class="text-[10px] text-slate-500">Conductor: Samuel L.</span>
+</div>
+</td>
+<td class="py-5 px-4 text-center">
+<span class="bg-secondary-container/20 text-on-secondary-container text-[10px] font-bold uppercase tracking-widest py-1 px-3 rounded-full">Active</span>
+</td>
+<td class="py-5 px-4 text-right text-xs text-slate-400">Harbor St (On Time)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>

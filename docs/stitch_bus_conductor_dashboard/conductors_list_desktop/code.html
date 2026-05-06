@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Conductors - Velox Fleet Noir</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#101418",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "outline": "#8c9198",
+                        "on-secondary-fixed-variant": "#434076",
+                        "on-secondary-fixed": "#171348",
+                        "surface-container": "#1c2024",
+                        "inverse-surface": "#e0e3e8",
+                        "primary": "#cee5ff",
+                        "surface-dim": "#101418",
+                        "surface-container-high": "#262a2f",
+                        "on-tertiary": "#502405",
+                        "tertiary": "#ffdcca",
+                        "inverse-primary": "#396284",
+                        "on-primary-fixed": "#001d32",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-tertiary-fixed": "#321200",
+                        "surface-container-lowest": "#0b0f12",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "on-background": "#e0e3e8",
+                        "on-tertiary-container": "#7a4523",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-secondary": "#2d2a5e",
+                        "surface-variant": "#31353a",
+                        "inverse-on-surface": "#2d3135",
+                        "surface-tint": "#a3cbf2",
+                        "surface-container-highest": "#31353a",
+                        "secondary-container": "#434076",
+                        "secondary-fixed": "#e3dfff",
+                        "outline-variant": "#42474e",
+                        "background": "#101418",
+                        "tertiary-fixed": "#ffdbc9",
+                        "tertiary-container": "#ffb78d",
+                        "surface-bright": "#363a3e",
+                        "on-primary-container": "#2d5678",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#181c20",
+                        "on-secondary-container": "#b3afed",
+                        "primary-container": "#a3cbf2",
+                        "on-surface": "#e0e3e8",
+                        "secondary": "#c4c0ff",
+                        "on-primary": "#003352",
+                        "primary-fixed": "#cde5ff",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit-base": "4px",
+                        "element-tight": "0.5rem",
+                        "card-gap": "1rem",
+                        "section-internal": "1.25rem",
+                        "page-padding": "1rem"
+                    },
+                    "fontFamily": {
+                        "button-text": ["Inter"],
+                        "body-standard": ["Inter"],
+                        "metadata-label": ["Inter"],
+                        "display-time": ["Manrope"],
+                        "header-title": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "button-text": ["11px", { "letterSpacing": "0.1em", "fontWeight": "900" }],
+                        "body-standard": ["0.875rem", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "metadata-label": ["10px", { "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "display-time": ["1.5rem", { "lineHeight": "1.2", "fontWeight": "900" }],
+                        "header-title": ["1.125rem", { "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .bg-noise {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-standard min-h-screen flex relative overflow-x-hidden">
+<!-- SVG Noise Overlay -->
+<div class="fixed inset-0 pointer-events-none z-50 bg-noise opacity-50 mix-blend-overlay"></div>
+<!-- TopNavBar (Web) -->
+<nav class="hidden md:flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-6 bg-surface-container/80 backdrop-blur-md h-14 border-b border-outline-variant/10">
+<div class="flex items-center gap-4">
+<span class="font-header-title text-header-title text-primary tracking-tighter">VELOX FLEET NOIR</span>
+</div>
+<div class="flex items-center gap-6 flex-1 justify-end px-8">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-container-highest border border-outline-variant/30 rounded text-on-surface text-body-standard font-body-standard py-1.5 pl-9 pr-3 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container placeholder-on-surface-variant/50" placeholder="Search conductors..." type="text"/>
+</div>
+<button class="bg-primary-container text-on-primary-container font-button-text text-button-text px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed-dim transition-colors h-[32px]">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                ADD CONDUCTOR
+            </button>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors p-1"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors p-1"><span class="material-symbols-outlined">settings</span></button>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="hidden md:flex fixed left-0 top-0 bottom-0 flex-col w-64 z-40 bg-surface-container-lowest border-r border-outline-variant/10 pt-14">
+<div class="p-4 border-b border-outline-variant/10 mb-4">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
+</div>
+<div>
+<h2 class="font-body-standard text-body-standard text-on-surface">Transit Control</h2>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant">Terminal A-12</p>
+</div>
+</div>
+<div class="mt-3 bg-secondary-container/20 text-secondary-fixed border border-secondary-container/50 px-2 py-1 rounded font-metadata-label text-metadata-label text-center">
+                System Status: Active
+            </div>
+</div>
+<nav class="flex-1 overflow-y-auto py-2 flex flex-col gap-1">
+<a class="text-on-surface-variant flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high hover:text-on-surface transition-all font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="text-on-surface-variant flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high hover:text-on-surface transition-all font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">directions_bus</span>
+                Fleet
+            </a>
+<a class="bg-surface-container-high text-primary-fixed-dim border-l-4 border-primary-container flex items-center gap-3 px-4 py-3 font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">badge</span>
+                Conductors
+            </a>
+<a class="text-on-surface-variant flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high hover:text-on-surface transition-all font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">map</span>
+                Routes
+            </a>
+<a class="text-on-surface-variant flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high hover:text-on-surface transition-all font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">event_note</span>
+                Schedules
+            </a>
+</nav>
+<div class="mt-auto border-t border-outline-variant/10 py-2">
+<a class="text-on-surface-variant flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high hover:text-on-surface transition-all font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">terminal</span>
+                Logs
+            </a>
+<a class="text-on-surface-variant flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high hover:text-on-surface transition-all font-button-text text-button-text uppercase tracking-tight" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                Help
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 pt-14 p-page-padding min-h-screen max-w-7xl mx-auto w-full">
+<!-- Header Section -->
+<header class="mb-section-internal flex flex-col md:flex-row md:items-end justify-between gap-4 mt-4">
+<div>
+<h1 class="font-display-time text-display-time text-on-surface tracking-tight">Conductors</h1>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mt-1">MANAGE ACTIVE AND INACTIVE FLEET PERSONNEL</p>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-metadata-label text-metadata-label">
+<span>TOTAL: 142</span>
+<span class="mx-1">•</span>
+<span class="text-primary-container">ACTIVE: 128</span>
+</div>
+</header>
+<!-- Conductors Grid (Bento/Card Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-card-gap">
+<!-- Conductor Card 1 - Active -->
+<div class="bg-surface-container-low border border-outline-variant/20 rounded p-section-internal hover:border-outline-variant/50 transition-colors group relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="bg-primary-container/10 text-primary-container border border-primary-container/20 px-2 py-1 rounded font-metadata-label text-metadata-label">ACTIVE</span>
+</div>
+<div class="flex items-start gap-4 mb-4">
+<img alt="Profile of Karan Sharma" class="w-14 h-14 rounded bg-surface-container-highest border border-outline-variant/30 object-cover" data-alt="A high-contrast, moody portrait of a transit conductor in a dark industrial setting. The lighting is dramatic, emphasizing professionalism and reliability in a nocturnal urban environment. The color palette aligns with a sleek 'Tech Noir' aesthetic, featuring deep charcoal shadows and subtle cool highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCc7azUDNNHV-ZPh17txNVJIKIX-j2KkZ5zntTd1WCJqlvPqOY-NtdBvM8Av6CEiqIwZVdfUdtDAOqjwSsq35URinhFfTLYT3B9tHvPT_7TnIqjHfivlKtdq_-UctuH4q67hLtrWa37FUdh5e-acij8NAZdtoqE09hHw0SsCuZWri_Y67rJ2tHVnUqy9tDuff6GCjd2u5QjrsC6HVouyfky1akDXY60oBn7ULbhHq_6qaO74zweHhiiCjCOMUTFvnN7-O82gxXVMwj"/>
+<div class="pt-1">
+<h3 class="font-body-standard text-body-standard text-on-surface">Karan Sharma</h3>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mt-1">+91 98765 43210</p>
+<p class="font-metadata-label text-metadata-label text-outline mt-0.5">ID: CND-8842</p>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-3 mt-2">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-metadata-label text-metadata-label">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                        Route 42A
+                    </div>
+<button class="text-on-surface-variant hover:text-primary-container font-button-text text-button-text flex items-center gap-1 transition-colors">
+                        VIEW <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Conductor Card 2 - Active -->
+<div class="bg-surface-container-low border border-outline-variant/20 rounded p-section-internal hover:border-outline-variant/50 transition-colors group relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="bg-primary-container/10 text-primary-container border border-primary-container/20 px-2 py-1 rounded font-metadata-label text-metadata-label">ACTIVE</span>
+</div>
+<div class="flex items-start gap-4 mb-4">
+<img alt="Profile of Priya Patel" class="w-14 h-14 rounded bg-surface-container-highest border border-outline-variant/30 object-cover" data-alt="A professional portrait of a female transit conductor in a dimly lit, high-tech control room environment. Sharp, clean lighting illuminates her face against a backdrop of dark, matte technical monitors. The style is modern industrial, conveying focus and authority." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8hieysJX2FYcPgfKTKRS6V2_Mal2apiR3D3hZDHzbsPhs1X1RiTS0BO7ziQhAd-ESyzPrdBNqJjUtdrLUSlCBoWQhrY1OAztsNbint0yE7mxIl0_PZYvAQTGsmL1rY0vx9RMM8xX1iv0bcXCuYnHCqPkqJz1G9xzN2DyskIjpi9vgAUcOqu8DkgeY8Cid3nlYHEcn3wocH0EjpeCTb9eiWV8qrtXDnKoUm6L_y-P27orIYybaOtS8OOF_YHIkHKL9tK-Qlnzra9xr"/>
+<div class="pt-1">
+<h3 class="font-body-standard text-body-standard text-on-surface">Priya Patel</h3>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mt-1">+91 91234 56789</p>
+<p class="font-metadata-label text-metadata-label text-outline mt-0.5">ID: CND-7731</p>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-3 mt-2">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-metadata-label text-metadata-label">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                        Route 12B
+                    </div>
+<button class="text-on-surface-variant hover:text-primary-container font-button-text text-button-text flex items-center gap-1 transition-colors">
+                        VIEW <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Conductor Card 3 - Inactive (Alert State) -->
+<div class="bg-surface-container-high border-l-4 border-l-outline-variant border-y border-r border-y-outline-variant/20 border-r-outline-variant/20 rounded-r p-section-internal hover:border-r-outline-variant/50 transition-colors group relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="bg-surface-container-highest text-on-surface-variant border border-outline-variant/30 px-2 py-1 rounded font-metadata-label text-metadata-label">INACTIVE</span>
+</div>
+<div class="flex items-start gap-4 mb-4">
+<div class="w-14 h-14 rounded bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[24px]">person_off</span>
+</div>
+<div class="pt-1">
+<h3 class="font-body-standard text-body-standard text-on-surface">Amit Singh</h3>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mt-1">+91 99887 76655</p>
+<p class="font-metadata-label text-metadata-label text-outline mt-0.5">ID: CND-9012</p>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-3 mt-2">
+<div class="flex items-center gap-1.5 text-outline font-metadata-label text-metadata-label">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+                        Off Duty - Leave
+                    </div>
+<button class="text-on-surface-variant hover:text-on-surface font-button-text text-button-text flex items-center gap-1 transition-colors">
+                        EDIT <span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Conductor Card 4 - Active -->
+<div class="bg-surface-container-low border border-outline-variant/20 rounded p-section-internal hover:border-outline-variant/50 transition-colors group relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="bg-primary-container/10 text-primary-container border border-primary-container/20 px-2 py-1 rounded font-metadata-label text-metadata-label">ACTIVE</span>
+</div>
+<div class="flex items-start gap-4 mb-4">
+<img alt="Profile of Rahul Desai" class="w-14 h-14 rounded bg-surface-container-highest border border-outline-variant/30 object-cover" data-alt="A gritty, high-definition portrait of a male transit worker in a low-light environment. The image is styled with a desaturated 'Tech Noir' aesthetic, highlighting sharp facial features against a deep, dark grey background. The mood is serious and focused, typical of a night-shift logistics operation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh8H0gi05nJyO47jG0mH3rqEWS8Pzk59jDVelnDNR7PGklO0-KPl_jk_6kCQ2C-v1jabkOS_Lc0UAPZr18boyi_xFus8uBQtRpEF-gjosRzElj7FKAcI_s0VMrQwLF7n6xsZ3plSuG8aAvgT-ibc6LSOXI9mAPdGd1dNlHmu8w1K3V7p1WunutLPRJuuigmBgBVCX8ez8lPWdM-DWnIPAHy0zloiDUwXIoBKPWmsWZSBkYvq6IaSwOMBBGIlyQkuVVDEzBgjhVT_99"/>
+<div class="pt-1">
+<h3 class="font-body-standard text-body-standard text-on-surface">Rahul Desai</h3>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mt-1">+91 98112 23344</p>
+<p class="font-metadata-label text-metadata-label text-outline mt-0.5">ID: CND-5521</p>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-3 mt-2">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-metadata-label text-metadata-label">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                        Route 09X
+                    </div>
+<button class="text-on-surface-variant hover:text-primary-container font-button-text text-button-text flex items-center gap-1 transition-colors">
+                        VIEW <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

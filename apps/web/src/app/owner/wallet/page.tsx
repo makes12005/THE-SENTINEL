@@ -1,17 +1,13 @@
 'use client';
-/**
- * Owner — Wallet Screen
- * Displays trip credit balance, usage stats, and transaction history.
- * Data: GET /api/owner/summary + GET /api/owner/wallet/transactions
- */
 
 import { useQuery } from '@tanstack/react-query';
 import { get } from '@/lib/api';
-import { PageHeader, TableSkeleton } from '@/components/ui';
+import { formatIstDateTime } from '@/lib/format-ist';
 
-interface OwnerSummary {
-  trips_remaining:        number;
-  trips_used_this_month:  number;
+interface OwnerWallet {
+  trips_remaining: number;
+  trips_used_this_month: number;
+  rate_trips_per_completed_trip: number;
 }
 
 interface WalletTransaction {
@@ -24,125 +20,90 @@ interface WalletTransaction {
 }
 
 export default function OwnerWalletPage() {
-  const { data: summary, isLoading: sumLoading } = useQuery<OwnerSummary>({
-    queryKey: ['owner-summary'],
-    queryFn:  () => get<OwnerSummary>('/api/owner/summary'),
+  const wallet = useQuery<OwnerWallet>({
+    queryKey: ['owner-wallet'],
+    queryFn: () => get('/api/owner/wallet'),
   });
-
-  const { data: txs, isLoading: txsLoading } = useQuery<WalletTransaction[]>({
+  const txs = useQuery<WalletTransaction[]>({
     queryKey: ['owner-wallet-transactions'],
-    queryFn:  () => get<WalletTransaction[]>('/api/owner/wallet/transactions'),
+    queryFn: () => get('/api/owner/wallet/transactions'),
   });
 
-  const isLowBalance = (summary?.trips_remaining ?? 0) <= 10;
+  const tripsRemaining = wallet.data?.trips_remaining ?? 0;
+  const tripsUsed = wallet.data?.trips_used_this_month ?? 0;
+  const lowBalance = tripsRemaining > 0 && tripsRemaining < 5;
+  const emptyWallet = tripsRemaining === 0;
 
   return (
-    <div>
-      <header className="sticky top-0 z-40 flex items-center justify-between px-8 h-16 bg-gradient-to-b from-[#181c20] to-transparent backdrop-blur-sm">
-        <PageHeader title="Trip Wallet" subtitle="Balance & Usage History" />
-        {isLowBalance && summary && (
-          <span className="text-[10px] bg-[#93000a] text-[#ffdad6] px-3 py-1 rounded-full font-black uppercase tracking-widest animate-pulse">
-            Low Balance
-          </span>
-        )}
-      </header>
+    <div className="min-h-screen bg-[#0F172A] text-[#F1F5F9] p-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <div className="mb-6">
+        <p className="text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[#475569]">Agency Trip Credits</p>
+        <h1 className="text-2xl font-black">TRIP WALLET</h1>
+      </div>
 
-      <div className="p-8 space-y-8 max-w-5xl">
-        {/* Main Balance Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#181c20] p-8 rounded-2xl border border-[#c4c0ff]/10 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <span className="material-symbols-outlined text-[120px]">account_balance_wallet</span>
-            </div>
-            <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-1">Available Trips</p>
-            <p className="text-6xl font-black text-[#c4c0ff]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              {sumLoading ? '—' : String(summary?.trips_remaining ?? 0).padStart(2, '0')}
-            </p>
-            <p className="text-xs text-[#8c9198] mt-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px]">info</span>
-              Each trip deduction occurs when a trip is started.
-            </p>
-          </div>
-
-          <div className="bg-[#181c20] p-8 rounded-2xl border border-[#a3cbf2]/10">
-            <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-[#c2c7ce] mb-1">Trips Used (Current Month)</p>
-            <p className="text-6xl font-black text-[#a3cbf2]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              {sumLoading ? '—' : String(summary?.trips_used_this_month ?? 0).padStart(2, '0')}
-            </p>
-            <p className="text-xs text-[#8c9198] mt-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px]">event_repeat</span>
-              Resets on the 1st of every month at 00:00 IST.
-            </p>
-          </div>
+      {(lowBalance || emptyWallet) && !wallet.isLoading && (
+        <div
+          className={`mb-6 rounded-2xl border p-5 ${emptyWallet ? 'border-[#ffb4ab]/40 bg-[#93000a]/20' : 'border-[#FF7A00]/40 bg-[#FF7A00]/10'}`}
+        >
+          <p className={`text-sm font-bold ${emptyWallet ? 'text-[#ffb4ab]' : 'text-[#FF7A00]'}`}>
+            {emptyWallet
+              ? 'Wallet empty. New trips are blocked until top-up.'
+              : `Low balance warning: ${tripsRemaining} trips remaining.`}
+          </p>
+          <p className="mt-1 text-xs text-[#c2c7ce]">Contact admin to top up trip credits.</p>
         </div>
+      )}
 
-        {/* Low Balance Alert */}
-        {isLowBalance && !sumLoading && (
-          <div className="bg-[#93000a]/10 border border-[#ffb4ab]/20 p-6 rounded-2xl flex items-center gap-5">
-            <div className="h-12 w-12 rounded-full bg-[#93000a] flex items-center justify-center text-[#ffdad6] shrink-0">
-              <span className="material-symbols-outlined">warning</span>
-            </div>
-            <div>
-              <p className="font-bold text-[#ffb4ab]" style={{ fontFamily: 'Manrope, sans-serif' }}>Low balance alert</p>
-              <p className="text-sm text-[#c2c7ce]">Your agency has {summary?.trips_remaining} trips remaining. Please contact the platform admin to top up your credits to avoid service interruption.</p>
-            </div>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="rounded-2xl border border-[#1e293b] bg-[#1e293b]/40 p-6">
+          <p className="text-[0.625rem] uppercase tracking-widest text-[#475569]">Trips remaining</p>
+          <p className="text-5xl font-black text-[#c4c0ff]">{wallet.isLoading ? '—' : tripsRemaining}</p>
+        </div>
+        <div className="rounded-2xl border border-[#1e293b] bg-[#1e293b]/40 p-6">
+          <p className="text-[0.625rem] uppercase tracking-widest text-[#475569]">Trips used this month</p>
+          <p className="text-5xl font-black text-[#a3cbf2]">{wallet.isLoading ? '—' : tripsUsed}</p>
+        </div>
+        <div className="rounded-2xl border border-[#1e293b] bg-[#1e293b]/40 p-6">
+          <p className="text-[0.625rem] uppercase tracking-widest text-[#475569]">Rate per completed trip</p>
+          <p className="text-5xl font-black text-[#7dffd4]">1</p>
+          <p className="text-xs text-[#8c9198]">credit per completed trip</p>
+        </div>
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-[#1e293b] bg-[#1e293b]/40 p-5">
+        <h2 className="mb-4 text-lg font-bold">Transaction history</h2>
+        {txs.isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-xl bg-[#1e293b]/50 animate-pulse" />
+            ))}
           </div>
-        )}
-
-        {/* Transaction History */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-[#e0e2e8]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            Transaction History
-          </h2>
-          <div className="bg-[#181c20] rounded-2xl border border-[#c2c7ce]/10 overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#1c2024] border-b border-[#c2c7ce]/10">
-                  <th className="px-6 py-4 text-[0.6875rem] font-bold uppercase tracking-widest text-[#8c9198]">Date & Time</th>
-                  <th className="px-6 py-4 text-[0.6875rem] font-bold uppercase tracking-widest text-[#8c9198]">Description</th>
-                  <th className="px-6 py-4 text-[0.6875rem] font-bold uppercase tracking-widest text-[#8c9198] text-right">Amount</th>
-                  <th className="px-6 py-4 text-[0.6875rem] font-bold uppercase tracking-widest text-[#8c9198] text-right">Balance</th>
+        ) : (txs.data ?? []).length === 0 ? (
+          <p className="text-sm text-[#8c9198]">No transactions found.</p>
+        ) : (
+          <table className="w-full border-separate border-spacing-y-2 text-sm">
+            <thead>
+              <tr className="text-left text-[0.6875rem] uppercase tracking-widest text-[#8c9198]">
+                <th className="px-4">Date</th>
+                <th className="px-4">Type</th>
+                <th className="px-4 text-right">Trips count</th>
+                <th className="px-4 text-right">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(txs.data ?? []).map((tx) => (
+                <tr key={tx.id} className="bg-[#181c20]">
+                  <td className="rounded-l-xl px-4 py-3">{formatIstDateTime(tx.created_at)}</td>
+                  <td className="px-4 py-3">{tx.type.replace('_', ' ')}</td>
+                  <td className={`px-4 py-3 text-right font-black ${tx.trips_amount >= 0 ? 'text-[#7dffd4]' : 'text-[#ffb4ab]'}`}>
+                    {tx.trips_amount > 0 ? `+${tx.trips_amount}` : tx.trips_amount}
+                  </td>
+                  <td className="rounded-r-xl px-4 py-3 text-right">{tx.trips_remaining_after}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {txsLoading ? (
-                  <tr><td colSpan={4} className="p-0"><TableSkeleton rows={5} /></td></tr>
-                ) : txs?.length ? (
-                  txs.map((tx) => (
-                    <tr key={tx.id} className="border-b border-[#c2c7ce]/5 hover:bg-[#1c2024]/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-[#e0e2e8]">
-                          {new Date(tx.created_at).toLocaleString('en-IN', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit', hour12: true
-                          })}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-[#e0e2e8] font-medium">{tx.description}</p>
-                        <p className="text-[10px] text-[#8c9198] uppercase tracking-tighter">{tx.type.replace('_', ' ')}</p>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className={`text-sm font-black ${tx.trips_amount > 0 ? 'text-[#7dffd4]' : 'text-[#ffb4ab]'}`}>
-                          {tx.trips_amount > 0 ? `+${tx.trips_amount}` : tx.trips_amount}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-[#c4c0ff]">
-                        {tx.trips_remaining_after}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-[#8c9198]">
-                      No transactions found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

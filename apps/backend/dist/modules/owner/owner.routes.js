@@ -20,10 +20,21 @@ function handleError(reply, err) {
         },
     });
 }
-function todayStart() {
-    const d = new Date();
-    d.setUTCHours(0, 0, 0, 0);
-    return d;
+/** Today's date YYYY-MM-DD in Asia/Kolkata */
+function istYYYYMMDD(d = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(d);
+}
+function istDayStart(d = new Date()) {
+    const ymd = istYYYYMMDD(d);
+    return new Date(`${ymd}T00:00:00+05:30`);
+}
+function istNextDayStart(d = new Date()) {
+    return new Date(istDayStart(d).getTime() + 24 * 60 * 60 * 1000);
 }
 async function getAgencyOperatorIds(agencyId) {
     const rows = await db_1.db
@@ -37,7 +48,8 @@ async function ownerRoutes(fastify) {
         try {
             const agencyId = req.user.agencyId;
             const operatorIds = await getAgencyOperatorIds(agencyId);
-            const dayStart = todayStart();
+            const dayStart = istDayStart();
+            const dayEnd = istNextDayStart();
             const [operatorCount] = await db_1.db
                 .select({ cnt: (0, drizzle_orm_1.count)() })
                 .from(schema_1.users)
@@ -74,7 +86,7 @@ async function ownerRoutes(fastify) {
                 .select({ id: schema_1.trips.id })
                 .from(schema_1.trips)
                 .innerJoin(schema_1.routes, (0, drizzle_orm_1.eq)(schema_1.routes.id, schema_1.trips.route_id))
-                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.routes.agency_id, agencyId), (0, drizzle_orm_1.gte)(schema_1.trips.created_at, dayStart)));
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.routes.agency_id, agencyId), (0, drizzle_orm_1.gte)(schema_1.trips.created_at, dayStart), (0, drizzle_orm_1.lt)(schema_1.trips.created_at, dayEnd)));
             const todayTripIds = todayTrips.map((trip) => trip.id);
             let totalPassengersToday = 0;
             let alertsSentToday = 0;
@@ -147,12 +159,51 @@ async function ownerRoutes(fastify) {
             return handleError(reply, err);
         }
     });
+    fastify.get('/owner/operators/:id', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.OWNER, shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        try {
+            const agencyId = req.user.agencyId;
+            const operatorId = req.params.id;
+            const rows = await db_1.db.execute((0, drizzle_orm_1.sql) `
+        select
+          u.id,
+          u.name,
+          u.phone,
+          u.role,
+          u.is_active,
+          u.created_at::text as created_at,
+          count(t.id)::text as trips_created_count,
+          max(t.created_at)::text as last_active_at
+        from users u
+        left join trips t on t.operator_id = u.id
+        where u.agency_id = ${agencyId} and u.role = 'operator' and u.id = ${operatorId}
+        group by u.id
+        limit 1
+      `);
+            const op = rows[0];
+            if (!op) {
+                return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Operator not found in your agency' } });
+            }
+            return reply.send({
+                success: true,
+                data: { ...op, trips_created_count: Number(op.trips_created_count ?? 0) },
+            });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
     fastify.post('/owner/operators', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.OWNER, shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
         try {
             const agencyId = req.user.agencyId;
             const body = req.body ?? {};
             if (!body.name || !body.phone || !body.password) {
                 return reply.status(400).send({ success: false, error: { code: 'MISSING_FIELDS', message: 'name, phone, and password are required' } });
+            }
+            if (!/^\+91\d{10}$/.test(body.phone.trim())) {
+                return reply.status(400).send({
+                    success: false,
+                    error: { code: 'INVALID_PHONE', message: 'Phone must be E.164 format: +91XXXXXXXXXX' },
+                });
             }
             const [existing] = await db_1.db.select({ id: schema_1.users.id }).from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.phone, body.phone)).limit(1);
             if (existing) {
@@ -207,12 +258,28 @@ async function ownerRoutes(fastify) {
             const page = Math.max(1, Number(query.page ?? 1));
             const pageSize = 50;
             const offset = (page - 1) * pageSize;
+            const istToday = istYYYYMMDD();
             const whereParts = [
                 (0, drizzle_orm_1.sql) `r.agency_id = ${agencyId}`,
                 query.status ? (0, drizzle_orm_1.sql) `t.status = ${query.status}` : (0, drizzle_orm_1.sql) `true`,
                 query.date ? (0, drizzle_orm_1.sql) `t.scheduled_date = ${query.date}` : (0, drizzle_orm_1.sql) `true`,
                 query.unassigned === 'true' ? (0, drizzle_orm_1.sql) `t.assigned_to_operator_id is null` : (0, drizzle_orm_1.sql) `true`,
             ];
+            if (!query.status) {
+                if (query.window === 'today') {
+                    whereParts.push((0, drizzle_orm_1.sql) `(t.scheduled_date = ${istToday}::date or t.status = 'active')`);
+                }
+                else if (query.window === 'upcoming') {
+                    whereParts.push((0, drizzle_orm_1.sql) `(t.scheduled_date > ${istToday}::date and t.status <> 'completed')`);
+                }
+                else if (query.window === 'completed') {
+                    whereParts.push((0, drizzle_orm_1.sql) `t.status = 'completed'`);
+                }
+            }
+            if (query.operator?.trim()) {
+                const pat = `%${query.operator.trim()}%`;
+                whereParts.push((0, drizzle_orm_1.sql) `(assigned_user.name ilike ${pat} or owner_user.name ilike ${pat})`);
+            }
             const rows = await db_1.db.execute((0, drizzle_orm_1.sql) `
         select
           t.id,
@@ -224,24 +291,33 @@ async function ownerRoutes(fastify) {
           owner_user.name as owner_name,
           t.assigned_to_operator_id as assigned_operator_id,
           assigned_user.name as assigned_operator_name,
+          conductor_user.name as conductor_name,
           r.name as route_name,
           r.from_city,
           r.to_city,
-          count(tp.id)::text as passenger_count
+          count(tp.id)::text as passenger_count,
+          count(tp.id) filter (where tp.alert_status = 'pending')::text as pending_alerts,
+          count(tp.id) filter (where tp.alert_status = 'sent')::text as sent_alerts,
+          count(tp.id) filter (where tp.alert_status = 'failed')::text as failed_alerts,
+          b.number_plate as bus_number
         from trips t
         inner join routes r on r.id = t.route_id
         left join users owner_user on owner_user.id = t.operator_id
         left join users assigned_user on assigned_user.id = t.assigned_to_operator_id
+        left join users conductor_user on conductor_user.id = t.conductor_id
         left join trip_passengers tp on tp.trip_id = t.id
+        left join buses b on b.id = t.bus_id
         where ${drizzle_orm_1.sql.join(whereParts, (0, drizzle_orm_1.sql) ` and `)}
-        group by t.id, r.id, owner_user.name, assigned_user.name
+        group by t.id, r.id, owner_user.name, assigned_user.name, conductor_user.name, b.number_plate
         order by t.created_at desc
         limit ${pageSize} offset ${offset}
       `);
             const [countRow] = await db_1.db.execute((0, drizzle_orm_1.sql) `
-        select count(*)::text as total
+        select count(distinct t.id)::text as total
         from trips t
         inner join routes r on r.id = t.route_id
+        left join users owner_user on owner_user.id = t.operator_id
+        left join users assigned_user on assigned_user.id = t.assigned_to_operator_id
         where ${drizzle_orm_1.sql.join(whereParts, (0, drizzle_orm_1.sql) ` and `)}
       `);
             return reply.send({
@@ -256,12 +332,19 @@ async function ownerRoutes(fastify) {
                     owner_name: row.owner_name,
                     assigned_operator_id: row.assigned_operator_id,
                     assigned_operator_name: row.assigned_operator_name,
+                    conductor_name: row.conductor_name,
                     route: {
                         name: row.route_name,
                         from_city: row.from_city,
                         to_city: row.to_city,
                     },
                     passenger_count: Number(row.passenger_count ?? 0),
+                    alerts: {
+                        pending: Number(row.pending_alerts ?? 0),
+                        sent: Number(row.sent_alerts ?? 0),
+                        failed: Number(row.failed_alerts ?? 0),
+                    },
+                    bus_number: row.bus_number,
                 })),
                 meta: {
                     page,
@@ -285,6 +368,10 @@ async function ownerRoutes(fastify) {
                 (0, drizzle_orm_1.sql) `r.agency_id = ${agencyId}`,
                 query.channel ? (0, drizzle_orm_1.sql) `al.channel = ${query.channel}` : (0, drizzle_orm_1.sql) `true`,
                 query.status ? (0, drizzle_orm_1.sql) `al.status = ${query.status}` : (0, drizzle_orm_1.sql) `true`,
+                query.date ? (0, drizzle_orm_1.sql) `(al.attempted_at at time zone 'Asia/Kolkata')::date = ${query.date}::date` : (0, drizzle_orm_1.sql) `true`,
+                query.operator?.trim()
+                    ? (0, drizzle_orm_1.sql) `owner_user.name ilike ${'%' + query.operator.trim() + '%'}`
+                    : (0, drizzle_orm_1.sql) `true`,
             ];
             const rows = await db_1.db.execute((0, drizzle_orm_1.sql) `
         select
@@ -312,6 +399,7 @@ async function ownerRoutes(fastify) {
         inner join trip_passengers tp on tp.id = al.trip_passenger_id
         inner join trips t on t.id = tp.trip_id
         inner join routes r on r.id = t.route_id
+        left join users owner_user on owner_user.id = t.operator_id
         where ${drizzle_orm_1.sql.join(whereParts, (0, drizzle_orm_1.sql) ` and `)}
       `);
             return reply.send({
@@ -343,17 +431,52 @@ async function ownerRoutes(fastify) {
     fastify.put('/agency/profile', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.OWNER, shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
         try {
             const body = req.body ?? {};
+            const patch = {};
+            if (body.name !== undefined)
+                patch.name = body.name.trim();
+            if (body.phone !== undefined)
+                patch.phone = body.phone.trim();
+            if (body.email !== undefined)
+                patch.email = body.email.trim();
+            if (body.state !== undefined)
+                patch.state = body.state.trim();
+            if (Object.keys(patch).length === 0) {
+                return reply.status(400).send({
+                    success: false,
+                    error: { code: 'MISSING_FIELDS', message: 'Provide at least one of name, phone, email, state' },
+                });
+            }
             const [agency] = await db_1.db
                 .update(schema_1.agencies)
-                .set({
-                name: body.name?.trim(),
-                phone: body.phone?.trim(),
-                email: body.email?.trim(),
-                state: body.state?.trim(),
-            })
+                .set(patch)
                 .where((0, drizzle_orm_1.eq)(schema_1.agencies.id, req.user.agencyId))
                 .returning({ id: schema_1.agencies.id, name: schema_1.agencies.name, phone: schema_1.agencies.phone, email: schema_1.agencies.email, state: schema_1.agencies.state });
             return reply.send({ success: true, data: agency });
+        }
+        catch (err) {
+            return handleError(reply, err);
+        }
+    });
+    /** Trip-credit wallet only (no monetary fields for agency owners). */
+    fastify.get('/owner/wallet', { preHandler: [(0, auth_middleware_1.requireAuth)([shared_types_1.UserRole.OWNER, shared_types_1.UserRole.ADMIN])] }, async (req, reply) => {
+        try {
+            const agencyId = req.user.agencyId;
+            const [wallet] = await db_1.db
+                .select({
+                trips_remaining: schema_1.agencyWallets.trips_remaining,
+                trips_used_this_month: schema_1.agencyWallets.trips_used_this_month,
+            })
+                .from(schema_1.agencyWallets)
+                .where((0, drizzle_orm_1.eq)(schema_1.agencyWallets.agency_id, agencyId))
+                .limit(1);
+            return reply.send({
+                success: true,
+                data: {
+                    trips_remaining: wallet?.trips_remaining ?? 0,
+                    trips_used_this_month: wallet?.trips_used_this_month ?? 0,
+                    rate_trips_per_completed_trip: 1,
+                },
+            });
         }
         catch (err) {
             return handleError(reply, err);

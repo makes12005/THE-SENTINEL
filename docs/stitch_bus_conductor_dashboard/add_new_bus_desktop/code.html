@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add New Bus - Velox Fleet</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Manrope:wght@600;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#321200",
+                        "on-surface": "#e0e3e8",
+                        "on-primary-fixed": "#001d32",
+                        "background": "#101418",
+                        "on-secondary": "#2d2a5e",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "surface-variant": "#31353a",
+                        "secondary-fixed": "#e3dfff",
+                        "on-tertiary": "#502405",
+                        "inverse-surface": "#e0e3e8",
+                        "surface-container-high": "#262a2f",
+                        "inverse-primary": "#396284",
+                        "on-background": "#e0e3e8",
+                        "surface-container-low": "#181c20",
+                        "surface": "#101418",
+                        "on-surface-variant": "#c2c7ce",
+                        "on-secondary-container": "#b3afed",
+                        "tertiary-fixed": "#ffdbc9",
+                        "secondary": "#c4c0ff",
+                        "on-error": "#690005",
+                        "surface-container-highest": "#31353a",
+                        "primary": "#cee5ff",
+                        "surface-dim": "#101418",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "secondary-container": "#434076",
+                        "surface-container": "#1c2024",
+                        "on-secondary-fixed": "#171348",
+                        "surface-container-lowest": "#0b0f12",
+                        "on-tertiary-container": "#7a4523",
+                        "outline-variant": "#42474e",
+                        "on-secondary-fixed-variant": "#434076",
+                        "on-primary-container": "#2d5678",
+                        "tertiary": "#ffdcca",
+                        "secondary-fixed-dim": "#c4c0ff",
+                        "on-primary": "#003352",
+                        "outline": "#8c9198",
+                        "on-tertiary-fixed-variant": "#6c3a19",
+                        "on-primary-fixed-variant": "#1f4a6b",
+                        "inverse-on-surface": "#2d3135",
+                        "surface-tint": "#a3cbf2",
+                        "primary-fixed": "#cde5ff",
+                        "primary-container": "#a3cbf2",
+                        "surface-bright": "#363a3e",
+                        "primary-fixed-dim": "#a3cbf2",
+                        "tertiary-container": "#ffb78d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "element-tight": "0.5rem",
+                        "unit-base": "4px",
+                        "page-padding": "1rem",
+                        "card-gap": "1rem",
+                        "section-internal": "1.25rem"
+                    },
+                    "fontFamily": {
+                        "display-time": ["Manrope"],
+                        "metadata-label": ["Inter"],
+                        "button-text": ["Inter"],
+                        "body-standard": ["Inter"],
+                        "header-title": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "display-time": ["1.5rem", { "lineHeight": "1.2", "fontWeight": "900" }],
+                        "metadata-label": ["10px", { "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "button-text": ["11px", { "letterSpacing": "0.1em", "fontWeight": "900" }],
+                        "body-standard": ["0.875rem", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "header-title": ["1.125rem", { "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full h-14 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-4 transition-all">
+<div class="flex items-center gap-4">
+<!-- Mobile Menu Toggle (Hidden on Desktop) -->
+<button class="md:hidden text-zinc-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="text-lg font-black text-blue-200 tracking-tighter uppercase font-manrope">VELOX FLEET</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-zinc-500 hover:text-white transition-colors active:opacity-70">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-zinc-500 hover:text-white transition-colors active:opacity-70">
+<span class="material-symbols-outlined">history</span>
+</button>
+<button class="text-zinc-500 hover:text-white transition-colors active:opacity-70">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile, Visible on md+) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r border-white/5 border-zinc-800 bg-zinc-900 pt-14 z-40">
+<div class="p-6 border-b border-zinc-800 flex flex-col gap-1">
+<h2 class="text-xl font-black text-zinc-100 uppercase font-manrope">VELOX NOIR</h2>
+<p class="font-metadata-label text-metadata-label text-zinc-500">OP-CENTER-01</p>
+</div>
+<nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1">
+<a class="text-zinc-400 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-100 duration-150 ease-in-out font-manrope font-semibold tracking-wider text-[11px]" href="#">
+<span class="material-symbols-outlined text-[18px]">dashboard</span>
+                DASHBOARD
+            </a>
+<a class="bg-zinc-800 text-blue-200 border-l-4 border-blue-400 flex items-center gap-3 px-4 py-3 duration-150 ease-in-out font-manrope font-semibold tracking-wider text-[11px]" href="#">
+<span class="material-symbols-outlined text-[18px]">directions_bus</span>
+                FLEET
+            </a>
+<a class="text-zinc-400 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-100 duration-150 ease-in-out font-manrope font-semibold tracking-wider text-[11px]" href="#">
+<span class="material-symbols-outlined text-[18px]">map</span>
+                ROUTES
+            </a>
+<a class="text-zinc-400 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-100 duration-150 ease-in-out font-manrope font-semibold tracking-wider text-[11px]" href="#">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+                LOGISTICS
+            </a>
+<a class="text-zinc-400 flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/50 hover:text-zinc-100 duration-150 ease-in-out font-manrope font-semibold tracking-wider text-[11px]" href="#">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+                SETTINGS
+            </a>
+</nav>
+<div class="p-4 border-t border-zinc-800">
+<button class="w-full bg-surface-container-highest hover:bg-surface-variant text-on-surface font-button-text text-button-text uppercase h-10 rounded transition-colors flex items-center justify-center gap-2 border border-outline-variant/20">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                ADD ASSET
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 pt-14 p-page-padding md:p-8 flex justify-center items-start">
+<div class="w-full max-w-2xl flex flex-col gap-6 mt-4">
+<header class="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
+<a class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center" href="#">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</a>
+<div>
+<h1 class="font-header-title text-header-title text-on-surface uppercase">ADD NEW ASSET</h1>
+<p class="font-metadata-label text-metadata-label text-on-surface-variant mt-1">FLEET INVENTORY REGISTRATION</p>
+</div>
+</header>
+<!-- Fleet Policy Alert Card -->
+<div class="bg-surface-container-high border-l-4 border-inverse-primary rounded-r p-4 flex gap-3 shadow-sm">
+<span class="material-symbols-outlined text-inverse-primary shrink-0">policy</span>
+<div>
+<h3 class="font-body-standard text-body-standard text-on-surface mb-1 uppercase tracking-wide">Fleet Policy Requirement</h3>
+<p class="font-body-standard text-body-standard text-on-surface-variant text-sm">All new assets must undergo a physical safety inspection within 48 hours of registration. Please ensure the vehicle identification number (VIN) matches documentation exactly.</p>
+</div>
+</div>
+<!-- Form Card -->
+<form class="bg-surface-container-low border border-outline-variant/20 rounded-lg p-section-internal flex flex-col gap-5 shadow-lg shadow-black/50">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<!-- Bus Number -->
+<div class="flex flex-col gap-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="bus_number">ASSET NUMBER / ID</label>
+<input class="bg-surface-container-high border border-outline-variant/30 rounded h-11 px-3 text-on-surface font-body-standard text-body-standard focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder:text-on-surface-variant/50" id="bus_number" placeholder="e.g. VX-1042" type="text"/>
+</div>
+<!-- Bus Type -->
+<div class="flex flex-col gap-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="bus_type">ASSET TYPE / CLASSIFICATION</label>
+<div class="relative">
+<select class="bg-surface-container-high border border-outline-variant/30 rounded h-11 px-3 w-full text-on-surface font-body-standard text-body-standard focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all appearance-none" id="bus_type">
+<option disabled="" selected="" value="">Select Classification...</option>
+<option value="standard">Standard Coach (45ft)</option>
+<option value="articulated">Articulated Transit (60ft)</option>
+<option value="minibus">Minibus / Shuttle</option>
+<option value="electric">EV Transit</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<!-- Total Seats -->
+<div class="flex flex-col gap-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="total_seats">CAPACITY (SEATS)</label>
+<input class="bg-surface-container-high border border-outline-variant/30 rounded h-11 px-3 text-on-surface font-body-standard text-body-standard focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder:text-on-surface-variant/50" id="total_seats" min="0" placeholder="0" type="number"/>
+</div>
+<!-- Plate Number (Implicit extra field for context) -->
+<div class="flex flex-col gap-1.5">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="plate_number">LICENSE PLATE</label>
+<input class="bg-surface-container-high border border-outline-variant/30 rounded h-11 px-3 text-on-surface font-body-standard text-body-standard focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder:text-on-surface-variant/50 uppercase" id="plate_number" placeholder="XXX-0000" type="text"/>
+</div>
+</div>
+<!-- Notes -->
+<div class="flex flex-col gap-1.5 border-t border-outline-variant/10 pt-5 mt-2">
+<label class="font-metadata-label text-metadata-label text-on-surface-variant uppercase" for="notes">OPERATIONAL NOTES (OPTIONAL)</label>
+<textarea class="bg-surface-container-high border border-outline-variant/30 rounded p-3 text-on-surface font-body-standard text-body-standard focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder:text-on-surface-variant/50 resize-y min-h-[80px]" id="notes" placeholder="Enter any specific routing constraints, maintenance holds, or special equipment details..." rows="3"></textarea>
+</div>
+<!-- Actions -->
+<div class="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/20 mt-2">
+<button class="bg-surface-container-highest hover:bg-surface-variant text-on-surface font-button-text text-button-text uppercase h-12 rounded transition-colors flex items-center justify-center border border-outline-variant/20" type="button">
+                        CANCEL
+                    </button>
+<button class="bg-primary-container hover:bg-primary-fixed text-on-primary-container font-button-text text-button-text uppercase h-12 rounded transition-colors flex items-center justify-center shadow-md" type="submit">
+                        SAVE ASSET
+                    </button>
+</div>
+</form>
+</div>
+</main>
+</body></html>

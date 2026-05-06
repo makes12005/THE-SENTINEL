@@ -31,6 +31,7 @@ class AppColors {
   // ── Tertiary (amber/orange) ───────────────────────────────────────────────
   static const Color tertiary             = Color(0xFFffb68b);
   static const Color tertiaryContainer    = Color(0xFF602a00);
+  static const Color onTertiary           = Color(0xFF4a1f00);
   static const Color onTertiaryContainer  = Color(0xFFff801d);
 
   // ── On-surface ────────────────────────────────────────────────────────────
