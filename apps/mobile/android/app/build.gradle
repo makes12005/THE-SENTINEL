@@ -4,6 +4,16 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+def dartDefines = [:]
+if (project.hasProperty('dart-defines')) {
+    dartDefines = project.property('dart-defines')
+        .split(',')
+        .collectEntries { encoded ->
+            def decoded = new String(encoded.decodeBase64(), 'UTF-8').split('=')
+            [(decoded[0]): decoded.length > 1 ? decoded[1] : ""]
+        }
+}
+
 def localProperties = new Properties()
 def localPropertiesFile = 
   rootProject.file('local.properties')
@@ -47,6 +57,10 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
+        manifestPlaceholders = [
+            applicationName: "android.app.Application",
+            googleMapsApiKey: dartDefines['GOOGLE_MAPS_API_KEY'] ?: ""
+        ]
     }
 
     buildTypes {

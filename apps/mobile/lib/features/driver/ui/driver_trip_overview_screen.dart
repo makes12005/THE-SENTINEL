@@ -2,26 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../provider/driver_provider.dart';
-import '../../passengers/ui/passengers_screen.dart';
-import '../../../core/router/app_router.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../alerts/socket_service.dart';
 import '../../gps/gps_service.dart';
-import '../../../widgets/driver_mode_badge.dart';
-import 'conductor_offline_alert.dart';
+import '../../passengers/provider/passengers_provider.dart';
+import '../model/driver_trip.dart';
+import '../provider/driver_mode_provider.dart';
+import '../provider/driver_provider.dart';
+import 'driver_offline_alert_overlay.dart';
 
-/// Driver Trip Overview — read-only view of an active trip.
-/// Based on docs/ui/screen/driver/2.html.
-///
-/// Shows:
-///   - Route info (from → to, departure, ETA)
-///   - Conductor status (Connected green / Disconnected orange pulsing)
-///   - "Take Over Trip" button when conductor disconnected
-///   - "DRIVER MODE" badge in top-right after takeover
 class DriverTripOverviewScreen extends ConsumerStatefulWidget {
+  const DriverTripOverviewScreen({
+    super.key,
+    required this.tripId,
+  });
+
   final String tripId;
-  const DriverTripOverviewScreen({super.key, required this.tripId});
 
   @override
   ConsumerState<DriverTripOverviewScreen> createState() =>
@@ -30,325 +27,210 @@ class DriverTripOverviewScreen extends ConsumerStatefulWidget {
 
 class _DriverTripOverviewScreenState
     extends ConsumerState<DriverTripOverviewScreen> {
-  int _navIndex = 0; // 0=Route, 1=Passengers
   late final SocketService _socket;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(driverTripDetailProvider(widget.tripId).notifier).loadTrip();
-      _initSocket();
-    });
-  }
-
-  void _initSocket() {
     _socket = SocketService.instance;
-    _socket.connectToTrip(widget.tripId);
-
-    // Conductor went offline — update state and show full-screen alert
-    _socket.on('conductor_offline', (data) {
-      if (!mounted) return;
-      ref
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref
           .read(driverTripDetailProvider(widget.tripId).notifier)
-          .markConductorOffline();
-      _showTakeoverAlert();
-    });
-
-    // Another device confirmed takeover
-    _socket.on('conductor_replaced', (data) {
-      if (!mounted) return;
-      ref
-          .read(driverTripDetailProvider(widget.tripId).notifier)
-          .markDriverModeActive();
+          .loadTrip();
+      await _socket.connectToTrip(widget.tripId);
+      _socket.joinTripRoom(widget.tripId);
+      _socket.on('conductor_offline', _handleConductorOffline);
+      _socket.on('conductor_online', _handleConductorOnline);
     });
   }
 
-  Future<void> _showTakeoverAlert() async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => ConductorOfflineAlert(
-        tripId: widget.tripId,
-        onTakeOver: _takeOver,
-        onDismiss: () => Navigator.of(context).pop(),
-      ),
+  void _handleConductorOffline(dynamic data) {
+    if (!mounted) return;
+    final payload =
+        data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+    final eventTripId =
+        (payload['tripId'] ?? payload['trip_id'] ?? widget.tripId) as String;
+    if (eventTripId != widget.tripId) return;
+
+    final lastSeen =
+        _parseDateTime(payload['lastSeenAt'] ?? payload['last_seen_at']);
+    ref
+        .read(driverTripDetailProvider(widget.tripId).notifier)
+        .markConductorOffline(lastSeenAt: lastSeen);
+
+    final trip = ref.read(driverTripDetailProvider(widget.tripId)).trip;
+    DriverOfflineAlertOverlay.show(
+      tripId: widget.tripId,
+      tripName:
+          payload['tripName'] as String? ?? trip?.tripName ?? 'Assigned Trip',
+      onTakeOver: _takeOver,
+      onDismiss: () {},
     );
   }
 
-  Future<void> _takeOver() async {
-    Navigator.of(context).pop(); // close alert dialog
-    final success = await ref
-        .read(driverTripDetailProvider(widget.tripId).notifier)
-        .takeover();
+  void _handleConductorOnline(dynamic data) {
+    if (!mounted) return;
+    final payload =
+        data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+    final eventTripId =
+        (payload['tripId'] ?? payload['trip_id'] ?? widget.tripId) as String;
+    if (eventTripId != widget.tripId) return;
 
-    if (success && mounted) {
-      // Start GPS service — same as conductor
+    DriverOfflineAlertOverlay.hide();
+    ref
+        .read(driverTripDetailProvider(widget.tripId).notifier)
+        .markConductorOnline();
+  }
+
+  Future<void> _takeOver() async {
+    final notifier = ref.read(driverTripDetailProvider(widget.tripId).notifier);
+    final success = await notifier.takeover();
+
+    if (!mounted) return;
+
+    if (success) {
+      ref.read(driverModeTripIdProvider.notifier).state = widget.tripId;
       await GpsService.start(tripId: widget.tripId);
+      SocketService.joinTrip(widget.tripId);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Takeover successful — GPS started'),
-          backgroundColor: Color(0xFF4CAF50),
+          content: Text('You are now in control of this trip'),
         ),
       );
-    } else if (mounted) {
-      final err = ref.read(driverTripDetailProvider(widget.tripId)).error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(err ?? 'Takeover failed'),
-          backgroundColor: AppColors.errorContainer,
-        ),
+      context.push(
+        '/conductor/active/${widget.tripId}?driverMode=true',
+        extra: true,
       );
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Failed to take over trip. Please try again.'),
+        backgroundColor: AppColors.errorContainer,
+      ),
+    );
   }
 
   @override
   void dispose() {
     _socket.off('conductor_offline');
-    _socket.off('conductor_replaced');
+    _socket.off('conductor_online');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(driverTripDetailProvider(widget.tripId));
-    final trip  = state.trip;
+    final passengersAsync = ref.watch(passengersProvider(widget.tripId));
+    final trip = state.trip;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // ── Main content ─────────────────────────────────────────
-          SafeArea(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : trip == null
-                    ? Center(child: Text(state.error ?? 'Loading…',
-                          style: GoogleFonts.inter(color: AppColors.error)))
-                    : _navIndex == 1
-                        ? PassengersScreen(
-                            tripId: widget.tripId,
-                            isDriverMode: state.hasDriverMode,
-                          )
-                        : _buildRouteView(trip, state),
-          ),
-
-          // ── Driver Mode badge ─────────────────────────────────────
-          if (state.hasDriverMode)
-            const Positioned(top: 56, right: 16, child: DriverModeBadge()),
+      appBar: AppBar(
+        leading: BackButton(
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          trip?.tripName ?? 'Trip Overview',
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w800),
+        ),
+        actions: [
+          if (state.hasDriverMode) const DriverModeAppBarBadge(),
         ],
       ),
-
-      // ── Bottom Navigation ──────────────────────────────────────────
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  Widget _buildRouteView(trip, state) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          backgroundColor: const Color(0xFF181c20),
-          leading: BackButton(
-            color: AppColors.onSurface,
-            onPressed: () => context.pop(),
-          ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                trip.displayRoute,
-                style: GoogleFonts.manrope(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 17),
-              ),
-              Text(
-                trip.routeName,
-                style: GoogleFonts.inter(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 11,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.all(20),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              // ── Route hero card ─────────────────────────────────
-              _RouteHeroCard(trip: trip),
-              const SizedBox(height: 20),
-
-              // ── Conductor status card ────────────────────────────
-              _ConductorStatusCard(
-                conductorName: trip.conductorName ?? 'Unknown',
-                online: trip.conductorOnline,
-                isTakingOver: state.isTakingOver,
-                hasDriverMode: state.hasDriverMode,
-                onTakeOver: _takeOver,
-              ),
-
-              const SizedBox(height: 80),
-            ]),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNav() {
-    final items = [
-      (Icons.route_outlined, 'ROUTE'),
-      (Icons.group_outlined, 'PASSENGERS'),
-    ];
-    return Container(
-      padding: const EdgeInsets.only(bottom: 8, top: 8),
-      decoration: const BoxDecoration(
-        color: Color(0xFF181c20),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 24, offset: Offset(0, -4))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(2, (i) {
-          final active = _navIndex == i;
-          return GestureDetector(
-            onTap: () => setState(() => _navIndex = i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              decoration: BoxDecoration(
-                color: active ? AppColors.surfaceContainerHigh : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(items[i].$1,
-                      color: active ? AppColors.primary : AppColors.onSurfaceVariant),
-                  const SizedBox(height: 4),
-                  Text(items[i].$2,
-                      style: GoogleFonts.inter(
-                        color: active ? AppColors.primary : AppColors.onSurfaceVariant,
-                        fontSize: 10, fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      )),
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
+      body: state.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : trip == null
+              ? Center(
+                  child: Text(
+                    state.error ?? 'Trip not available',
+                    style: GoogleFonts.inter(color: AppColors.error),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _RouteHeaderCard(trip: trip),
+                    const SizedBox(height: 16),
+                    _ConductorStatusCard(trip: trip),
+                    const SizedBox(height: 16),
+                    _PassengerSummaryCard(
+                      trip: trip,
+                      passengersAsync: passengersAsync,
+                    ),
+                    const SizedBox(height: 16),
+                    _BusInfoCard(busLabel: trip.busLabel),
+                    const SizedBox(height: 24),
+                    if (trip.isTakeoverEligible && !state.hasDriverMode)
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: state.isTakingOver ? null : _takeOver,
+                          child: state.isTakingOver
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Request Takeover'),
+                        ),
+                      ),
+                    if (!trip.isTakeoverEligible && !state.hasDriverMode)
+                      Text(
+                        'Takeover becomes available after the conductor has been offline for more than 2 minutes.',
+                        style: GoogleFonts.inter(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                  ],
+                ),
     );
   }
 }
 
-// ── Route Hero Card ───────────────────────────────────────────────────────────
+class _RouteHeaderCard extends StatelessWidget {
+  const _RouteHeaderCard({required this.trip});
 
-class _RouteHeroCard extends StatelessWidget {
-  final trip;
-  const _RouteHeroCard({required this.trip});
+  final DriverTrip trip;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ACTIVE ROUTE',
-              style: GoogleFonts.inter(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5)),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(trip.fromCity,
-                  style: GoogleFonts.manrope(
-                      color: AppColors.onSurface,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800)),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.east_rounded, color: AppColors.primary, size: 22),
-              ),
-              Text(trip.toCity,
-                  style: GoogleFonts.manrope(
-                      color: AppColors.onSurface,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800)),
-            ],
+          Text(
+            trip.tripName,
+            style: GoogleFonts.manrope(
+              color: AppColors.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('DEPARTURE',
-                          style: GoogleFonts.inter(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 9, fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2)),
-                      const SizedBox(height: 4),
-                      Text(
-                        trip.scheduledDate.isNotEmpty
-                            ? trip.scheduledDate.substring(0, 10)
-                            : '—',
-                        style: GoogleFonts.manrope(
-                            color: AppColors.onSurface, fontSize: 15,
-                            fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('STATUS',
-                          style: GoogleFonts.inter(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 9, fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2)),
-                      const SizedBox(height: 4),
-                      Text(
-                        trip.status.toUpperCase(),
-                        style: GoogleFonts.manrope(
-                            color: trip.isActive ? const Color(0xFF4CAF50) : AppColors.onSurface,
-                            fontSize: 15, fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            trip.displayRoute,
+            style: GoogleFonts.inter(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -356,209 +238,190 @@ class _RouteHeroCard extends StatelessWidget {
   }
 }
 
-// ── Conductor Status Card (core driver interaction) ────────────────────────────
-
 class _ConductorStatusCard extends StatelessWidget {
-  final String conductorName;
-  final bool online;
-  final bool isTakingOver;
-  final bool hasDriverMode;
-  final VoidCallback onTakeOver;
+  const _ConductorStatusCard({required this.trip});
 
-  const _ConductorStatusCard({
-    required this.conductorName,
-    required this.online,
-    required this.isTakingOver,
-    required this.hasDriverMode,
-    required this.onTakeOver,
-  });
+  final DriverTrip trip;
 
   @override
   Widget build(BuildContext context) {
-    // If driver mode is already active → show confirmation chip
-    if (hasDriverMode) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle_outline_rounded,
-                  color: Color(0xFF4CAF50), size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('YOU ARE IN CONTROL',
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF4CAF50),
-                        fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
-                  Text('Driver mode active — GPS running',
-                      style: GoogleFonts.manrope(
-                          color: AppColors.onSurface,
-                          fontSize: 15, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Normal / warning state
-    final isWarning = !online;
-    final cardColor = isWarning
-        ? AppColors.tertiaryContainer.withOpacity(0.3)
-        : AppColors.surfaceContainerLow;
-    final borderColor = isWarning
-        ? AppColors.tertiary.withOpacity(0.3)
-        : Colors.transparent;
+    final isOnline = trip.conductorOnline;
+    final color = isOnline ? Colors.green : Colors.red;
+    final title = isOnline ? 'Conductor Active' : 'Conductor Offline';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 48, height: 48,
+                width: 12,
+                height: 12,
                 decoration: BoxDecoration(
-                  color: (isWarning ? AppColors.tertiary : AppColors.secondary)
-                      .withOpacity(0.12),
+                  color: color,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  isWarning ? Icons.wifi_off_rounded : Icons.verified_user_outlined,
-                  color: isWarning ? AppColors.tertiary : AppColors.secondary,
-                  size: 26,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: GoogleFonts.manrope(
+                  color: AppColors.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isWarning ? 'CURRENT STATUS' : 'SECONDARY STATUS',
-                      style: GoogleFonts.inter(
-                        color: isWarning ? AppColors.tertiary : AppColors.onSurfaceVariant,
-                        fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-                    ),
-                    Text(
-                      isWarning ? 'Conductor Disconnected' : 'Conductor Active',
-                      style: GoogleFonts.manrope(
-                        color: isWarning ? AppColors.tertiary : AppColors.onSurface,
-                        fontSize: 18, fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      'Conductor: $conductorName',
-                      style: GoogleFonts.inter(
-                        color: isWarning
-                            ? AppColors.tertiary.withOpacity(0.8)
-                            : AppColors.onSurfaceVariant,
-                        fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-              if (isWarning)
-                _PulsingDot()
-              else
-                const Icon(Icons.check_circle_outline, color: AppColors.primary),
             ],
           ),
-
-          // Take Over button — only shown when conductor offline
-          if (isWarning) ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 58,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.tertiary,
-                  foregroundColor: AppColors.onTertiary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                onPressed: isTakingOver ? null : onTakeOver,
-                icon: isTakingOver
-                    ? const SizedBox(
-                        width: 20, height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.assignment_ind_rounded),
-                label: Text(
-                  isTakingOver ? 'TAKING OVER…' : 'TAKE OVER TRIP',
-                  style: GoogleFonts.manrope(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    letterSpacing: 1.5,
-                  ),
+          const SizedBox(height: 8),
+          Text(
+            'Conductor: ${trip.conductorName ?? 'Not assigned'}',
+            style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ),
+          if (!isOnline)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Last seen: ${_formatLastSeen(trip.conductorLastSeenAt)}',
+                style: GoogleFonts.inter(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 13,
                 ),
               ),
             ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _PulsingDot extends StatefulWidget {
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
+class _PassengerSummaryCard extends StatelessWidget {
+  const _PassengerSummaryCard({
+    required this.trip,
+    required this.passengersAsync,
+  });
 
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  final DriverTrip trip;
+  final AsyncValue passengersAsync;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (_, __) => Container(
-        width: 12, height: 12,
-        decoration: BoxDecoration(
-          color: AppColors.tertiary,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.tertiary.withOpacity(0.4 + _ctrl.value * 0.6),
-              blurRadius: 8 + _ctrl.value * 8,
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Passengers',
+            style: GoogleFonts.manrope(
+              color: AppColors.onSurface,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Total passengers count: ${trip.totalPassengers}',
+            style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Alert progress: ${trip.alertedPassengers} of ${trip.totalPassengers} alerted',
+            style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          passengersAsync.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (passengers) => Column(
+              children: [
+                for (final passenger in passengers.take(5))
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      passenger.name,
+                      style: GoogleFonts.inter(color: AppColors.onSurface),
+                    ),
+                    subtitle: Text(
+                      passenger.stopName,
+                      style: GoogleFonts.inter(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing: Text(
+                      passenger.alertStatus,
+                      style: GoogleFonts.inter(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _BusInfoCard extends StatelessWidget {
+  const _BusInfoCard({required this.busLabel});
+
+  final String? busLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bus Info',
+            style: GoogleFonts.manrope(
+              color: AppColors.onSurface,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            busLabel?.isNotEmpty == true ? busLabel! : 'Bus not assigned',
+            style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+DateTime? _parseDateTime(dynamic value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value)?.toLocal();
+}
+
+String _formatLastSeen(DateTime? value) {
+  if (value == null) return 'Unavailable';
+  final now = DateTime.now();
+  final diff = now.difference(value);
+  if (diff.inMinutes < 1) return 'just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+  return '${value.day}/${value.month}/${value.year} ${value.hour}:${value.minute.toString().padLeft(2, '0')}';
 }

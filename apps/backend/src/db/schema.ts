@@ -20,6 +20,8 @@ export const tripStatusEnum = pgEnum('trip_status', ['scheduled', 'active', 'com
 export const alertStatusEnum = pgEnum('alert_status', ['pending', 'sent', 'failed']);
 export const alertChannelEnum = pgEnum('alert_channel', ['call', 'sms', 'whatsapp', 'manual']);
 export const alertLogStatusEnum = pgEnum('alert_log_status', ['success', 'failed']);
+export const routeSourceEnum = pgEnum('route_source', ['scratch', 'popular', 'library']);
+export const boardingStatusEnum = pgEnum('boarding_status', ['pending', 'boarded', 'absent']);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth tables (unchanged from sprint 1)
@@ -94,11 +96,47 @@ export const routes = pgTable('routes', {
   from_city: varchar('from_city', { length: 255 }).notNull(),
   to_city: varchar('to_city', { length: 255 }).notNull(),
   is_active: boolean('is_active').default(true).notNull(),
+  is_published: boolean('is_published').default(false).notNull(),
+  published_at: timestamp('published_at', { withTimezone: true }),
+  source: routeSourceEnum('source').default('scratch').notNull(),
   created_by: uuid('created_by').references(() => users.id),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
   agencyIdx: index('routes_agency_idx').on(table.agency_id),
   agencyNameUnique: unique('routes_agency_name_unique').on(table.agency_id, table.name),
+}));
+
+export const geoCoordinatesLibrary = pgTable('geo_coordinates_library', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  latitude: decimal('latitude', { precision: 10, scale: 7 }).notNull(),
+  longitude: decimal('longitude', { precision: 10, scale: 7 }).notNull(),
+  captured_by_user_id: uuid('captured_by_user_id').references(() => users.id).notNull(),
+  captured_by_name: varchar('captured_by_name', { length: 255 }).notNull(),
+  agency_id: uuid('agency_id').references(() => agencies.id).notNull(),
+  agency_name: varchar('agency_name', { length: 255 }).notNull(),
+  verified: boolean('verified').default(false).notNull(),
+  use_count: integer('use_count').default(0).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  verifiedUseCountIdx: index('geo_library_verified_use_count_idx').on(table.verified, table.use_count),
+  agencyIdx: index('geo_library_agency_idx').on(table.agency_id),
+}));
+
+export const popularRoutes = pgTable('popular_routes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  from_city: varchar('from_city', { length: 255 }).notNull(),
+  to_city: varchar('to_city', { length: 255 }).notNull(),
+  stops: jsonb('stops').notNull(),
+  published_by_agency_id: uuid('published_by_agency_id').references(() => agencies.id).notNull(),
+  published_by_agency_name: varchar('published_by_agency_name', { length: 255 }).notNull(),
+  is_approved: boolean('is_approved').default(false).notNull(),
+  use_count: integer('use_count').default(0).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  approvedUseCountIdx: index('popular_routes_approved_use_count_idx').on(table.is_approved, table.use_count),
+  agencyIdx: index('popular_routes_agency_idx').on(table.published_by_agency_id),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -163,6 +201,10 @@ export const tripPassengers = pgTable('trip_passengers', {
   passenger_name: varchar('passenger_name', { length: 255 }).notNull(),
   passenger_phone: varchar('passenger_phone', { length: 20 }).notNull(),
   stop_id: uuid('stop_id').references(() => stops.id).notNull(),
+  pickup_point: text('pickup_point'),
+  seat_no: varchar('seat_no', { length: 50 }),
+  boarding_status: boardingStatusEnum('boarding_status').default('pending').notNull(),
+  boarded_at: timestamp('boarded_at', { withTimezone: true }),
   alert_status: alertStatusEnum('alert_status').default('pending').notNull(),
   alert_channel: alertChannelEnum('alert_channel'),          // set on successful delivery
   alert_sent_at: timestamp('alert_sent_at', { withTimezone: true }),
@@ -252,4 +294,3 @@ export const tripTemplates = pgTable('trip_templates', {
   agencyNameUnique: unique('templates_agency_name_unique').on(table.agency_id, table.name),
   agencyIdx: index('templates_agency_idx').on(table.agency_id),
 }));
-

@@ -7,7 +7,9 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
-  const WelcomeScreen({super.key});
+  const WelcomeScreen({super.key, this.initialError});
+
+  final String? initialError;
 
   @override
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -20,6 +22,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   int _authTab = 0;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialError == 'unsupported_role') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('This app is for conductors and drivers only.'),
+          backgroundColor: AppColors.errorContainer,
+        ));
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _contactCon.dispose();
     _passCon.dispose();
@@ -29,7 +45,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Future<void> _onPasswordLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final contact = _contactCon.text.trim();
+    final contact = _formatContact(_contactCon.text);
     final password = _passCon.text;
     if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -40,23 +56,44 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     }
 
     final success = await ref.read(authProvider.notifier).loginWithPassword(
-      contact: contact,
-      password: password,
-    );
+          contact: contact,
+          password: password,
+        );
     if (success && mounted) {
-      context.go(AppRoutes.dashboard);
+      final role = ref.read(authProvider).role;
+      if (role == 'conductor') {
+        context.go(AppRoutes.dashboard);
+      } else if (role == 'driver') {
+        context.go(AppRoutes.driverDashboard);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('This app is for conductors and drivers only.'),
+          backgroundColor: AppColors.errorContainer,
+        ));
+      }
     }
   }
 
   Future<void> _onSendOtp() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final contact = _contactCon.text.trim();
+    final contact = _formatContact(_contactCon.text);
 
     final success = await ref.read(authProvider.notifier).sendOtp(contact);
     if (success && mounted) {
       context.push(AppRoutes.otp);
     }
+  }
+
+  String _formatContact(String value) {
+    final contact = value.trim();
+    final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(contact);
+    if (isEmail) return contact.toLowerCase();
+
+    if (!contact.startsWith('+')) {
+      return '+91${contact.replaceAll(RegExp(r'\D'), '')}';
+    }
+    return contact;
   }
 
   @override
@@ -77,12 +114,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       body: Stack(
         children: [
           Positioned(
-            top: -80, right: -80,
-            child: _glowOrb(AppColors.primary.withOpacity(0.08), 260),
+            top: -80,
+            right: -80,
+            child: _glowOrb(AppColors.primary.withValues(alpha: 0.08), 260),
           ),
           Positioned(
-            bottom: -60, left: -80,
-            child: _glowOrb(AppColors.secondary.withOpacity(0.05), 320),
+            bottom: -60,
+            left: -80,
+            child: _glowOrb(AppColors.secondary.withValues(alpha: 0.05), 320),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -97,7 +136,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       child: Column(
                         children: [
                           Container(
-                            width: 72, height: 72,
+                            width: 72,
+                            height: 72,
                             decoration: BoxDecoration(
                               color: AppColors.primaryContainer,
                               borderRadius: BorderRadius.circular(20),
@@ -144,11 +184,19 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: _authTab == 0 ? AppColors.surfaceContainerHigh : Colors.transparent,
+                                  color: _authTab == 0
+                                      ? AppColors.surfaceContainerHigh
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Center(
-                                  child: Text('LOGIN', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, letterSpacing: 1.2, color: _authTab == 0 ? AppColors.primary : AppColors.onSurfaceVariant)),
+                                  child: Text('LOGIN',
+                                      style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.2,
+                                          color: _authTab == 0
+                                              ? AppColors.primary
+                                              : AppColors.onSurfaceVariant)),
                                 ),
                               ),
                             ),
@@ -159,11 +207,19 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                               child: Container(
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: _authTab == 1 ? AppColors.surfaceContainerHigh : Colors.transparent,
+                                  color: _authTab == 1
+                                      ? AppColors.surfaceContainerHigh
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Center(
-                                  child: Text('SIGN UP', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, letterSpacing: 1.2, color: _authTab == 1 ? AppColors.primary : AppColors.onSurfaceVariant)),
+                                  child: Text('SIGN UP',
+                                      style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.2,
+                                          color: _authTab == 1
+                                              ? AppColors.primary
+                                              : AppColors.onSurfaceVariant)),
                                 ),
                               ),
                             ),
@@ -178,7 +234,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       child: ElevatedButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                        label: Text('Continue with Google', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                        label: Text('Continue with Google',
+                            style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.surfaceContainerHigh,
                           foregroundColor: AppColors.onSurface,
@@ -189,12 +248,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     const SizedBox(height: 18),
                     Row(
                       children: [
-                        const Expanded(child: Divider(color: AppColors.surfaceContainerHighest)),
+                        const Expanded(
+                            child: Divider(
+                                color: AppColors.surfaceContainerHighest)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('OR', style: GoogleFonts.manrope(fontSize: 11, letterSpacing: 1.4, color: AppColors.outline)),
+                          child: Text('OR',
+                              style: GoogleFonts.manrope(
+                                  fontSize: 11,
+                                  letterSpacing: 1.4,
+                                  color: AppColors.outline)),
                         ),
-                        const Expanded(child: Divider(color: AppColors.surfaceContainerHighest)),
+                        const Expanded(
+                            child: Divider(
+                                color: AppColors.surfaceContainerHighest)),
                       ],
                     ),
                     const SizedBox(height: 22),
@@ -211,18 +278,23 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     TextFormField(
                       controller: _contactCon,
                       keyboardType: TextInputType.emailAddress,
-                      style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
+                      style: GoogleFonts.inter(
+                          color: AppColors.onSurface, fontSize: 16),
                       decoration: const InputDecoration(
                         hintText: '+91XXXXXXXXXX or name@example.com',
-                        prefixIcon: Icon(Icons.alternate_email, color: AppColors.onSurfaceVariant),
+                        prefixIcon: Icon(Icons.alternate_email,
+                            color: AppColors.onSurfaceVariant),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Phone number or email is required';
+                        if (v == null || v.isEmpty)
+                          return 'Phone number or email is required';
                         final value = v.trim();
-                        final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
+                        final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                            .hasMatch(value);
                         final digits = value.replaceAll(RegExp(r'\D'), '');
-                        final isPhone =
-                            value.startsWith('+') ? digits.length >= 10 : digits.length == 10;
+                        final isPhone = value.startsWith('+')
+                            ? digits.length >= 10
+                            : digits.length == 10;
                         if (!isEmail && !isPhone) {
                           return 'Enter a valid phone number or email';
                         }
@@ -243,10 +315,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     TextFormField(
                       controller: _passCon,
                       obscureText: true,
-                      style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
+                      style: GoogleFonts.inter(
+                          color: AppColors.onSurface, fontSize: 16),
                       decoration: const InputDecoration(
                         hintText: '••••••••',
-                        prefixIcon: Icon(Icons.lock_outline, color: AppColors.onSurfaceVariant),
+                        prefixIcon: Icon(Icons.lock_outline,
+                            color: AppColors.onSurfaceVariant),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -257,7 +331,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         onPressed: auth.isLoading ? null : _onPasswordLogin,
                         child: auth.isLoading
                             ? const SizedBox(
-                                width: 24, height: 24,
+                                width: 24,
+                                height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
                                   color: AppColors.onPrimaryContainer,
@@ -303,7 +378,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             blurRadius: size * 0.4,
             spreadRadius: size * 0.1,
           ),

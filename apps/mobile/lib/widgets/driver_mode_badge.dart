@@ -20,8 +20,8 @@ class DriverModeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.18),
-        border: Border.all(color: AppColors.error.withOpacity(0.55)),
+        color: AppColors.error.withValues(alpha: 0.18),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.55)),
         borderRadius: BorderRadius.circular(99),
       ),
       child: Row(
@@ -33,7 +33,7 @@ class DriverModeBadge extends StatelessWidget {
               color: AppColors.error,
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: AppColors.error.withOpacity(0.6), blurRadius: 6),
+                BoxShadow(color: AppColors.error.withValues(alpha: 0.6), blurRadius: 6),
               ],
             ),
           ),

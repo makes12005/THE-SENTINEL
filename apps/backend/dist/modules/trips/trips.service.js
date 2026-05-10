@@ -7,6 +7,7 @@ const schema_1 = require("../../db/schema");
 const shared_types_1 = require("../../lib/shared-types");
 const wallet_service_1 = require("../wallet/wallet.service");
 const trip_auth_helper_1 = require("./trip-auth.helper");
+const trip_template_column_1 = require("./trip-template-column");
 class TripsService {
     static async createTrip(operatorId, agencyId, payload) {
         // ── Template resolution ─────────────────────────────────────────────────
@@ -112,10 +113,7 @@ class TripsService {
                 throw Object.assign(new Error('Assigned operator is inactive'), { statusCode: 422 });
             finalAssignedOperatorId = assignedOperatorId;
         }
-        const [trip] = await db_1.db
-            .insert(schema_1.trips)
-            .values({
-            template_id: payload.template_id || null,
+        const tripValues = {
             route_id: routeId,
             owned_by_operator_id: operatorId,
             assigned_operator_id: finalAssignedOperatorId,
@@ -125,7 +123,13 @@ class TripsService {
             scheduled_date: scheduledDate,
             scheduled_time: scheduledTime || null,
             status: 'scheduled',
-        })
+        };
+        if (await (0, trip_template_column_1.hasTripTemplateColumn)()) {
+            tripValues.template_id = payload.template_id || null;
+        }
+        const [trip] = await db_1.db
+            .insert(schema_1.trips)
+            .values(tripValues)
             .returning();
         return trip;
     }
@@ -137,6 +141,12 @@ class TripsService {
         ];
         if (userRole === shared_types_1.UserRole.OPERATOR) {
             conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema_1.trips.owned_by_operator_id, userId), (0, drizzle_orm_1.eq)(schema_1.trips.assigned_operator_id, userId)));
+        }
+        else if (userRole === shared_types_1.UserRole.CONDUCTOR) {
+            conditions.push((0, drizzle_orm_1.eq)(schema_1.trips.conductor_id, userId));
+        }
+        else if (userRole === shared_types_1.UserRole.DRIVER) {
+            conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema_1.trips.driver_id, userId), (0, drizzle_orm_1.eq)(schema_1.trips.conductor_id, userId)));
         }
         return db_1.db
             .select({
@@ -247,14 +257,25 @@ class TripsService {
             id: schema_1.tripPassengers.id,
             passenger_name: schema_1.tripPassengers.passenger_name,
             passenger_phone: schema_1.tripPassengers.passenger_phone,
+            name: schema_1.tripPassengers.passenger_name,
+            phone: schema_1.tripPassengers.passenger_phone,
+            pickup_point: schema_1.tripPassengers.pickup_point,
+            seat_no: schema_1.tripPassengers.seat_no,
+            boarding_status: schema_1.tripPassengers.boarding_status,
+            boarded_at: schema_1.tripPassengers.boarded_at,
             alert_status: schema_1.tripPassengers.alert_status,
             alert_channel: schema_1.tripPassengers.alert_channel,
             alert_sent_at: schema_1.tripPassengers.alert_sent_at,
             created_at: schema_1.tripPassengers.created_at,
+            stop_name: schema_1.stops.name,
+            stop_sequence: schema_1.stops.sequence_number,
+            stop_latitude: (0, drizzle_orm_1.sql) `ST_Y(${schema_1.stops.coordinates}::geometry)`,
+            stop_longitude: (0, drizzle_orm_1.sql) `ST_X(${schema_1.stops.coordinates}::geometry)`,
         })
             .from(schema_1.tripPassengers)
+            .innerJoin(schema_1.stops, (0, drizzle_orm_1.eq)(schema_1.stops.id, schema_1.tripPassengers.stop_id))
             .where((0, drizzle_orm_1.eq)(schema_1.tripPassengers.trip_id, tripId))
-            .orderBy(schema_1.tripPassengers.created_at);
+            .orderBy(schema_1.stops.sequence_number, schema_1.tripPassengers.created_at);
     }
     static async getTripStatus(tripId) {
         const [trip] = await db_1.db.select().from(schema_1.trips).where((0, drizzle_orm_1.eq)(schema_1.trips.id, tripId)).limit(1);
@@ -313,7 +334,7 @@ class TripsService {
             },
         };
     }
-    static async startTrip(tripId, conductorId) {
+    static async startTrip(tripId, conductorId, checklist) {
         const [trip] = await db_1.db.select().from(schema_1.trips).where((0, drizzle_orm_1.eq)(schema_1.trips.id, tripId)).limit(1);
         if (!trip)
             throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
@@ -326,6 +347,30 @@ class TripsService {
         }
         if (trip.status !== 'scheduled')
             throw Object.assign(new Error(`Cannot start a trip with status: ${trip.status}`), { statusCode: 409 });
+        if (checklist && checklist.length > 0) {
+            const passengerIds = checklist.map((item) => item.id);
+            const existingPassengers = await db_1.db
+                .select({ id: schema_1.tripPassengers.id })
+                .from(schema_1.tripPassengers)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.tripPassengers.trip_id, tripId), (0, drizzle_orm_1.sql) `${schema_1.tripPassengers.id} = any(${passengerIds})`));
+            const existingIds = new Set(existingPassengers.map((row) => row.id));
+            const invalidId = checklist.find((item) => !existingIds.has(item.id));
+            if (invalidId) {
+                throw Object.assign(new Error('Checklist contains passengers from another trip'), {
+                    statusCode: 400,
+                    code: 'INVALID_BOARDING_CHECKLIST',
+                });
+            }
+            for (const item of checklist) {
+                await db_1.db
+                    .update(schema_1.tripPassengers)
+                    .set({
+                    boarding_status: item.boarding_status,
+                    boarded_at: item.boarding_status === 'boarded' ? new Date() : null,
+                })
+                    .where((0, drizzle_orm_1.eq)(schema_1.tripPassengers.id, item.id));
+            }
+        }
         const [updated] = await db_1.db.update(schema_1.trips).set({ status: 'active', started_at: new Date() }).where((0, drizzle_orm_1.eq)(schema_1.trips.id, tripId)).returning();
         return updated;
     }
@@ -366,7 +411,10 @@ class TripsService {
             passenger_name: payload.passenger_name,
             passenger_phone: payload.passenger_phone,
             stop_id: payload.stop_id,
+            pickup_point: payload.pickup_point ?? null,
+            seat_no: payload.seat_no ?? null,
             alert_status: 'pending',
+            boarding_status: 'pending',
         })
             .returning();
         return passenger;
@@ -385,7 +433,10 @@ class TripsService {
                 passenger_name: p.passenger_name,
                 passenger_phone: p.passenger_phone,
                 stop_id: p.stop_id,
+                pickup_point: p.pickup_point ?? null,
+                seat_no: p.seat_no ?? null,
                 alert_status: 'pending',
+                boarding_status: 'pending',
             })))
                 .returning();
         });

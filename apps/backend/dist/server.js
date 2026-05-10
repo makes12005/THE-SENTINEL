@@ -10,6 +10,8 @@ const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const google_routes_1 = __importDefault(require("./modules/auth/google.routes"));
 const trips_routes_1 = __importDefault(require("./modules/trips/trips.routes"));
 const routes_routes_1 = __importDefault(require("./modules/trips/routes.routes"));
+const geo_library_routes_1 = __importDefault(require("./modules/trips/geo-library.routes"));
+const popular_routes_routes_1 = __importDefault(require("./modules/trips/popular-routes.routes"));
 const templates_routes_1 = __importDefault(require("./modules/trips/templates.routes"));
 const operator_routes_1 = __importDefault(require("./modules/operator/operator.routes"));
 const owner_routes_1 = __importDefault(require("./modules/owner/owner.routes"));
@@ -62,6 +64,8 @@ fastify.register(auth_routes_1.default, { prefix: '/api/auth' });
 fastify.register(google_routes_1.default, { prefix: '/api/auth' }); // /api/auth/google, /api/auth/google/callback
 fastify.register(trips_routes_1.default, { prefix: '/api/trips' });
 fastify.register(routes_routes_1.default, { prefix: '/api/routes' });
+fastify.register(geo_library_routes_1.default, { prefix: '/api/geo-library' });
+fastify.register(popular_routes_routes_1.default, { prefix: '/api/popular-routes' });
 fastify.register(templates_routes_1.default, { prefix: '/api/templates' });
 // Operator dashboard API (sprint 7)
 // All routes live under /api: /api/operator/summary, /api/agency/members, /api/logs/alert-logs

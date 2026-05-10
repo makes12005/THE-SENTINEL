@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:isolate';
-import 'dart:ui';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -34,6 +33,12 @@ class _GpsTaskHandler extends TaskHandler {
       headers: {'Authorization': 'Bearer $_accessToken'},
     ));
 
+    // Keep log lines explicit for audit verification.
+    // ignore: avoid_print
+    print('GPS service started');
+    // ignore: avoid_print
+    print('Sending location every 10 seconds');
+
     // Start streaming GPS
     _positionSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -62,6 +67,8 @@ class _GpsTaskHandler extends TaskHandler {
     if (data is Map && data['type'] == 'token_refresh') {
       _accessToken = data['token'] as String;
       _dio.options.headers['Authorization'] = 'Bearer $_accessToken';
+    } else if (data is Map && data['type'] == 'flush_queue') {
+      _flushQueue();
     }
   }
 
@@ -79,6 +86,8 @@ class _GpsTaskHandler extends TaskHandler {
     await _flushQueue();
 
     try {
+      // ignore: avoid_print
+      print('POST /api/trips/$_tripId/location');
       await _dio.post('/api/trips/$_tripId/location', data: payload);
     } catch (_) {
       // Network failure — push to offline queue
@@ -125,7 +134,8 @@ class GpsService {
   GpsService._();
 
   static const _tripIdKey = 'busalert.active_trip_id';
-  static const _channelId = 'bus_alert_gps';
+  static const _channelId = 'bus_alert_location';
+  static StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   /// Request permissions and start the foreground service.
   static Future<void> start({required String tripId}) async {
@@ -137,8 +147,8 @@ class GpsService {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: _channelId,
-        channelName: 'Bus Alert GPS',
-        channelDescription: 'Live GPS tracking for active trips',
+        channelName: 'Bus Alert Location',
+        channelDescription: 'Bus Alert is tracking location',
         channelImportance: NotificationChannelImportance.DEFAULT,
         priority: NotificationPriority.DEFAULT,
         enableVibration: false,
@@ -164,17 +174,35 @@ class GpsService {
     } else {
       await FlutterForegroundTask.startService(
         serviceId: 1001,
-        notificationTitle: 'Bus Alert — Trip Active',
-        notificationText: 'GPS tracking is running',
+        notificationTitle: 'Trip Active',
+        notificationText: 'Bus Alert is tracking location',
         callback: startCallback,
       );
     }
+
+    await _bindConnectivityFlushListener();
   }
 
   static Future<void> stop() async {
     await FlutterForegroundTask.stopService();
+    await _connectivitySub?.cancel();
+    _connectivitySub = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tripIdKey);
+  }
+
+  static Future<void> _bindConnectivityFlushListener() async {
+    await _connectivitySub?.cancel();
+    final connectivity = Connectivity();
+
+    _connectivitySub = connectivity.onConnectivityChanged.listen((results) {
+      final hasNetwork = results.any(
+        (r) => r == ConnectivityResult.mobile || r == ConnectivityResult.wifi,
+      );
+      if (hasNetwork) {
+        FlutterForegroundTask.sendDataToTask({'type': 'flush_queue'});
+      }
+    });
   }
 
   static Future<void> _requestPermissions() async {

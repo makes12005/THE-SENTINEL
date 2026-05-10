@@ -8,6 +8,10 @@ export type AlertStatus = z.infer<typeof AlertStatusEnum>;
 
 export const AlertChannelEnum = z.enum(['call', 'sms', 'whatsapp', 'manual']);
 export type AlertChannel = z.infer<typeof AlertChannelEnum>;
+export const RouteSourceEnum = z.enum(['scratch', 'popular', 'library']);
+export type RouteSource = z.infer<typeof RouteSourceEnum>;
+export const BoardingStatusEnum = z.enum(['pending', 'boarded', 'absent']);
+export type BoardingStatus = z.infer<typeof BoardingStatusEnum>;
 
 export const CoordinatesSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -22,16 +26,43 @@ export const CreateRouteSchema = z
     from_city: z.string().min(1).max(255).optional(),
     toCity: z.string().min(1).max(255).optional(),
     to_city: z.string().min(1).max(255).optional(),
+    is_published: z.boolean().optional(),
+    source: RouteSourceEnum.optional(),
   })
   .transform((data) => ({
     name: data.name,
     from_city: data.from_city ?? data.fromCity ?? '',
     to_city: data.to_city ?? data.toCity ?? '',
+    is_published: data.is_published ?? false,
+    source: data.source ?? 'scratch',
   }))
   .refine((data) => Boolean(data.from_city && data.to_city), {
     message: 'from_city/to_city (or fromCity/toCity) is required',
   });
 export type CreateRouteRequest = z.infer<typeof CreateRouteSchema>;
+
+export const GeoLibraryCreateSchema = z.object({
+  name: z.string().min(1).max(255),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+export type GeoLibraryCreateRequest = z.infer<typeof GeoLibraryCreateSchema>;
+
+export const PopularRouteStopSchema = z.object({
+  name: z.string().min(1).max(255),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  sequence: z.number().int().positive(),
+});
+export type PopularRouteStop = z.infer<typeof PopularRouteStopSchema>;
+
+export const CreatePopularRouteSchema = z.object({
+  name: z.string().min(1).max(255),
+  from_city: z.string().min(1).max(255),
+  to_city: z.string().min(1).max(255),
+  stops: z.array(PopularRouteStopSchema).min(2),
+});
+export type CreatePopularRouteRequest = z.infer<typeof CreatePopularRouteSchema>;
 
 export const CreateStopSchema = z
   .object({
@@ -89,15 +120,28 @@ export const AddPassengerSchema = z.object({
   passenger_name: z.string().min(1).max(255),
   passenger_phone: z.string().regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
   stop_id: z.string().uuid(),
+  pickup_point: z.string().max(255).nullable().optional(),
+  seat_no: z.string().max(50).nullable().optional(),
 });
 export type AddPassengerRequest = z.infer<typeof AddPassengerSchema>;
 
 export const PassengerRowSchema = z.object({
   name: z.string().min(1, 'name is required').max(255),
-  phone: z.string().regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
-  stop_name: z.string().min(1, 'stop_name is required'),
+  phone: z.string().nullable().optional(),
+  stop_name: z.string().nullable().optional(),
+  pickup_point: z.string().max(255).nullable().optional(),
+  seat_no: z.string().max(50).nullable().optional(),
 });
 export type PassengerRow = z.infer<typeof PassengerRowSchema>;
+
+export const PassengerUploadReviewRowSchema = z.object({
+  name: z.string().min(1, 'name is required').max(255),
+  phone: z.string().regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
+  stop_name: z.string().min(1, 'stop_name is required'),
+  pickup_point: z.string().max(255).nullable().optional(),
+  seat_no: z.string().max(50).nullable().optional(),
+});
+export type PassengerUploadReviewRow = z.infer<typeof PassengerUploadReviewRowSchema>;
 
 export interface PassengerRowError {
   row: number;
@@ -106,7 +150,14 @@ export interface PassengerRowError {
 }
 
 export interface UploadPassengersResponse {
-  uploaded: number;
+  uploaded?: number;
+  raw_passengers?: Array<{
+    name: string | null;
+    phone: string | null;
+    stop_name: string | null;
+    pickup_point: string | null;
+    seat_no: string | null;
+  }>;
   errors?: PassengerRowError[];
 }
 
@@ -134,6 +185,19 @@ export interface TripStatusResponse {
   passengers: PassengerAlertSummary;
   passenger_summary?: PassengerAlertSummary;
 }
+
+export const ConfirmPassengersSchema = z.object({
+  passengers: z.array(PassengerUploadReviewRowSchema).min(1),
+});
+export type ConfirmPassengersRequest = z.infer<typeof ConfirmPassengersSchema>;
+
+export const BoardingChecklistUpdateSchema = z.object({
+  passengers: z.array(z.object({
+    id: z.string().uuid(),
+    boarding_status: BoardingStatusEnum,
+  })).min(1),
+});
+export type BoardingChecklistUpdateRequest = z.infer<typeof BoardingChecklistUpdateSchema>;
 
 export const LocationUpdateSchema = z.object({
   lat: z.number().min(-90).max(90),

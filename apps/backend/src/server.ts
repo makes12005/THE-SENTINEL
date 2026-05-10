@@ -5,6 +5,8 @@ import authRoutes       from './modules/auth/auth.routes';
 import googleAuthRoutes from './modules/auth/google.routes';
 import tripsRoutes    from './modules/trips/trips.routes';
 import routesRoutes   from './modules/trips/routes.routes';
+import geoLibraryRoutes from './modules/trips/geo-library.routes';
+import popularRoutesModule from './modules/trips/popular-routes.routes';
 import templatesRoutes from './modules/trips/templates.routes';
 import operatorRoutes from './modules/operator/operator.routes';
 import ownerRoutes    from './modules/owner/owner.routes';
@@ -64,6 +66,8 @@ fastify.register(authRoutes,       { prefix: '/api/auth' });
 fastify.register(googleAuthRoutes, { prefix: '/api/auth' }); // /api/auth/google, /api/auth/google/callback
 fastify.register(tripsRoutes,     { prefix: '/api/trips' });
 fastify.register(routesRoutes,    { prefix: '/api/routes' });
+fastify.register(geoLibraryRoutes, { prefix: '/api/geo-library' });
+fastify.register(popularRoutesModule, { prefix: '/api/popular-routes' });
 fastify.register(templatesRoutes, { prefix: '/api/templates' });
 
 // Operator dashboard API (sprint 7)

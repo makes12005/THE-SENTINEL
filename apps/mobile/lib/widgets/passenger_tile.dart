@@ -20,7 +20,7 @@ class PassengerTile extends StatelessWidget {
           color: AppColors.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(20),
           border: passenger.isFailed
-              ? Border.all(color: AppColors.error.withOpacity(0.3))
+              ? Border.all(color: AppColors.error.withValues(alpha: 0.3))
               : null,
         ),
         padding: const EdgeInsets.all(18),

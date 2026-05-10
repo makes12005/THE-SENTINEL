@@ -16,6 +16,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/auth.middleware';
 import { CreateRouteSchema, CreateStopSchema } from '../../lib/shared-types';
 import * as RoutesService from './routes.service';
+import { geocodePlace, reverseGeocodePlace } from './maps.service';
 
 export default async function routesRoutes(fastify: FastifyInstance) {
   const getAgencyIdOrReply = (req: FastifyRequest, reply: FastifyReply): string | null => {
@@ -42,6 +43,40 @@ export default async function routesRoutes(fastify: FastifyInstance) {
       error: { code: err.code ?? 'REQUEST_FAILED', message: err.message ?? 'An error occurred' },
     });
   }
+
+  fastify.get('/search-place', async (req, reply) => {
+    try {
+      const q = ((req.query as { q?: string }).q ?? '').trim();
+      if (!q) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Query parameter q is required' },
+        });
+      }
+      const places = await geocodePlace(q);
+      return reply.send({ success: true, data: places });
+    } catch (err: any) {
+      return handleErr(reply, err);
+    }
+  });
+
+  fastify.get('/reverse-geocode', async (req, reply) => {
+    try {
+      const query = req.query as { lat?: string; lng?: string };
+      const lat = Number(query.lat);
+      const lng = Number(query.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'lat and lng are required' },
+        });
+      }
+      const place = await reverseGeocodePlace(lat, lng);
+      return reply.send({ success: true, data: place });
+    } catch (err: any) {
+      return handleErr(reply, err);
+    }
+  });
 
   // ── POST /api/routes ─────────────────────────────────────────────────────
   fastify.post('/', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },

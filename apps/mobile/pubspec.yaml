@@ -21,6 +21,7 @@ dependencies:
 
   # GPS positioning
   geolocator: ^13.0.2
+  google_maps_flutter: ^2.5.0
 
   # Background GPS foreground service
   flutter_foreground_task: ^8.14.0
@@ -36,9 +37,14 @@ dependencies:
 
   # Offline GPS queue
   shared_preferences: ^2.3.3
+  connectivity_plus: ^6.1.5
 
   # Phone dialer for alert popup
   url_launcher: ^6.3.1
+  just_audio: ^0.9.36
+  audio_session: ^0.1.18
+  flutter_tts: ^3.8.5
+  reorderable_list: ^0.0.1
 
   # Manrope + Inter fonts
   google_fonts: ^6.2.1

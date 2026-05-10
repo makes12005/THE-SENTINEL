@@ -1,28 +1,36 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
-/// Top-level GPS task callback — must be here with vm:entry-point.
-/// Delegates to GpsService.startCallback (defined in gps_service.dart).
-@pragma('vm:entry-point')
-void startCallback() {
-  // Re-exported from gps_service.dart; kept here as top-level for the isolate
-  FlutterForegroundTask.setTaskHandler(_NullHandler());
-}
-
-/// Placeholder — the real handler is set by GpsService.start().
-/// This ensures the isolate can boot even if start() hasn't been called yet.
-class _NullHandler extends TaskHandler {
-  @override Future<void> onStart(DateTime t, TaskStarter s) async {}
-  @override Future<void> onRepeatEvent(DateTime t) async {}
-  @override Future<void> onDestroy(DateTime t) async {}
-}
+// Note: startCallback is defined in gps_service.dart with @pragma('vm:entry-point').
+// Flutter foreground task stores the function handle directly — no re-declaration needed here.
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = true;
+
+  // Avoid app-start crashes caused by transient Google Fonts fetch failures.
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final msg = details.exceptionAsString();
+    if (msg.contains('google_fonts')) {
+      debugPrint('[Fonts] Non-fatal font load error: $msg');
+      return;
+    }
+    FlutterError.presentError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final msg = error.toString();
+    if (msg.contains('google_fonts')) {
+      debugPrint('[Fonts] Ignored async font error: $msg');
+      return true;
+    }
+    return false;
+  };
 
   // Required by flutter_foreground_task v8+: must be called before runApp
   FlutterForegroundTask.initCommunicationPort();
@@ -35,9 +43,9 @@ void main() async {
 
   // Match dark theme system bars
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor:                   Colors.transparent,
-    statusBarIconBrightness:          Brightness.light,
-    systemNavigationBarColor:         Color(0xFF101418),
+    statusBarColor:                    Colors.transparent,
+    statusBarIconBrightness:           Brightness.light,
+    systemNavigationBarColor:          Color(0xFF101418),
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
@@ -50,7 +58,7 @@ class BusAlertApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Bus Alert — Conductor',
+      title: 'Bus Alert',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       routerConfig: appRouter,

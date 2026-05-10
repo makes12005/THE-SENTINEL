@@ -50,6 +50,7 @@ exports.default = routesRoutes;
 const auth_middleware_1 = require("../auth/auth.middleware");
 const shared_types_1 = require("../../lib/shared-types");
 const RoutesService = __importStar(require("./routes.service"));
+const maps_service_1 = require("./maps.service");
 async function routesRoutes(fastify) {
     const getAgencyIdOrReply = (req, reply) => {
         const agencyId = req.user.agency_id ?? req.user.agencyId ?? null;
@@ -70,6 +71,40 @@ async function routesRoutes(fastify) {
             error: { code: err.code ?? 'REQUEST_FAILED', message: err.message ?? 'An error occurred' },
         });
     }
+    fastify.get('/search-place', async (req, reply) => {
+        try {
+            const q = (req.query.q ?? '').trim();
+            if (!q) {
+                return reply.status(400).send({
+                    success: false,
+                    error: { code: 'VALIDATION_ERROR', message: 'Query parameter q is required' },
+                });
+            }
+            const places = await (0, maps_service_1.geocodePlace)(q);
+            return reply.send({ success: true, data: places });
+        }
+        catch (err) {
+            return handleErr(reply, err);
+        }
+    });
+    fastify.get('/reverse-geocode', async (req, reply) => {
+        try {
+            const query = req.query;
+            const lat = Number(query.lat);
+            const lng = Number(query.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                return reply.status(400).send({
+                    success: false,
+                    error: { code: 'VALIDATION_ERROR', message: 'lat and lng are required' },
+                });
+            }
+            const place = await (0, maps_service_1.reverseGeocodePlace)(lat, lng);
+            return reply.send({ success: true, data: place });
+        }
+        catch (err) {
+            return handleErr(reply, err);
+        }
+    });
     // ── POST /api/routes ─────────────────────────────────────────────────────
     fastify.post('/', { preHandler: [(0, auth_middleware_1.requireAuth)(['operator', 'owner', 'admin'])] }, async (req, reply) => {
         try {

@@ -1,296 +1,599 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { get, post, del, put } from '@/lib/api';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import type { MapStop } from '@/components/shared/RouteMap';
+import GoogleRouteMap, { useGoogleMapsReady } from '@/components/google-route-map';
+import { get, post } from '@/lib/api';
 
-const RouteMap = dynamic(() => import('@/components/shared/RouteMap'), { ssr: false });
+type PlaceResult = {
+  name: string;
+  lat: number;
+  lng: number;
+  formatted_address: string;
+};
 
-interface Route { id: string; name: string; from_city: string; to_city: string; stop_count: number; created_at: string; created_by_name?: string | null; }
-interface Stop { id: string; name: string; sequence_number: number; latitude: number; longitude: number; trigger_radius_km: string; }
+type RouteStop = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  sequence: number;
+  source: 'search' | 'map' | 'library' | 'popular';
+};
 
-export default function RoutesPage() {
+type LibraryEntry = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  captured_by_name: string;
+  agency_name: string;
+  use_count: number;
+  verified: boolean;
+  created_at: string;
+};
+
+type PopularRoute = {
+  id: string;
+  name: string;
+  from_city: string;
+  to_city: string;
+  stops: Array<{ name: string; lat: number; lng: number; sequence: number }>;
+  use_count: number;
+};
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
+
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+
+export default function OperatorRoutesPage() {
   const qc = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
-  const [showStopModal, setShowStopModal] = useState(false);
-  const [editingStop, setEditingStop] = useState<Stop | null>(null);
-  const [pickedLatLng, setPickedLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const { ready: mapsReady } = useGoogleMapsReady(API_KEY);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [routeName, setRouteName] = useState('');
+  const [fromInput, setFromInput] = useState('');
+  const [toInput, setToInput] = useState('');
+  const [fromPlace, setFromPlace] = useState<PlaceResult | null>(null);
+  const [toPlace, setToPlace] = useState<PlaceResult | null>(null);
+  const [stops, setStops] = useState<RouteStop[]>([]);
+  const [stopSearch, setStopSearch] = useState('');
+  const [publishRoute, setPublishRoute] = useState(false);
+  const [clickToAdd, setClickToAdd] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [showPopular, setShowPopular] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [fromSuggestions, setFromSuggestions] = useState<Array<{ description: string }>>([]);
+  const [toSuggestions, setToSuggestions] = useState<Array<{ description: string }>>([]);
+  const [stopSuggestions, setStopSuggestions] = useState<Array<{ description: string }>>([]);
 
-  // Form states
-  const [form, setForm] = useState({ name: '', from_city: '', to_city: '' });
-  const [stopForm, setStopForm] = useState({ name: '', sequence_number: '', trigger_radius_km: '10' });
-
-  const { data: routes = [], isLoading } = useQuery<Route[]>({
-    queryKey: ['routes'],
-    queryFn: () => get('/api/routes'),
+  const libraryQuery = useQuery<LibraryEntry[]>({
+    queryKey: ['geo-library', 'all'],
+    queryFn: () => get('/api/geo-library'),
   });
 
-  const { data: selectedRouteData } = useQuery<{ stops: Stop[] } & Route>({
-    queryKey: ['route', selectedRoute?.id],
-    queryFn: () => get(`/api/routes/${selectedRoute!.id}`),
-    enabled: !!selectedRoute,
+  const popularRoutesQuery = useQuery<PopularRoute[]>({
+    queryKey: ['popular-routes'],
+    queryFn: () => get('/api/popular-routes'),
   });
 
-  const stops: Stop[] = selectedRouteData?.stops ?? [];
+  useEffect(() => {
+    if (fromPlace && toPlace && !routeName.trim()) {
+      setRouteName(`${fromPlace.name} to ${toPlace.name}`);
+    }
+  }, [fromPlace, routeName, toPlace]);
 
-  const createRoute = useMutation({
-    mutationFn: (data: typeof form) => post<Route>('/api/routes', data),
-    onSuccess: (route: Route) => {
-      qc.invalidateQueries({ queryKey: ['routes'] });
-      setSelectedRoute(route);
-      setShowCreate(false);
-      setForm({ name: '', from_city: '', to_city: '' });
-      setTimeout(() => openAddStop(), 150);
-      toast.success('Route created. Add stops to complete setup.');
+  useEffect(() => {
+    if (!mapsReady || !window.google?.maps?.places) return;
+    const service = new window.google.maps.places.AutocompleteService();
+
+    const loadPredictions = (value: string, setter: (items: Array<{ description: string }>) => void) => {
+      if (value.trim().length < 2) {
+        setter([]);
+        return;
+      }
+      service.getPlacePredictions(
+        {
+          input: value,
+          componentRestrictions: { country: 'in' },
+        },
+        (predictions: any[]) => setter((predictions ?? []).map((prediction) => ({ description: prediction.description })))
+      );
+    };
+
+    const timeout = window.setTimeout(() => {
+      loadPredictions(fromInput, setFromSuggestions);
+      loadPredictions(toInput, setToSuggestions);
+      loadPredictions(stopSearch, setStopSuggestions);
+    }, 160);
+
+    return () => window.clearTimeout(timeout);
+  }, [fromInput, mapsReady, stopSearch, toInput]);
+
+  const orderedStops = useMemo(
+    () => stops.map((stop, index) => ({ ...stop, sequence: index + 1 })),
+    [stops]
+  );
+
+  const saveRoute = useMutation({
+    mutationFn: async () => {
+      if (!fromPlace || !toPlace) {
+        throw new Error('Select both start and destination cities.');
+      }
+
+      const created = await post<{ id: string }>('/api/routes', {
+        name: routeName.trim() || `${fromPlace.name} to ${toPlace.name}`,
+        from_city: fromPlace.name,
+        to_city: toPlace.name,
+        is_published: publishRoute,
+        source: stops.some((stop) => stop.source === 'popular')
+          ? 'popular'
+          : stops.some((stop) => stop.source === 'library')
+            ? 'library'
+            : 'scratch',
+      });
+
+      const fullStops = [
+        { name: fromPlace.name, lat: fromPlace.lat, lng: fromPlace.lng, sequence: 1 },
+        ...orderedStops.map((stop, index) => ({
+          name: stop.name,
+          lat: stop.lat,
+          lng: stop.lng,
+          sequence: index + 2,
+        })),
+        { name: toPlace.name, lat: toPlace.lat, lng: toPlace.lng, sequence: orderedStops.length + 2 },
+      ];
+
+      for (const stop of fullStops) {
+        await post(`/api/routes/${created.id}/stops`, {
+          name: stop.name,
+          latitude: stop.lat,
+          longitude: stop.lng,
+          sequence_number: stop.sequence,
+          trigger_radius_km: 10,
+        });
+      }
+
+      if (publishRoute) {
+        await post('/api/popular-routes', {
+          name: routeName.trim() || `${fromPlace.name} to ${toPlace.name}`,
+          from_city: fromPlace.name,
+          to_city: toPlace.name,
+          stops: fullStops.map((stop) => ({
+            name: stop.name,
+            lat: stop.lat,
+            lng: stop.lng,
+            sequence: stop.sequence,
+          })),
+        });
+      }
     },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Failed to create route'),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routes'] });
+      qc.invalidateQueries({ queryKey: ['popular-routes'] });
+      toast.success('Route saved locally.');
+      resetBuilder();
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error?.message ?? error?.message ?? 'Failed to save route');
+    },
   });
 
-  const deleteRoute = useMutation({
-    mutationFn: (id: string) => del(`/api/routes/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['routes'] }); if (selectedRoute) setSelectedRoute(null); toast.success('Route deleted'); },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Failed'),
-  });
+  const selectPrediction = async (
+    description: string,
+    kind: 'from' | 'to' | 'stop'
+  ) => {
+    const results = await get<PlaceResult[]>('/api/routes/search-place', { q: description });
+    const first = results[0];
+    if (!first) {
+      toast.error('Place not found.');
+      return;
+    }
 
-  const addStop = useMutation({
-    mutationFn: (data: any) => post(`/api/routes/${selectedRoute!.id}/stops`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['route', selectedRoute?.id] }); qc.invalidateQueries({ queryKey: ['routes'] }); setShowStopModal(false); resetStopForm(); toast.success('Stop added'); },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Failed'),
-  });
+    if (kind === 'from') {
+      setFromInput(description);
+      setFromPlace(first);
+      setFromSuggestions([]);
+      return;
+    }
+    if (kind === 'to') {
+      setToInput(description);
+      setToPlace(first);
+      setToSuggestions([]);
+      return;
+    }
 
-  const updateStop = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => put(`/api/routes/${selectedRoute!.id}/stops/${id}`, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['route', selectedRoute?.id] }); setShowStopModal(false); setEditingStop(null); resetStopForm(); toast.success('Stop updated'); },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Failed'),
-  });
-
-  const deleteStop = useMutation({
-    mutationFn: (id: string) => del(`/api/routes/${selectedRoute!.id}/stops/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['route', selectedRoute?.id] }); qc.invalidateQueries({ queryKey: ['routes'] }); toast.success('Stop removed'); },
-    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Failed'),
-  });
-
-  const resetStopForm = () => { setStopForm({ name: '', sequence_number: '', trigger_radius_km: '10' }); setPickedLatLng(null); setEditingStop(null); };
-
-  const openAddStop = () => {
-    resetStopForm();
-    const nextSeq = stops.length ? Math.max(...stops.map(s => s.sequence_number)) + 1 : 1;
-    setStopForm(f => ({ ...f, sequence_number: String(nextSeq) }));
-    setShowStopModal(true);
+    setStops((current) => [...current, { id: crypto.randomUUID(), name: first.name, lat: first.lat, lng: first.lng, sequence: current.length + 1, source: 'search' }]);
+    setStopSearch('');
+    setStopSuggestions([]);
   };
 
-  const openEditStop = (s: Stop) => {
-    setEditingStop(s);
-    setStopForm({ name: s.name, sequence_number: String(s.sequence_number), trigger_radius_km: s.trigger_radius_km });
-    setPickedLatLng({ lat: s.latitude, lng: s.longitude });
-    setShowStopModal(true);
+  const addMapStop = async (lat: number, lng: number) => {
+    try {
+      const place = await get<PlaceResult | null>('/api/routes/reverse-geocode', { lat, lng });
+      if (!place) {
+        toast.error('Could not name that map point.');
+        return;
+      }
+      setStops((current) => [...current, { id: crypto.randomUUID(), name: place.name, lat: place.lat, lng: place.lng, sequence: current.length + 1, source: 'map' }]);
+      toast.success(`Added ${place.name}`);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error?.message ?? 'Could not add that point.');
+    }
   };
 
-  const handleSaveStop = () => {
-    if (!stopForm.name || !pickedLatLng) return toast.error('Name and map location are required');
-    const payload = { name: stopForm.name, sequence_number: Number(stopForm.sequence_number), latitude: pickedLatLng.lat, longitude: pickedLatLng.lng, trigger_radius_km: Number(stopForm.trigger_radius_km) };
-    if (editingStop) updateStop.mutate({ id: editingStop.id, data: payload });
-    else addStop.mutate(payload);
+  const loadPopularRoute = async (route: PopularRoute) => {
+    const [from] = await get<PlaceResult[]>('/api/routes/search-place', { q: route.from_city });
+    const [to] = await get<PlaceResult[]>('/api/routes/search-place', { q: route.to_city });
+    if (!from || !to) {
+      toast.error('Could not load the selected route cities.');
+      return;
+    }
+    setFromInput(route.from_city);
+    setToInput(route.to_city);
+    setFromPlace(from);
+    setToPlace(to);
+    setRouteName(route.name);
+    setStops(
+      route.stops
+        .sort((a, b) => a.sequence - b.sequence)
+        .slice(1, Math.max(route.stops.length - 1, 1))
+        .map((stop, index) => ({
+          id: crypto.randomUUID(),
+          name: stop.name,
+          lat: stop.lat,
+          lng: stop.lng,
+          sequence: index + 1,
+          source: 'popular' as const,
+        }))
+    );
+    setShowPopular(false);
+    toast.success('Popular route loaded. You can edit the stops before saving.');
   };
 
-  const mapStops: MapStop[] = stops.map(s => ({ id: s.id, name: s.name, latitude: s.latitude, longitude: s.longitude, sequence_number: s.sequence_number, trigger_radius_km: s.trigger_radius_km }));
+  const resetBuilder = () => {
+    setStep(1);
+    setRouteName('');
+    setFromInput('');
+    setToInput('');
+    setFromPlace(null);
+    setToPlace(null);
+    setStops([]);
+    setStopSearch('');
+    setPublishRoute(false);
+    setClickToAdd(false);
+    setShowLibrary(false);
+    setShowPopular(false);
+  };
+
+  const moveStop = (fromId: string, toId: string) => {
+    const sourceIndex = orderedStops.findIndex((stop) => stop.id === fromId);
+    const targetIndex = orderedStops.findIndex((stop) => stop.id === toId);
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+
+    const updated = [...orderedStops];
+    const [item] = updated.splice(sourceIndex, 1);
+    updated.splice(targetIndex, 0, item);
+    setStops(updated);
+  };
+
+  const fullStopList = [
+    ...(fromPlace ? [{ id: 'from', name: fromPlace.name, lat: fromPlace.lat, lng: fromPlace.lng, sequence: 1 }] : []),
+    ...orderedStops.map((stop, index) => ({ ...stop, sequence: index + 2 })),
+    ...(toPlace ? [{ id: 'to', name: toPlace.name, lat: toPlace.lat, lng: toPlace.lng, sequence: orderedStops.length + 2 }] : []),
+  ];
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-[#F1F5F9]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-      <div className="px-8 py-8 max-w-[1400px] mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-[#f3f8fc] px-6 py-8 text-[#102132]">
+      <div className="mx-auto max-w-[1440px]">
+        <div className="mb-8 flex items-end justify-between gap-6">
           <div>
-            <h1 className="text-2xl font-black text-[#F1F5F9] tracking-wide">ROUTE MANAGEMENT</h1>
-            <p className="text-sm text-[#64748b] mt-1">Define physical paths and stops for your fleet</p>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#0f9ae8]">Route Creation</p>
+            <h1 className="mt-2 text-4xl font-black">Create New Route</h1>
+            <p className="mt-2 max-w-3xl text-sm text-[#526579]">
+              Build routes with Google Maps, pull shared coordinates from the field, and publish reusable routes for every agency.
+            </p>
           </div>
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6C63FF] text-white text-sm font-bold hover:bg-[#5a53e0] transition-all">
-            <span className="material-symbols-outlined text-[18px]">add</span> New Route
-          </button>
-        </div>
-
-        <div className="grid grid-cols-[380px_1fr] gap-6">
-          {/* Left: Route List */}
-          <div className="space-y-3">
-            <p className="text-xs uppercase tracking-widest text-[#64748b] font-bold mb-4">{routes.length} Routes</p>
-            {isLoading ? (
-              [...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-[#1E293B] animate-pulse" />)
-            ) : routes.length === 0 ? (
-              <div className="text-center py-16 text-[#64748b]">
-                <span className="material-symbols-outlined text-4xl mb-3 block">route</span>
-                <p className="text-sm">No routes yet. Create your first route.</p>
-              </div>
-            ) : routes.map(route => (
-              <div key={route.id} onClick={() => setSelectedRoute(route)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedRoute?.id === route.id ? 'bg-[#1E293B] border-[#6C63FF]/60' : 'bg-[#131B2E] border-[#1E293B] hover:border-[#6C63FF]/30'}`}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[#F1F5F9] truncate">{route.name}</p>
-                    <p className="text-xs text-[#6C63FF] mt-0.5">{route.from_city} → {route.to_city}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs text-[#64748b]">{route.stop_count} stops</span>
-                        <span className="text-xs text-[#64748b]">by {route.created_by_name ?? 'Unknown'}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Link href={`/operator/routes/${route.id}`} onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 rounded-lg text-[#64748b] hover:text-[#6C63FF] hover:bg-[#6C63FF]/10 transition-all">
-                      <span className="material-symbols-outlined text-[16px]">visibility</span>
-                    </Link>
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedRoute(route); }}
-                      className="p-1.5 rounded-lg text-[#64748b] hover:text-[#6C63FF] hover:bg-[#6C63FF]/10 transition-all">
-                      <span className="material-symbols-outlined text-[16px]">edit</span>
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); if (confirm('Delete this route?')) deleteRoute.mutate(route.id); }}
-                      className="p-1.5 rounded-lg text-[#64748b] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-all">
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
-                  </div>
-                </div>
+          <div className="flex items-center gap-3 rounded-full bg-white px-4 py-2 shadow-sm">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${step >= item ? 'bg-[#0f9ae8] text-white' : 'bg-[#e5edf5] text-[#526579]'}`}>
+                {item}
               </div>
             ))}
           </div>
-
-          {/* Right: Route Detail */}
-          {selectedRoute ? (
-            <div className="bg-[#131B2E] rounded-2xl border border-[#1E293B] overflow-hidden">
-              {/* Route header */}
-              <div className="px-6 py-5 border-b border-[#1E293B] flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-black text-[#F1F5F9]">{selectedRoute.name}</h2>
-                  <p className="text-sm text-[#6C63FF]">{selectedRoute.from_city} → {selectedRoute.to_city}</p>
-                </div>
-                <button onClick={openAddStop} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6C63FF]/15 text-[#6C63FF] text-sm font-bold border border-[#6C63FF]/30 hover:bg-[#6C63FF]/25 transition-all">
-                  <span className="material-symbols-outlined text-[16px]">add_location_alt</span> Add Stop
-                </button>
-              </div>
-
-              {/* Map */}
-              <div className="px-6 py-5">
-                <RouteMap stops={mapStops} height="320px" readonly />
-              </div>
-
-              {/* Stops list */}
-              <div className="px-6 pb-6">
-                <p className="text-xs uppercase tracking-widest text-[#64748b] font-bold mb-3">{stops.length} Stops</p>
-                {stops.length === 0 ? (
-                  <p className="text-sm text-[#64748b] text-center py-6">No stops yet. Click "Add Stop" to begin.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {stops.map((stop, idx) => (
-                      <div key={stop.id} className="flex items-center gap-4 px-4 py-3 rounded-xl bg-[#0F172A] border border-[#1E293B]">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black border ${idx === 0 ? 'bg-[#22c55e]/20 border-[#22c55e]/50 text-[#22c55e]' : idx === stops.length - 1 ? 'bg-[#ef4444]/20 border-[#ef4444]/50 text-[#ef4444]' : 'bg-[#6C63FF]/20 border-[#6C63FF]/40 text-[#6C63FF]'}`}>{stop.sequence_number}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[#F1F5F9]">{stop.name}</p>
-                          <p className="text-xs text-[#64748b]">{stop.latitude.toFixed(5)}, {stop.longitude.toFixed(5)} · {stop.trigger_radius_km} km radius</p>
-                        </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => openEditStop(stop)} className="p-1.5 rounded-lg text-[#64748b] hover:text-[#6C63FF] hover:bg-[#6C63FF]/10 transition-all">
-                            <span className="material-symbols-outlined text-[15px]">edit</span>
-                          </button>
-                          <button onClick={() => { if (confirm('Remove stop?')) deleteStop.mutate(stop.id); }} className="p-1.5 rounded-lg text-[#64748b] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-all">
-                            <span className="material-symbols-outlined text-[15px]">delete</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center bg-[#131B2E] rounded-2xl border border-[#1E293B] text-[#64748b]">
-              <div className="text-center">
-                <span className="material-symbols-outlined text-5xl mb-3 block text-[#1E293B]">route</span>
-                <p className="text-sm">Select a route to view details and stops</p>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Create Route Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#131B2E] border border-[#1E293B] rounded-2xl w-full max-w-md p-6">
-            <h3 className="text-lg font-black text-[#F1F5F9] mb-5">Create New Route</h3>
-            <div className="space-y-4">
-              {[['Route Name', 'name', 'e.g. Ahmedabad → Surat Express'], ['From City', 'from_city', 'e.g. Ahmedabad'], ['To City', 'to_city', 'e.g. Surat']].map(([label, key, ph]) => (
-                <div key={key}>
-                  <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5">{label}</label>
-                  <input value={(form as any)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder={ph}
-                    className="w-full bg-[#0F172A] border border-[#1E293B] rounded-xl px-4 py-2.5 text-sm text-[#F1F5F9] placeholder-[#334155] focus:outline-none focus:border-[#6C63FF]/60" />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowCreate(false)} className="flex-1 py-2.5 rounded-xl border border-[#1E293B] text-[#64748b] text-sm font-bold hover:text-[#F1F5F9] transition-all">Cancel</button>
-              <button onClick={() => createRoute.mutate(form)} disabled={createRoute.isPending || !form.name || !form.from_city || !form.to_city}
-                className="flex-1 py-2.5 rounded-xl bg-[#6C63FF] text-white text-sm font-bold hover:bg-[#5a53e0] disabled:opacity-50 transition-all">
-                {createRoute.isPending ? 'Creating…' : 'Create Route'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add / Edit Stop Modal */}
-      {showStopModal && selectedRoute && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#131B2E] border border-[#1E293B] rounded-2xl w-full max-w-2xl p-6">
-            <h3 className="text-lg font-black text-[#F1F5F9] mb-5">{editingStop ? 'Edit Stop' : 'Add Stop'}</h3>
-            <div className="grid grid-cols-3 gap-4 mb-5">
-              <div>
-                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5">Stop Name</label>
-                <input value={stopForm.name} onChange={e => setStopForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Nadiad Bus Stand"
-                  className="w-full bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5 text-sm text-[#F1F5F9] placeholder-[#334155] focus:outline-none focus:border-[#6C63FF]/60" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5">Sequence #</label>
-                <input type="number" value={stopForm.sequence_number} onChange={e => setStopForm(f => ({ ...f, sequence_number: e.target.value }))}
-                  className="w-full bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5 text-sm text-[#F1F5F9] focus:outline-none focus:border-[#6C63FF]/60" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5">Radius (km)</label>
-                <input type="number" step="0.5" value={stopForm.trigger_radius_km} onChange={e => setStopForm(f => ({ ...f, trigger_radius_km: e.target.value }))}
-                  className="w-full bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5 text-sm text-[#F1F5F9] focus:outline-none focus:border-[#6C63FF]/60" />
-              </div>
-            </div>
-
-            {/* Coordinate display */}
-            {pickedLatLng && (
-              <div className="mb-3 px-4 py-2 bg-[#6C63FF]/10 border border-[#6C63FF]/30 rounded-xl text-xs text-[#6C63FF] font-bold">
-                📍 {pickedLatLng.lat.toFixed(6)}, {pickedLatLng.lng.toFixed(6)}
-              </div>
-            )}
-
-            {/* Map picker */}
-            <div className="rounded-xl overflow-hidden border border-[#1E293B] mb-5">
-              <RouteMap
-                stops={[
-                  ...mapStops,
-                  ...(pickedLatLng && !editingStop ? [{ name: stopForm.name || 'New Stop', latitude: pickedLatLng.lat, longitude: pickedLatLng.lng, sequence_number: Number(stopForm.sequence_number) || 99 }] : []),
-                ]}
-                onMapClick={(lat, lng) => setPickedLatLng({ lat, lng })}
-                height="300px"
+        {step === 1 && (
+          <section className="rounded-[36px] bg-white p-8 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <AutocompleteField
+                label="From city"
+                value={fromInput}
+                suggestions={fromSuggestions}
+                onChange={setFromInput}
+                onPick={(description) => selectPrediction(description, 'from')}
+              />
+              <AutocompleteField
+                label="To city"
+                value={toInput}
+                suggestions={toSuggestions}
+                onChange={setToInput}
+                onPick={(description) => selectPrediction(description, 'to')}
               />
             </div>
 
-            <div className="flex gap-3">
-              <button onClick={() => { setShowStopModal(false); resetStopForm(); }} className="flex-1 py-2.5 rounded-xl border border-[#1E293B] text-[#64748b] text-sm font-bold hover:text-[#F1F5F9] transition-all">Cancel</button>
-              <button onClick={handleSaveStop} disabled={addStop.isPending || updateStop.isPending}
-                className="flex-1 py-2.5 rounded-xl bg-[#6C63FF] text-white text-sm font-bold hover:bg-[#5a53e0] disabled:opacity-50 transition-all">
-                {addStop.isPending || updateStop.isPending ? 'Saving…' : editingStop ? 'Update Stop' : 'Add Stop'}
+            {(fromPlace || toPlace) && (
+              <div className="mt-8">
+                <GoogleRouteMap apiKey={API_KEY} fromPlace={fromPlace} toPlace={toPlace} stops={[]} height={420} />
+              </div>
+            )}
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => {
+                  if (!fromPlace || !toPlace) {
+                    toast.error('Select both cities first.');
+                    return;
+                  }
+                  setStep(2);
+                }}
+                className="rounded-full bg-[#0f9ae8] px-8 py-4 text-sm font-black uppercase tracking-[0.18em] text-white"
+              >
+                Next
               </button>
             </div>
-          </div>
+          </section>
+        )}
+
+        {step === 2 && (
+          <section className="grid gap-6 lg:grid-cols-[0.4fr_0.6fr]">
+            <div className="rounded-[36px] bg-white p-6 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black">Add Stops</h2>
+                  <p className="text-sm text-[#526579]">Search, tap the map, pull from the GPS library, or load a shared route.</p>
+                </div>
+                <button
+                  onClick={() => setClickToAdd((current) => !current)}
+                  className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${clickToAdd ? 'bg-[#102132] text-white' : 'bg-[#e5edf5] text-[#102132]'}`}
+                >
+                  {clickToAdd ? 'Click to add: On' : 'Click to add: Off'}
+                </button>
+              </div>
+
+              <AutocompleteField
+                label="Search by stop name"
+                value={stopSearch}
+                suggestions={stopSuggestions}
+                onChange={setStopSearch}
+                onPick={(description) => selectPrediction(description, 'stop')}
+              />
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button onClick={() => setShowLibrary(true)} className="rounded-full border border-[#d8e5f1] px-4 py-2 text-sm font-bold text-[#102132]">
+                  From Library
+                </button>
+                <button onClick={() => setShowPopular(true)} className="rounded-full border border-[#d8e5f1] px-4 py-2 text-sm font-bold text-[#102132]">
+                  Load Popular Route
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {orderedStops.length === 0 && (
+                  <div className="rounded-[24px] border border-dashed border-[#d8e5f1] bg-[#f7fbff] px-4 py-6 text-sm text-[#526579]">
+                    No stops yet. Search above, turn on map click mode, or pull from the shared library.
+                  </div>
+                )}
+                {orderedStops.map((stop, index) => (
+                  <div
+                    key={stop.id}
+                    draggable
+                    onDragStart={() => setDraggingId(stop.id)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => {
+                      if (draggingId) moveStop(draggingId, stop.id);
+                      setDraggingId(null);
+                    }}
+                    className="flex items-center gap-3 rounded-[24px] border border-[#d8e5f1] bg-[#f7fbff] px-4 py-4"
+                  >
+                    <div className="text-[#526579]">::</div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f9ae8] text-sm font-black text-white">
+                      {index + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-black">{stop.name}</div>
+                      <div className="text-xs text-[#526579] capitalize">{stop.source} stop</div>
+                    </div>
+                    <button
+                      onClick={() => setStops((current) => current.filter((item) => item.id !== stop.id))}
+                      className="rounded-full bg-[#ffe1e1] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#b42318]"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex justify-between">
+                <button onClick={() => setStep(1)} className="rounded-full border border-[#d8e5f1] px-6 py-3 text-sm font-black uppercase tracking-[0.16em]">
+                  Back
+                </button>
+                <button onClick={() => setStep(3)} className="rounded-full bg-[#0f9ae8] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white">
+                  Review
+                </button>
+              </div>
+            </div>
+
+            <GoogleRouteMap
+              apiKey={API_KEY}
+              fromPlace={fromPlace}
+              toPlace={toPlace}
+              stops={orderedStops}
+              clickToAdd={clickToAdd}
+              onMapClick={addMapStop}
+              height={760}
+            />
+          </section>
+        )}
+
+        {step === 3 && (
+          <section className="grid gap-6 lg:grid-cols-[0.38fr_0.62fr]">
+            <div className="rounded-[36px] bg-white p-6 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
+              <h2 className="text-2xl font-black">Review & Save</h2>
+              <div className="mt-5">
+                <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#526579]">Route name</label>
+                <input
+                  value={routeName}
+                  onChange={(event) => setRouteName(event.target.value)}
+                  className="w-full rounded-[22px] border border-[#d8e5f1] bg-[#f7fbff] px-4 py-3 text-sm font-semibold outline-none"
+                />
+              </div>
+              <div className="mt-5 rounded-[24px] bg-[#f7fbff] p-4">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#526579]">From {'->'} To</div>
+                <div className="mt-2 text-sm font-black">{fromPlace?.name} {'->'} {toPlace?.name}</div>
+              </div>
+              <div className="mt-5 space-y-2">
+                {fullStopList.map((stop) => (
+                  <div key={stop.id} className="flex items-center gap-3 rounded-[20px] border border-[#d8e5f1] px-4 py-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#102132] text-xs font-black text-white">
+                      {stop.sequence}
+                    </div>
+                    <div className="text-sm font-semibold">{stop.name}</div>
+                  </div>
+                ))}
+              </div>
+              <label className="mt-5 flex items-center gap-3 rounded-[20px] bg-[#f7fbff] px-4 py-4">
+                <input type="checkbox" checked={publishRoute} onChange={(event) => setPublishRoute(event.target.checked)} />
+                <div>
+                  <div className="text-sm font-black">Publish this route</div>
+                  <div className="text-xs text-[#526579]">Share it with all agencies as a popular route draft.</div>
+                </div>
+              </label>
+              <div className="mt-6 flex justify-between">
+                <button onClick={() => setStep(2)} className="rounded-full border border-[#d8e5f1] px-6 py-3 text-sm font-black uppercase tracking-[0.16em]">
+                  Back
+                </button>
+                <button
+                  onClick={() => saveRoute.mutate()}
+                  disabled={saveRoute.isPending}
+                  className="rounded-full bg-[#16a34a] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white disabled:opacity-60"
+                >
+                  {saveRoute.isPending ? 'Saving...' : 'Save Route'}
+                </button>
+              </div>
+            </div>
+
+            <GoogleRouteMap apiKey={API_KEY} fromPlace={fromPlace} toPlace={toPlace} stops={orderedStops} height={760} />
+          </section>
+        )}
+      </div>
+
+      {showLibrary && (
+        <SelectionModal title="GPS Library" onClose={() => setShowLibrary(false)}>
+          {(libraryQuery.data ?? []).map((entry) => (
+            <button
+              key={entry.id}
+              onClick={() => {
+                setStops((current) => [...current, { id: crypto.randomUUID(), name: entry.name, lat: entry.latitude, lng: entry.longitude, sequence: current.length + 1, source: 'library' }]);
+                setShowLibrary(false);
+              }}
+              className="w-full rounded-[22px] border border-[#d8e5f1] px-4 py-4 text-left"
+            >
+              <div className="text-sm font-black">{entry.name}</div>
+              <div className="mt-1 text-xs text-[#526579]">
+                Captured by {entry.captured_by_name} • {entry.agency_name} • Used {entry.use_count} times
+              </div>
+            </button>
+          ))}
+        </SelectionModal>
+      )}
+
+      {showPopular && (
+        <SelectionModal title="Popular Routes" onClose={() => setShowPopular(false)}>
+          {(popularRoutesQuery.data ?? []).map((route) => (
+            <button
+              key={route.id}
+              onClick={() => {
+                post(`/api/popular-routes/${route.id}/use`).catch(() => undefined);
+                void loadPopularRoute(route);
+              }}
+              className="w-full rounded-[22px] border border-[#d8e5f1] px-4 py-4 text-left"
+            >
+              <div className="text-sm font-black">{route.name}</div>
+              <div className="mt-1 text-xs text-[#526579]">
+                {route.from_city} {'->'} {route.to_city} • {route.stops.length} stops • Used {route.use_count} times
+              </div>
+            </button>
+          ))}
+        </SelectionModal>
+      )}
+    </div>
+  );
+}
+
+function AutocompleteField({
+  label,
+  value,
+  suggestions,
+  onChange,
+  onPick,
+}: {
+  label: string;
+  value: string;
+  suggestions: Array<{ description: string }>;
+  onChange: (value: string) => void;
+  onPick: (description: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#526579]">{label}</label>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-[24px] border border-[#d8e5f1] bg-[#f7fbff] px-5 py-4 text-sm font-semibold outline-none"
+        placeholder="Search a city or place"
+      />
+      {suggestions.length > 0 && (
+        <div className="absolute z-20 mt-2 w-full rounded-[22px] border border-[#d8e5f1] bg-white p-2 shadow-xl">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion.description}
+              onClick={() => onPick(suggestion.description)}
+              className="w-full rounded-[18px] px-3 py-3 text-left text-sm hover:bg-[#f3f8fc]"
+            >
+              {suggestion.description}
+            </button>
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SelectionModal({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#09121b]/55 px-4">
+      <div className="w-full max-w-3xl rounded-[32px] bg-white p-6 shadow-[0_30px_90px_rgba(9,33,56,0.18)]">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-2xl font-black">{title}</h3>
+          <button onClick={onClose} className="rounded-full bg-[#f3f8fc] px-4 py-2 text-sm font-black uppercase tracking-[0.14em]">
+            Close
+          </button>
+        </div>
+        <div className="max-h-[60vh] space-y-3 overflow-y-auto">{children}</div>
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/operator/dashboard', icon: 'dashboard',       label: 'Dashboard' },
   { href: '/operator/routes',    icon: 'route',           label: 'Routes' },
+  { href: '/operator/geo-library', icon: 'location_on',   label: '📍 Geo Library' },
   { href: '/operator/templates', icon: 'bookmarks',       label: 'Templates' },
   { href: '/operator/trips',     icon: 'directions_bus',  label: 'Trips' },
   { href: '/operator/monitor',   icon: 'radar',           label: 'Monitor' },

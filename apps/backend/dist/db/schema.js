@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.tripTemplates = exports.walletTransactions = exports.walletTransactionTypeEnum = exports.agencyWallets = exports.alertLogs = exports.conductorLocations = exports.tripPassengers = exports.trips = exports.buses = exports.stops = exports.routes = exports.auditLogs = exports.refreshTokens = exports.users = exports.agencies = exports.agencyInvites = exports.alertLogStatusEnum = exports.alertChannelEnum = exports.alertStatusEnum = exports.tripStatusEnum = exports.userRoleEnum = void 0;
+exports.tripTemplates = exports.walletTransactions = exports.walletTransactionTypeEnum = exports.agencyWallets = exports.alertLogs = exports.conductorLocations = exports.tripPassengers = exports.trips = exports.buses = exports.stops = exports.popularRoutes = exports.geoCoordinatesLibrary = exports.routes = exports.auditLogs = exports.refreshTokens = exports.users = exports.agencies = exports.agencyInvites = exports.boardingStatusEnum = exports.routeSourceEnum = exports.alertLogStatusEnum = exports.alertChannelEnum = exports.alertStatusEnum = exports.tripStatusEnum = exports.userRoleEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // ─────────────────────────────────────────────────────────────────────────────
 // PostGIS geometry(Point, 4326) — WGS84 coordinates stored as EWKT string
@@ -18,6 +18,8 @@ exports.tripStatusEnum = (0, pg_core_1.pgEnum)('trip_status', ['scheduled', 'act
 exports.alertStatusEnum = (0, pg_core_1.pgEnum)('alert_status', ['pending', 'sent', 'failed']);
 exports.alertChannelEnum = (0, pg_core_1.pgEnum)('alert_channel', ['call', 'sms', 'whatsapp', 'manual']);
 exports.alertLogStatusEnum = (0, pg_core_1.pgEnum)('alert_log_status', ['success', 'failed']);
+exports.routeSourceEnum = (0, pg_core_1.pgEnum)('route_source', ['scratch', 'popular', 'library']);
+exports.boardingStatusEnum = (0, pg_core_1.pgEnum)('boarding_status', ['pending', 'boarded', 'absent']);
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth tables (unchanged from sprint 1)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,11 +88,45 @@ exports.routes = (0, pg_core_1.pgTable)('routes', {
     from_city: (0, pg_core_1.varchar)('from_city', { length: 255 }).notNull(),
     to_city: (0, pg_core_1.varchar)('to_city', { length: 255 }).notNull(),
     is_active: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
+    is_published: (0, pg_core_1.boolean)('is_published').default(false).notNull(),
+    published_at: (0, pg_core_1.timestamp)('published_at', { withTimezone: true }),
+    source: (0, exports.routeSourceEnum)('source').default('scratch').notNull(),
     created_by: (0, pg_core_1.uuid)('created_by').references(() => exports.users.id),
     created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
     agencyIdx: (0, pg_core_1.index)('routes_agency_idx').on(table.agency_id),
     agencyNameUnique: (0, pg_core_1.unique)('routes_agency_name_unique').on(table.agency_id, table.name),
+}));
+exports.geoCoordinatesLibrary = (0, pg_core_1.pgTable)('geo_coordinates_library', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    name: (0, pg_core_1.varchar)('name', { length: 255 }).notNull(),
+    latitude: (0, pg_core_1.decimal)('latitude', { precision: 10, scale: 7 }).notNull(),
+    longitude: (0, pg_core_1.decimal)('longitude', { precision: 10, scale: 7 }).notNull(),
+    captured_by_user_id: (0, pg_core_1.uuid)('captured_by_user_id').references(() => exports.users.id).notNull(),
+    captured_by_name: (0, pg_core_1.varchar)('captured_by_name', { length: 255 }).notNull(),
+    agency_id: (0, pg_core_1.uuid)('agency_id').references(() => exports.agencies.id).notNull(),
+    agency_name: (0, pg_core_1.varchar)('agency_name', { length: 255 }).notNull(),
+    verified: (0, pg_core_1.boolean)('verified').default(false).notNull(),
+    use_count: (0, pg_core_1.integer)('use_count').default(0).notNull(),
+    created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+    verifiedUseCountIdx: (0, pg_core_1.index)('geo_library_verified_use_count_idx').on(table.verified, table.use_count),
+    agencyIdx: (0, pg_core_1.index)('geo_library_agency_idx').on(table.agency_id),
+}));
+exports.popularRoutes = (0, pg_core_1.pgTable)('popular_routes', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    name: (0, pg_core_1.varchar)('name', { length: 255 }).notNull(),
+    from_city: (0, pg_core_1.varchar)('from_city', { length: 255 }).notNull(),
+    to_city: (0, pg_core_1.varchar)('to_city', { length: 255 }).notNull(),
+    stops: (0, pg_core_1.jsonb)('stops').notNull(),
+    published_by_agency_id: (0, pg_core_1.uuid)('published_by_agency_id').references(() => exports.agencies.id).notNull(),
+    published_by_agency_name: (0, pg_core_1.varchar)('published_by_agency_name', { length: 255 }).notNull(),
+    is_approved: (0, pg_core_1.boolean)('is_approved').default(false).notNull(),
+    use_count: (0, pg_core_1.integer)('use_count').default(0).notNull(),
+    created_at: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+    approvedUseCountIdx: (0, pg_core_1.index)('popular_routes_approved_use_count_idx').on(table.is_approved, table.use_count),
+    agencyIdx: (0, pg_core_1.index)('popular_routes_agency_idx').on(table.published_by_agency_id),
 }));
 // ─────────────────────────────────────────────────────────────────────────────
 // Stops
@@ -151,6 +187,10 @@ exports.tripPassengers = (0, pg_core_1.pgTable)('trip_passengers', {
     passenger_name: (0, pg_core_1.varchar)('passenger_name', { length: 255 }).notNull(),
     passenger_phone: (0, pg_core_1.varchar)('passenger_phone', { length: 20 }).notNull(),
     stop_id: (0, pg_core_1.uuid)('stop_id').references(() => exports.stops.id).notNull(),
+    pickup_point: (0, pg_core_1.text)('pickup_point'),
+    seat_no: (0, pg_core_1.varchar)('seat_no', { length: 50 }),
+    boarding_status: (0, exports.boardingStatusEnum)('boarding_status').default('pending').notNull(),
+    boarded_at: (0, pg_core_1.timestamp)('boarded_at', { withTimezone: true }),
     alert_status: (0, exports.alertStatusEnum)('alert_status').default('pending').notNull(),
     alert_channel: (0, exports.alertChannelEnum)('alert_channel'), // set on successful delivery
     alert_sent_at: (0, pg_core_1.timestamp)('alert_sent_at', { withTimezone: true }),

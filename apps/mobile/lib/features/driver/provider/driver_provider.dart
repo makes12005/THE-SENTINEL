@@ -1,63 +1,68 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/driver_repository.dart';
-import '../model/driver_trip.dart';
+
 import '../../../core/network/api_client.dart';
+import '../data/driver_repository.dart';
+import '../model/driver_profile.dart';
+import '../model/driver_trip.dart';
 
-// ── Repository provider ──────────────────────────────────────────────────────
-
-final driverRepositoryProvider = Provider<DriverRepository>((_) => DriverRepository());
-
-// ── Driver trips list (dashboard) ────────────────────────────────────────────
+final driverRepositoryProvider =
+    Provider<DriverRepository>((_) => DriverRepository());
 
 class DriverTripsState {
-  final List<DriverTrip> today;
-  final List<DriverTrip> upcoming;
-  final List<DriverTrip> completed;
+  final List<DriverTrip> trips;
   final bool isLoading;
   final String? error;
 
   const DriverTripsState({
-    this.today = const [],
-    this.upcoming = const [],
-    this.completed = const [],
+    this.trips = const [],
     this.isLoading = false,
     this.error,
   });
 
   DriverTripsState copyWith({
-    List<DriverTrip>? today,
-    List<DriverTrip>? upcoming,
-    List<DriverTrip>? completed,
+    List<DriverTrip>? trips,
     bool? isLoading,
     String? error,
   }) {
     return DriverTripsState(
-      today:     today     ?? this.today,
-      upcoming:  upcoming  ?? this.upcoming,
-      completed: completed ?? this.completed,
+      trips: trips ?? this.trips,
       isLoading: isLoading ?? this.isLoading,
-      error:     error,
+      error: error,
     );
   }
 }
 
 class DriverTripsNotifier extends StateNotifier<DriverTripsState> {
-  final DriverRepository _repo;
-
   DriverTripsNotifier(this._repo) : super(const DriverTripsState());
+
+  final DriverRepository _repo;
 
   Future<void> loadTrips() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final all = await _repo.listTrips();
-      final today    = all.where((t) => t.isActive).toList();
-      final upcoming = all.where((t) => t.isScheduled).toList();
-      final completed = all.where((t) => t.isCompleted).toList();
-      state = state.copyWith(
-        today: today, upcoming: upcoming, completed: completed, isLoading: false);
+      final trips = await _repo.listTrips();
+      state = state.copyWith(isLoading: false, trips: _todayTrips(trips));
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.parseError(e),
+      );
     }
+  }
+
+  List<DriverTrip> _todayTrips(List<DriverTrip> trips) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final filtered = trips.where((trip) {
+      final scheduled = _parseDateTime(trip.scheduledDate);
+      if (scheduled == null) {
+        return trip.isActive || trip.isScheduled || trip.isCompleted;
+      }
+      final tripDay = DateTime(scheduled.year, scheduled.month, scheduled.day);
+      return tripDay == today;
+    }).toList()
+      ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+    return filtered;
   }
 }
 
@@ -66,13 +71,15 @@ final driverTripsProvider =
   (ref) => DriverTripsNotifier(ref.read(driverRepositoryProvider)),
 );
 
-// ── Single trip detail + takeover ─────────────────────────────────────────────
+final driverProfileProvider = FutureProvider<DriverProfile>((ref) async {
+  return ref.read(driverRepositoryProvider).getProfile();
+});
 
 class DriverTripDetailState {
   final DriverTrip? trip;
   final bool isLoading;
   final bool isTakingOver;
-  final bool hasDriverMode; // true after successful takeover
+  final bool hasDriverMode;
   final String? error;
 
   const DriverTripDetailState({
@@ -91,67 +98,90 @@ class DriverTripDetailState {
     String? error,
   }) {
     return DriverTripDetailState(
-      trip:          trip         ?? this.trip,
-      isLoading:     isLoading    ?? this.isLoading,
-      isTakingOver:  isTakingOver ?? this.isTakingOver,
+      trip: trip ?? this.trip,
+      isLoading: isLoading ?? this.isLoading,
+      isTakingOver: isTakingOver ?? this.isTakingOver,
       hasDriverMode: hasDriverMode ?? this.hasDriverMode,
-      error:         error,
+      error: error,
     );
   }
 }
 
-class DriverTripDetailNotifier
-    extends StateNotifier<DriverTripDetailState> {
-  final DriverRepository _repo;
-  final String tripId;
-
+class DriverTripDetailNotifier extends StateNotifier<DriverTripDetailState> {
   DriverTripDetailNotifier(this._repo, this.tripId)
       : super(const DriverTripDetailState());
+
+  final DriverRepository _repo;
+  final String tripId;
 
   Future<void> loadTrip() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final trip = await _repo.getTrip(tripId);
-      state = state.copyWith(trip: trip, isLoading: false);
+      state = state.copyWith(
+        trip: trip,
+        isLoading: false,
+        hasDriverMode: trip.isDriverModeActive,
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.parseError(e),
+      );
     }
   }
 
-  /// Driver presses "Take Over Trip"
   Future<bool> takeover() async {
     state = state.copyWith(isTakingOver: true, error: null);
     try {
       await _repo.takeoverTrip(tripId);
-      final updatedTrip = state.trip?.copyWith(isDriverModeActive: true);
       state = state.copyWith(
         isTakingOver: false,
         hasDriverMode: true,
-        trip: updatedTrip,
+        trip: state.trip?.copyWith(isDriverModeActive: true),
       );
       return true;
     } catch (e) {
       state = state.copyWith(
-          isTakingOver: false, error: ApiClient.parseError(e));
+        isTakingOver: false,
+        error: ApiClient.parseError(e),
+      );
       return false;
     }
   }
 
-  /// Called when Socket.IO conductor_offline event fires
-  void markConductorOffline() {
-    final updated = state.trip?.copyWith(conductorOnline: false);
-    state = state.copyWith(trip: updated);
+  void markConductorOffline({DateTime? lastSeenAt}) {
+    state = state.copyWith(
+      trip: state.trip?.copyWith(
+        conductorOnline: false,
+        conductorLastSeenAt: lastSeenAt ?? state.trip?.conductorLastSeenAt,
+      ),
+    );
   }
 
-  /// Called when Socket.IO conductor_replaced event fires (another device triggered it)
+  void markConductorOnline() {
+    state = state.copyWith(
+      trip: state.trip?.copyWith(conductorOnline: true),
+    );
+  }
+
   void markDriverModeActive() {
-    final updated = state.trip?.copyWith(isDriverModeActive: true);
-    state = state.copyWith(hasDriverMode: true, trip: updated);
+    state = state.copyWith(
+      hasDriverMode: true,
+      trip: state.trip?.copyWith(isDriverModeActive: true),
+    );
   }
 }
 
 final driverTripDetailProvider = StateNotifierProvider.family<
     DriverTripDetailNotifier, DriverTripDetailState, String>(
-  (ref, tripId) =>
-      DriverTripDetailNotifier(ref.read(driverRepositoryProvider), tripId),
+  (ref, tripId) => DriverTripDetailNotifier(
+    ref.read(driverRepositoryProvider),
+    tripId,
+  ),
 );
+
+DateTime? _parseDateTime(String? value) {
+  if (value == null || value.isEmpty) return null;
+  return DateTime.tryParse(value)?.toLocal();
+}

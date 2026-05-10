@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { get, post } from '@/lib/api';
+import { get, post, postForm } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/lib/auth-store';
 
@@ -176,21 +176,24 @@ export default function CreateTripPage() {
       if (uploadedFile) {
         const formData = new FormData();
         formData.append('file', uploadedFile);
+        const uploadPreview = await postForm<{ raw_passengers?: Array<{
+          name?: string | null;
+          phone?: string | null;
+          stop_name?: string | null;
+          pickup_point?: string | null;
+          seat_no?: string | null;
+        }> }>(`/api/trips/${tripId}/passengers/upload`, formData);
 
-        const token = localStorage.getItem('access_token') || (() => {
-          try { return JSON.parse(localStorage.getItem('busalert-auth') ?? '{}').state?.token ?? ''; } catch { return ''; }
-        })();
-        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/trips/${tripId}/passengers/upload`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-
-        const uploadResult = await uploadRes.json();
-        if (!uploadRes.ok || !uploadResult.success) {
-          throw new Error(uploadResult.error?.message ?? 'Manifest upload failed');
+        if ((uploadPreview.raw_passengers ?? []).length > 0) {
+          await post(`/api/trips/${tripId}/passengers/confirm`, {
+            passengers: (uploadPreview.raw_passengers ?? []).map((row) => ({
+              name: row.name ?? '',
+              phone: row.phone ?? '',
+              stop_name: row.stop_name ?? '',
+              pickup_point: row.pickup_point ?? null,
+              seat_no: row.seat_no ?? null,
+            })),
+          });
         }
       }
 

@@ -38,14 +38,14 @@ class AuthState {
     String? identifier,
   }) {
     return AuthState(
-      isLoading:       isLoading       ?? this.isLoading,
-      error:           error,           // null clears error
+      isLoading: isLoading ?? this.isLoading,
+      error: error, // null clears error
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      role:            role            ?? this.role,
-      userId:          userId          ?? this.userId,
-      userName:        userName        ?? this.userName,
-      tempToken:       tempToken       ?? this.tempToken,
-      identifier:      identifier      ?? this.identifier,
+      role: role ?? this.role,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      tempToken: tempToken ?? this.tempToken,
+      identifier: identifier ?? this.identifier,
     );
   }
 }
@@ -84,7 +84,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<bool> sendOtp(String identifier) async {
     final normalized = _normalizeContact(identifier);
-    state = state.copyWith(isLoading: true, error: null, identifier: normalized);
+    state =
+        state.copyWith(isLoading: true, error: null, identifier: normalized);
     try {
       await _repo.sendOtp(normalized);
       state = state.copyWith(isLoading: false);
@@ -100,7 +101,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
   }) async {
     final normalized = _normalizeContact(contact);
-    state = state.copyWith(isLoading: true, error: null, identifier: normalized);
+    state =
+        state.copyWith(isLoading: true, error: null, identifier: normalized);
     try {
       final result = await _repo.login(contact: normalized, password: password);
       return await _handleAuthSuccess(result);
@@ -115,7 +117,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Throws or sets error if failed.
   Future<bool?> verifyOtp(String otp) async {
     if (state.identifier == null) {
-      state = state.copyWith(error: 'Identifier is missing. Please restart login.');
+      state =
+          state.copyWith(error: 'Identifier is missing. Please restart login.');
       return null;
     }
 
@@ -145,7 +148,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? inviteCode,
   }) async {
     if (state.tempToken == null) {
-      state = state.copyWith(error: 'Session expired. Please verify OTP again.');
+      state =
+          state.copyWith(error: 'Session expired. Please verify OTP again.');
       return false;
     }
 
@@ -166,12 +170,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> _handleAuthSuccess(AuthResult result) async {
-    // Mobile supports conductor, driver, and passenger sessions.
-    const allowedRoles = ['conductor', 'driver', 'passenger'];
+    const allowedRoles = ['conductor', 'driver'];
+
+    if (result.role.isEmpty) {
+      state = state.copyWith(
+        isLoading: false,
+        error:
+            'Account not found / એકાઉન્ટ મળ્યું નહીં. Please check your credentials.',
+      );
+      return false;
+    }
+
     if (!allowedRoles.contains(result.role)) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Access denied for role: ${result.role}',
+        error: 'This app is for conductors and drivers only.',
       );
       return false;
     }
@@ -211,7 +224,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 
-final authRepositoryProvider = Provider<AuthRepository>((_) => AuthRepository());
+final authRepositoryProvider =
+    Provider<AuthRepository>((_) => AuthRepository());
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
   (ref) => AuthNotifier(ref.read(authRepositoryProvider)),

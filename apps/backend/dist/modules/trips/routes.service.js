@@ -43,6 +43,9 @@ async function createRoute(agencyId, payload, createdBy) {
         from_city: fromCity,
         to_city: toCity,
         is_active: true,
+        is_published: payload.is_published ?? false,
+        published_at: payload.is_published ? new Date() : null,
+        source: payload.source ?? 'scratch',
         created_by: createdBy ?? null,
         created_at: new Date(),
     })
@@ -108,6 +111,9 @@ async function updateRoute(routeId, agencyId, payload) {
         name: payload.name,
         from_city: payload.from_city,
         to_city: payload.to_city,
+        is_published: payload.is_published ?? false,
+        published_at: payload.is_published ? new Date() : null,
+        source: payload.source ?? 'scratch',
     })
         .where((0, drizzle_orm_1.eq)(schema_1.routes.id, routeId))
         .returning();

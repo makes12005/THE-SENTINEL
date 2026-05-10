@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../model/trip.dart';
 import '../provider/trips_provider.dart';
 import '../../auth/provider/auth_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../widgets/trip_card.dart';
-import '../../../widgets/status_chip.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -19,7 +17,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedTab = 0;
   static const _tabs  = ['Today', 'Upcoming', 'Completed'];
-  static const _statuses = ['scheduled', 'active', 'scheduled'];  // mapped by tab
 
   @override
   void initState() {
@@ -53,7 +50,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               width: 220, height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.05),
+                color: AppColors.primary.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -97,8 +94,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       PopupMenuButton<String>(
                         icon: const Icon(Icons.account_circle_outlined, color: AppColors.onSurface),
                         color: AppColors.surfaceContainerHigh,
-                        onSelected: (v) { if (v == 'logout') _onLogout(); },
+                        onSelected: (v) {
+                          if (v == 'capture_location') {
+                            context.push(AppRoutes.captureLocation);
+                          }
+                          if (v == 'logout') _onLogout();
+                        },
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'capture_location',
+                            child: Row(children: [
+                              const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              Text('Capture Location', style: GoogleFonts.inter(color: AppColors.onSurface)),
+                            ]),
+                          ),
                           PopupMenuItem(
                             value: 'logout',
                             child: Row(children: [
@@ -270,7 +280,7 @@ class _NavItem extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: GoogleFonts.inter(
-              color: active ? AppColors.tertiary : AppColors.onSurfaceVariant.withOpacity(0.6),
+              color: active ? AppColors.tertiary : AppColors.onSurfaceVariant.withValues(alpha: 0.6),
               fontSize: 10,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,

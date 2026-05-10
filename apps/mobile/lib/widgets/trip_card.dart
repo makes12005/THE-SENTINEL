@@ -12,7 +12,6 @@ class TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isReady  = trip.isScheduled;
     final isActive = trip.isActive;
 
     return GestureDetector(
@@ -22,10 +21,10 @@ class TripCard extends StatelessWidget {
         scale: 1.0,
         child: Container(
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primaryContainer.withOpacity(0.3) : AppColors.surfaceContainerHigh,
+            color: isActive ? AppColors.primaryContainer.withValues(alpha: 0.3) : AppColors.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(24),
             border: isActive
-                ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5)
+                ? Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5)
                 : null,
           ),
           padding: const EdgeInsets.all(24),
@@ -57,7 +56,7 @@ class TripCard extends StatelessWidget {
                   Column(
                     children: [
                       Icon(Icons.radio_button_checked, color: AppColors.secondary, size: 14),
-                      Container(width: 2, height: 28, color: AppColors.outlineVariant.withOpacity(0.4)),
+                      Container(width: 2, height: 28, color: AppColors.outlineVariant.withValues(alpha: 0.4)),
                       Icon(Icons.location_on, color: AppColors.tertiary, size: 14),
                     ],
                   ),

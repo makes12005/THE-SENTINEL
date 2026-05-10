@@ -3,13 +3,15 @@ import 'package:synchronized/synchronized.dart';
 import '../auth/session_notifier.dart';
 import '../storage/secure_storage.dart';
 import '../env.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import '../../features/alerts/socket_service.dart';
 
 /// Intercepts 401 responses and transparently refreshes the access token.
 /// Uses a Lock to prevent multiple simultaneous refresh calls.
 class TokenInterceptor extends Interceptor {
   final Dio _dio;
   final _lock = Lock();
-  bool _isRefreshing = false;
+
 
   TokenInterceptor(this._dio);
 
@@ -18,6 +20,12 @@ class TokenInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    // Do not attach stale bearer tokens to public auth endpoints.
+    if (options.path.contains('/api/auth/')) {
+      handler.next(options);
+      return;
+    }
+
     final token = await SecureStorage.getAccessToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -30,17 +38,20 @@ class TokenInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    // Only intercept 401 on non-refresh endpoints
+    // Never force-refresh/force-logout on auth endpoints.
+    if (err.requestOptions.path.contains('/api/auth/')) {
+      return handler.next(err);
+    }
+
+    // Only intercept 401 on non-auth endpoints
     if (err.response?.statusCode != 401 ||
-        err.requestOptions.path.contains('/auth/refresh') ||
-        err.requestOptions.path.contains('/auth/login')) {
+        err.requestOptions.path.contains('/auth/refresh')) {
       return handler.next(err);
     }
 
     // Serialize refresh calls with a lock
     await _lock.synchronized(() async {
       try {
-        _isRefreshing = true;
         final refreshToken = await SecureStorage.getRefreshToken();
         if (refreshToken == null) {
           await _forceLogout(err, handler);
@@ -63,6 +74,17 @@ class TokenInterceptor extends Interceptor {
           refreshToken: newRefresh,
         );
 
+        // Notify background GPS task about the new token (if running)
+        try {
+          FlutterForegroundTask.sendDataToTask({
+            'type': 'token_refresh',
+            'token': newToken,
+          });
+        } catch (_) {}
+
+        // Notify socket connection about the new token
+        SocketService.updateToken(newToken);
+
         // Retry original request with new token
         final opts = err.requestOptions;
         opts.headers['Authorization'] = 'Bearer $newToken';
@@ -70,8 +92,6 @@ class TokenInterceptor extends Interceptor {
         handler.resolve(retryResp);
       } catch (_) {
         await _forceLogout(err, handler);
-      } finally {
-        _isRefreshing = false;
       }
     });
   }

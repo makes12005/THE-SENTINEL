@@ -19,6 +19,7 @@ type Stop = {
   longitude: number;
   trigger_radius_km: string;
 };
+
 type RouteDetails = {
   id: string;
   name: string;
@@ -27,14 +28,22 @@ type RouteDetails = {
   stops: Stop[];
 };
 
+type PlaceResult = {
+  label: string;
+  shortLabel: string;
+  latitude: number;
+  longitude: number;
+};
+
 export default function RouteDetailsPage() {
   const params = useParams<{ id: string }>();
   const routeId = params.id;
   const qc = useQueryClient();
-  const [showStopModal, setShowStopModal] = useState(false);
-  const [stopForm, setStopForm] = useState({ name: '', sequence_number: '1', trigger_radius_km: '10' });
-  const [pickedLatLng, setPickedLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const [showStopEditor, setShowStopEditor] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const [editingStop, setEditingStop] = useState<Stop | null>(null);
+  const [pickedPlace, setPickedPlace] = useState<PlaceResult | null>(null);
+  const [stopName, setStopName] = useState('');
 
   const route = useQuery<RouteDetails>({
     queryKey: ['route-detail', routeId],
@@ -42,22 +51,20 @@ export default function RouteDetailsPage() {
     enabled: !!routeId,
   });
 
-  const stops = route.data?.stops ?? [];
+  const stopSearch = useQuery<PlaceResult[]>({
+    queryKey: ['detail-stop-search', searchText],
+    queryFn: () => searchPlaces(searchText),
+    enabled: searchText.trim().length >= 2,
+  });
 
-  const resetStopForm = () => {
-    const nextSeq = stops.length ? Math.max(...stops.map((s) => s.sequence_number)) + 1 : 1;
-    setStopForm({ name: '', sequence_number: String(nextSeq), trigger_radius_km: '10' });
-    setPickedLatLng(null);
-    setEditingStop(null);
-  };
+  const stops = route.data?.stops ?? [];
 
   const addStop = useMutation({
     mutationFn: (data: any) => post(`/api/routes/${routeId}/stops`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['route-detail', routeId] });
       toast.success('Stop added');
-      setShowStopModal(false);
-      resetStopForm();
+      resetEditor();
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to add stop'),
   });
@@ -67,8 +74,7 @@ export default function RouteDetailsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['route-detail', routeId] });
       toast.success('Stop updated');
-      setShowStopModal(false);
-      resetStopForm();
+      resetEditor();
     },
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to update stop'),
   });
@@ -84,124 +90,310 @@ export default function RouteDetailsPage() {
 
   const mapStops = useMemo<MapStop[]>(
     () =>
-      stops.map((s) => ({
-        id: s.id,
-        name: s.name,
-        latitude: s.latitude,
-        longitude: s.longitude,
-        sequence_number: s.sequence_number,
-        trigger_radius_km: s.trigger_radius_km,
+      stops.map((stop) => ({
+        id: stop.id,
+        name: stop.name,
+        latitude: stop.latitude,
+        longitude: stop.longitude,
+        sequence_number: stop.sequence_number,
+        trigger_radius_km: stop.trigger_radius_km,
       })),
     [stops]
   );
 
+  const nextSequence = stops.length ? Math.max(...stops.map((stop) => stop.sequence_number)) + 1 : 1;
+
+  const openNewStop = () => {
+    setEditingStop(null);
+    setPickedPlace(null);
+    setStopName('');
+    setSearchText('');
+    setShowStopEditor(true);
+  };
+
+  const openEditStop = (stop: Stop) => {
+    setEditingStop(stop);
+    setPickedPlace({
+      label: stop.name,
+      shortLabel: stop.name,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+    });
+    setStopName(stop.name);
+    setSearchText(stop.name);
+    setShowStopEditor(true);
+  };
+
+  const resetEditor = () => {
+    setShowStopEditor(false);
+    setEditingStop(null);
+    setPickedPlace(null);
+    setStopName('');
+    setSearchText('');
+  };
+
   const reorderStop = (stop: Stop, direction: -1 | 1) => {
     const sorted = [...stops].sort((a, b) => a.sequence_number - b.sequence_number);
-    const index = sorted.findIndex((s) => s.id === stop.id);
-    const swapWith = sorted[index + direction];
-    if (!swapWith) return;
-    updateStop.mutate({ stopId: stop.id, data: { sequence_number: swapWith.sequence_number } });
-    updateStop.mutate({ stopId: swapWith.id, data: { sequence_number: stop.sequence_number } });
+    const index = sorted.findIndex((item) => item.id === stop.id);
+    const target = sorted[index + direction];
+    if (!target) return;
+
+    updateStop.mutate({ stopId: stop.id, data: { sequence_number: target.sequence_number } });
+    updateStop.mutate({ stopId: target.id, data: { sequence_number: stop.sequence_number } });
+  };
+
+  const handleMapClick = async (lat: number, lng: number) => {
+    try {
+      const place = await reverseLookup(lat, lng);
+      setPickedPlace(place);
+      if (!stopName.trim()) {
+        setStopName(place.shortLabel);
+      }
+      toast.success('Stop location selected from map.');
+    } catch {
+      toast.error('Could not name that map point.');
+    }
   };
 
   const saveStop = () => {
-    if (!stopForm.name || !pickedLatLng) {
-      toast.error('Stop name and map-selected coordinates are required');
+    if (!pickedPlace) {
+      toast.error('Select a stop by search or map first.');
       return;
     }
+
     const payload = {
-      name: stopForm.name,
-      sequence_number: Number(stopForm.sequence_number),
-      latitude: pickedLatLng.lat,
-      longitude: pickedLatLng.lng,
-      trigger_radius_km: Number(stopForm.trigger_radius_km || '10'),
+      name: stopName.trim() || pickedPlace.shortLabel,
+      sequence_number: editingStop?.sequence_number ?? nextSequence,
+      latitude: pickedPlace.latitude,
+      longitude: pickedPlace.longitude,
+      trigger_radius_km: Number(editingStop?.trigger_radius_km ?? '10'),
     };
+
     if (editingStop) {
       updateStop.mutate({ stopId: editingStop.id, data: payload });
       return;
     }
+
     addStop.mutate(payload);
   };
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-[#F1F5F9] px-8 py-8" style={{ fontFamily: 'Manrope, sans-serif' }}>
-      <div className="max-w-[1200px] mx-auto space-y-6">
-        <Link href="/operator/routes" className="text-sm text-[#94a3b8] hover:text-[#F1F5F9]">
-          ← Back to Routes
+    <div
+      className="min-h-screen px-6 py-8 text-[#F8FAFC] lg:px-10"
+      style={{
+        fontFamily: 'Manrope, sans-serif',
+        background:
+          'radial-gradient(circle at top left, rgba(56,189,248,0.12), transparent 26%), linear-gradient(160deg, #07111f 0%, #0f172a 55%, #111827 100%)',
+      }}
+    >
+      <div className="mx-auto max-w-[1260px] space-y-6">
+        <Link href="/operator/routes" className="inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#dbeafe] transition hover:border-white/20 hover:bg-white/10">
+          Back to route builder
         </Link>
-        <div className="flex justify-between items-center">
+
+        <div className="flex flex-col gap-4 rounded-[32px] border border-white/10 bg-[#081120]/80 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-black">{route.data?.name ?? 'Route'}</h1>
-            <p className="text-[#6C63FF]">{route.data?.from_city} → {route.data?.to_city}</p>
+            <p className="text-xs font-extrabold uppercase tracking-[0.32em] text-[#7dd3fc]">Route Details</p>
+            <h1 className="mt-3 text-3xl font-black text-white">{route.data?.name ?? 'Route'}</h1>
+            <p className="mt-2 text-sm text-[#cbd5e1]">
+              {route.data?.from_city} to {route.data?.to_city}
+            </p>
           </div>
           <button
-            onClick={() => {
-              resetStopForm();
-              setShowStopModal(true);
-            }}
-            className="px-4 py-2 rounded-xl bg-[#6C63FF] text-white text-sm font-bold"
+            onClick={openNewStop}
+            className="rounded-2xl bg-[#f97316] px-5 py-3 text-sm font-extrabold text-white shadow-[0_18px_40px_rgba(249,115,22,0.25)]"
           >
             Add Stop
           </button>
         </div>
 
-        <RouteMap stops={mapStops} height="420px" readonly />
+        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+          <div className="rounded-[32px] border border-white/10 bg-[#081120]/80 p-4 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur">
+            <RouteMap stops={mapStops} height="480px" readonly />
+          </div>
 
-        <div className="bg-[#131B2E] border border-[#1E293B] rounded-xl divide-y divide-[#1E293B]">
-          {stops.map((s, idx) => (
-            <div key={s.id} className="p-4 flex items-center gap-4">
-              <div className="w-8 h-8 rounded-full bg-[#6C63FF]/20 text-[#6C63FF] font-bold text-sm flex items-center justify-center">{s.sequence_number}</div>
-              <div className="flex-1">
-                <p className="font-bold">{s.name}</p>
-                <p className="text-xs text-[#94a3b8]">{s.latitude.toFixed(5)}, {s.longitude.toFixed(5)} · {s.trigger_radius_km} km</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button disabled={idx === 0} onClick={() => reorderStop(s, -1)} className="px-2 py-1 text-xs rounded bg-[#1E293B] disabled:opacity-30">↑</button>
-                <button disabled={idx === stops.length - 1} onClick={() => reorderStop(s, 1)} className="px-2 py-1 text-xs rounded bg-[#1E293B] disabled:opacity-30">↓</button>
-                <button onClick={() => {
-                  setEditingStop(s);
-                  setPickedLatLng({ lat: s.latitude, lng: s.longitude });
-                  setStopForm({ name: s.name, sequence_number: String(s.sequence_number), trigger_radius_km: s.trigger_radius_km });
-                  setShowStopModal(true);
-                }} className="px-3 py-1 text-xs rounded bg-[#6C63FF]/20 text-[#6C63FF]">Edit</button>
-                <button
-                  onClick={() => {
-                    if (stops.length <= 1) {
-                      toast.error('At least one stop is required');
-                      return;
-                    }
-                    if (confirm('Delete this stop?')) deleteStop.mutate(s.id);
-                  }}
-                  className="px-3 py-1 text-xs rounded bg-[#ef4444]/20 text-[#ef4444]"
-                >
-                  Delete
-                </button>
+          <div className="rounded-[32px] border border-white/10 bg-[#081120]/80 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#7dd3fc]">Stop List</p>
+                <p className="mt-1 text-sm text-[#94a3b8]">{stops.length} stops in order</p>
               </div>
             </div>
-          ))}
-          {stops.length === 0 && <div className="p-8 text-center text-[#94a3b8]">No stops yet.</div>}
+
+            {stops.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 px-5 py-10 text-center">
+                <p className="text-base font-bold text-white">No stops yet</p>
+                <p className="mt-2 text-sm text-[#94a3b8]">Add the first stop by searching a place name or tapping the map.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stops.map((stop, index) => (
+                  <div key={stop.id} className="rounded-[24px] border border-white/10 bg-[#0a1627] px-4 py-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-sm font-black text-white">
+                        {stop.sequence_number}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-extrabold text-white">{stop.name}</p>
+                        <p className="mt-1 text-xs text-[#94a3b8]">Radius {stop.trigger_radius_km} km</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          disabled={index === 0}
+                          onClick={() => reorderStop(stop, -1)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-[#e2e8f0] disabled:opacity-30"
+                        >
+                          Move up
+                        </button>
+                        <button
+                          disabled={index === stops.length - 1}
+                          onClick={() => reorderStop(stop, 1)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-[#e2e8f0] disabled:opacity-30"
+                        >
+                          Move down
+                        </button>
+                        <button
+                          onClick={() => openEditStop(stop)}
+                          className="rounded-xl border border-[#38bdf8]/20 bg-[#38bdf8]/10 px-3 py-2 text-xs font-bold text-[#7dd3fc]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Delete this stop?')) deleteStop.mutate(stop.id);
+                          }}
+                          className="rounded-xl border border-[#ef4444]/20 bg-[#ef4444]/10 px-3 py-2 text-xs font-bold text-[#fca5a5]"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {showStopModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-3xl bg-[#131B2E] border border-[#1E293B] rounded-2xl p-6 space-y-4">
-            <h3 className="text-lg font-black">{editingStop ? 'Edit Stop' : 'Add Stop'}</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <input className="bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5" placeholder="Stop name" value={stopForm.name} onChange={(e) => setStopForm((f) => ({ ...f, name: e.target.value }))} />
-              <input className="bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5" type="number" placeholder="Sequence" value={stopForm.sequence_number} onChange={(e) => setStopForm((f) => ({ ...f, sequence_number: e.target.value }))} />
-              <input className="bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5" value={pickedLatLng?.lat ?? ''} placeholder="Latitude" readOnly />
-              <input className="bg-[#0F172A] border border-[#1E293B] rounded-xl px-3 py-2.5" value={pickedLatLng?.lng ?? ''} placeholder="Longitude" readOnly />
+      {showStopEditor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#081120] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#7dd3fc]">Stop Editor</p>
+                <h2 className="mt-2 text-2xl font-black text-white">{editingStop ? 'Update stop' : 'Add a new stop'}</h2>
+                <p className="mt-2 text-sm text-[#cbd5e1]">Search the place or tap the map. Coordinates stay hidden from the operator.</p>
+              </div>
+              <button
+                onClick={resetEditor}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#e2e8f0]"
+              >
+                Close
+              </button>
             </div>
-            <div className="text-xs text-[#94a3b8]">Pick from map below to auto-fill coordinates.</div>
-            <RouteMap stops={mapStops} height="280px" onMapClick={(lat, lng) => setPickedLatLng({ lat, lng })} />
-            <div className="flex gap-3">
-              <button onClick={() => setShowStopModal(false)} className="flex-1 border border-[#1E293B] rounded-xl py-2.5">Cancel</button>
-              <button onClick={saveStop} className="flex-1 bg-[#6C63FF] rounded-xl py-2.5 font-bold">{editingStop ? 'Update Stop' : 'Add Stop'}</button>
+
+            <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+              <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+                <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Search stop name</label>
+                <input
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="Search village, landmark, or bus stand"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                />
+                <div className="space-y-2">
+                  {(stopSearch.data ?? []).map((place) => (
+                    <button
+                      key={`${place.shortLabel}-${place.latitude}-${place.longitude}`}
+                      onClick={() => {
+                        setPickedPlace(place);
+                        setStopName(place.shortLabel);
+                      }}
+                      className="flex w-full items-start justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[#38bdf8]/35 hover:bg-[#0f2036]"
+                    >
+                      <div>
+                        <p className="text-sm font-extrabold text-white">{place.shortLabel}</p>
+                        <p className="mt-1 text-xs text-[#94a3b8]">{place.label}</p>
+                      </div>
+                      <span className="rounded-full bg-[#38bdf8]/10 px-3 py-1 text-xs font-bold text-[#7dd3fc]">Use</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="rounded-[24px] border border-white/10 bg-[#091321] p-4">
+                  <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Stop display name</label>
+                  <input
+                    value={stopName}
+                    onChange={(event) => setStopName(event.target.value)}
+                    placeholder="Auto-filled after you select a place"
+                    className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                  />
+                  {pickedPlace ? (
+                    <p className="mt-3 text-xs text-[#94a3b8]">Selected place: {pickedPlace.label}</p>
+                  ) : (
+                    <p className="mt-3 text-xs text-[#94a3b8]">Select a place from search or by tapping the map.</p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={resetEditor}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#e2e8f0]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveStop}
+                    disabled={addStop.isPending || updateStop.isPending}
+                    className="rounded-2xl bg-[#f97316] px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60"
+                  >
+                    {editingStop ? 'Save changes' : 'Add stop'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-[#081321] p-4">
+                <RouteMap
+                  stops={
+                    pickedPlace
+                      ? [
+                          ...mapStops,
+                          {
+                            id: editingStop?.id ?? 'preview',
+                            name: stopName || pickedPlace.shortLabel,
+                            latitude: pickedPlace.latitude,
+                            longitude: pickedPlace.longitude,
+                            sequence_number: editingStop?.sequence_number ?? nextSequence,
+                            trigger_radius_km: editingStop?.trigger_radius_km ?? '10',
+                          },
+                        ]
+                      : mapStops
+                  }
+                  onMapClick={handleMapClick}
+                  height="560px"
+                />
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+async function searchPlaces(query: string) {
+  const response = await fetch(`/api/geocode/search?query=${encodeURIComponent(query)}&kind=any`);
+  if (!response.ok) {
+    throw new Error('Could not search places right now.');
+  }
+  return (await response.json()) as PlaceResult[];
+}
+
+async function reverseLookup(lat: number, lng: number) {
+  const response = await fetch(`/api/geocode/reverse?lat=${lat}&lng=${lng}`);
+  if (!response.ok) {
+    throw new Error('Could not resolve this map point.');
+  }
+  return (await response.json()) as PlaceResult;
 }

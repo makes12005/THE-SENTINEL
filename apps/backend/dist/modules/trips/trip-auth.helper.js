@@ -62,5 +62,27 @@ async function verifyTripAgency(tripId, agencyId, userId, userRole) {
             code: 'FORBIDDEN'
         });
     }
+    if (userRole === shared_types_1.UserRole.CONDUCTOR && result.trip.conductor_id !== userId) {
+        await logForbiddenAccess(userId, tripId, 'UNAUTHORIZED_TRIP_ACCESS_ATTEMPT', {
+            attempted_agency_id: agencyId,
+            user_role: userRole,
+        });
+        throw Object.assign(new Error('You are not assigned to this trip'), {
+            statusCode: 403,
+            code: 'FORBIDDEN'
+        });
+    }
+    if (userRole === shared_types_1.UserRole.DRIVER &&
+        result.trip.driver_id !== userId &&
+        result.trip.conductor_id !== userId) {
+        await logForbiddenAccess(userId, tripId, 'UNAUTHORIZED_TRIP_ACCESS_ATTEMPT', {
+            attempted_agency_id: agencyId,
+            user_role: userRole,
+        });
+        throw Object.assign(new Error('You are not assigned to this trip'), {
+            statusCode: 403,
+            code: 'FORBIDDEN'
+        });
+    }
     return result.trip;
 }

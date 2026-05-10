@@ -16,7 +16,7 @@ class OtpScreen extends ConsumerStatefulWidget {
 }
 
 class _OtpScreenState extends ConsumerState<OtpScreen> {
-  final _formKey = GlobalKey<FormState>();
+
   final _otpCon = TextEditingController();
   
   Timer? _timer;
@@ -62,7 +62,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     if (!mounted) return;
     
     if (isExistingUser == true) {
-      context.go(AppRoutes.dashboard);
+      final role = ref.read(authProvider).role;
+      context.go(routeForRole(role));
     } else if (isExistingUser == false) {
       context.push(AppRoutes.signup);
     }
@@ -152,7 +153,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    AppColors.primaryContainer.withOpacity(0.2),
+                    AppColors.primaryContainer.withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                 ),
@@ -239,7 +240,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                         backgroundColor: AppColors.onTertiaryContainer,
                         foregroundColor: AppColors.onTertiary,
                         elevation: 8,
-                        shadowColor: AppColors.tertiaryContainer.withOpacity(0.2),
+                        shadowColor: AppColors.tertiaryContainer.withValues(alpha: 0.2),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -306,7 +307,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                             letterSpacing: 1.5,
                             color: _canResend 
                                 ? AppColors.primary 
-                                : AppColors.onSurfaceVariant.withOpacity(0.5),
+                                : AppColors.onSurfaceVariant.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
@@ -316,7 +317,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   Text(
                     'SENTINEL SECURE NODE v4.2.0',
                     style: GoogleFonts.manrope(
-                      color: AppColors.onSurfaceVariant.withOpacity(0.35),
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.35),
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 3,

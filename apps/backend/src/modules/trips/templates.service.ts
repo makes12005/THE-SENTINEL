@@ -9,6 +9,7 @@ import { db } from '../../db';
 import { tripTemplates, routes, buses, users, stops, trips } from '../../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { CreateTemplateRequest } from '../../lib/shared-types';
+import { hasTripTemplateColumn } from './trip-template-column';
 
 export class TemplatesService {
   // ── Create Template ───────────────────────────────────────────────────────
@@ -363,16 +364,18 @@ export class TemplatesService {
 
   // ── Delete Template (soft) ────────────────────────────────────────────────
   static async deleteTemplate(templateId: string, agencyId: string) {
-    const [upcomingTrip] = await db
-      .select({ id: trips.id })
-      .from(trips)
-      .where(and(eq(trips.template_id, templateId), eq(trips.status, 'scheduled')))
-      .limit(1);
-    if (upcomingTrip) {
-      throw Object.assign(new Error('Cannot delete template with upcoming trips'), {
-        statusCode: 409,
-        code: 'TEMPLATE_IN_USE',
-      });
+    if (await hasTripTemplateColumn()) {
+      const [upcomingTrip] = await db
+        .select({ id: trips.id })
+        .from(trips)
+        .where(and(eq(trips.template_id, templateId), eq(trips.status, 'scheduled')))
+        .limit(1);
+      if (upcomingTrip) {
+        throw Object.assign(new Error('Cannot delete template with upcoming trips'), {
+          statusCode: 409,
+          code: 'TEMPLATE_IN_USE',
+        });
+      }
     }
 
     const [existing] = await db

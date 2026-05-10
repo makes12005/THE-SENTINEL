@@ -1,6 +1,112 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-05-05 (IST)
+Last Updated: 2026-05-10 (IST)
+
+## 2026-05-10 - Major Features Local-Only Implementation Pass
+
+- Implemented a local-only feature pass across `apps/backend`, `apps/web`, and `apps/mobile` for route creation overhaul, geo-library capture/reuse, passenger upload review/confirm, and conductor boarding/active-trip flows.
+- Provider decision:
+  - Anthropic/Claude was not used.
+  - AI upload processing now targets configurable OpenRouter or NVIDIA-style endpoints via env (`AI_UPLOAD_PROVIDER`, `OPENROUTER_*`, `NVIDIA_*`).
+- Backend:
+  - Added schema support for `geo_coordinates_library`, `popular_routes`, route publish/source fields, and passenger `pickup_point`, `seat_no`, `boarding_status`, `boarded_at`.
+  - Added APIs for `/api/geo-library`, `/api/popular-routes`, `/api/routes/search-place`, `/api/routes/reverse-geocode`, and review-first passenger upload/confirm.
+  - `pnpm --filter backend db:generate` passed and created migration `0008_modern_marten_broadcloak.sql`.
+  - `pnpm --filter backend db:push` did not complete within timeout, so database application is still pending verification.
+- Web:
+  - Replaced operator route creation with a Google Maps-based 3-step flow.
+  - Added `/operator/geo-library`.
+  - Rebuilt pending passenger upload into upload -> processing -> review -> confirm.
+  - Updated trip-create upload path to align with the new preview/confirm backend.
+  - `pnpm --filter web build` passed locally.
+- Mobile:
+  - Added capture-location screen and dashboard entry point.
+  - Added boarding checklist before trip start.
+  - Added active-trip screen with next-stop card and in-app alert scaffolding.
+  - Added Google Maps / audio dependencies and Android manifest/Gradle key wiring for `--dart-define=GOOGLE_MAPS_API_KEY=...`.
+  - `flutter analyze` passed locally.
+  - `flutter build apk --debug` produced `apps/mobile/build/app/outputs/flutter-apk/app-debug.apk`.
+- Next action:
+  - Real Google Maps and OpenRouter/NVIDIA keys have been added to Railway and Vercel. Database has been pushed. Vercel and Railway services successfully redeployed.
+  - Perform device-backed end-to-end verification for route creation, geo capture, upload extraction, and conductor alert behavior on the fully provisioned backend.
+
+## 2026-05-08 — Flutter P2/P3 Fixes: Deep Audit + 3 Code Fixes Applied
+
+**Status: ✅ Ready for device testing**
+
+### Deep Audit Results (verified by full source read)
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Socket.IO reconnection config | ✅ Already correct | 99999 attempts, 2s–30s delay, rejoin on connect/reconnect |
+| AndroidManifest permissions | ✅ Already correct | All 7 permissions present; `stopWithTask="false"` already set |
+| GPS foreground task + callback | ✅ Already correct | `startCallback` + `@pragma('vm:entry-point')`, 10s repeat |
+| Offline location queue | ✅ Already correct | 20-item cap, SharedPrefs, connectivity flush listener |
+| ConductorOfflineAlert | ✅ Already correct | Full-screen, `barrierDismissible:false`, vibration, 2 buttons |
+| Driver takeover (API + GPS + socket rejoin) | ✅ Already correct | `PUT /trips/:id/takeover`, GPS start, socket joinTrip all in `_takeOver()` |
+| Passenger alert status realtime | ✅ Already correct | `passenger_alert_updated` socket event handled in `passengers_provider.dart` |
+| End trip button (driver mode) | ✅ Already correct | FAB shown when `state.hasDriverMode` |
+| Memory leak guards (dispose) | ✅ Already correct | All subscriptions cancelled in `dispose()` |
+
+### Code Fixes Applied (3 real bugs)
+
+1. **`driver_trip_overview_screen.dart`** — `DriverModeBadge` positioned at `top: 56` (overcorrected) → fixed to `top: 8, right: 8` per spec.
+2. **`passengers_screen.dart`** — `SocketService.registerDialogContext(context)` was always called even in driver mode. Wrapped in `if (!widget.isDriverMode)` guard so driver never steals conductor's manual alert channel.
+3. **`trip_detail_screen.dart`** — Raw `$e` error string in SnackBars → replaced with `ApiClient.parseError(e)` for bilingual Gujarati/English user-friendly messages. Added `ApiClient` import.
+
+### Compilation
+- `flutter clean` ✅ Exit 0
+- `flutter pub get` ✅ Exit 0
+- `flutter build apk --debug` ✅ Built `app-debug.apk` — **EXIT:0, zero Dart errors**
+
+### Device Testing Required
+1. Background GPS continuity when screen locked (2+ min)
+2. Driver takeover end-to-end with two physical devices
+3. Offline GPS queue flush on network restore
+4. Socket auto-reconnect after 8+ hours
+5. Manual alert popup on both conductor + driver screens after takeover
+
+Report: `docs/test-reports/flutter-p2p3-fixes.md`
+
+
+
+## 2026-05-07 - Flutter Priority 2/3 Runtime Hardening
+
+- Completed Priority 2/3 fixes in Flutter mobile app (`apps/mobile`) focused on driver takeover parity, background GPS resilience, and Socket.IO stability.
+- Generated report: `docs/test-reports/flutter-p2p3-fixes.md`.
+- Key improvements:
+  - Driver takeover parity: driver can now complete trip in driver mode (end-trip action), GPS starts on takeover, and driver explicitly rejoins trip socket room.
+  - Driver-mode UX parity: driver mode badge reinforced on post-takeover views, including passengers screen.
+  - Socket hardening: increased reconnect attempts, added reconnect delay max, added connect/disconnect/reconnect monitoring logs, and auto rejoin on reconnect.
+  - GPS background hardening: Android manifest service now has `android:stopWithTask="false"` and required foreground/background location permissions are confirmed.
+  - Offline queue resilience: location queue continues capped persistence (20 max) and now flushes on connectivity restoration via listener.
+  - Error UX: API error parsing now maps common failures to user-friendly Gujarati/English messages (401/404/500/network).
+- Verification:
+  - `flutter clean` ✅
+  - `flutter pub get` ✅
+  - `flutter analyze` ✅
+  - `flutter build apk --debug` ✅
+- Ready for device testing: YES.
+- Next action:
+  - Run full physical-device validation for takeover lifecycle, locked-screen GPS continuity, and socket reconnection behavior under intermittent network.
+
+## 2026-05-07 - Flutter Mobile Full Audit (Auth/GPS/Socket)
+
+- Completed deep code audit for `apps/mobile` across auth flow, conductor flow, driver flow, routing, storage, GPS foreground service, and Socket.IO integration.
+- Generated report: `docs/test-reports/flutter-audit-report.md`.
+- Fixes applied in Flutter app:
+  - Login/OTP success routing is now role-aware (`conductor` -> conductor dashboard, `driver` -> driver dashboard) via `routeForRole(...)`.
+  - Added explicit submit-time phone normalization in auth UI (`+91` prefix handling for local 10-digit input).
+  - Added runtime-verifiable socket logs: `Socket connected` and `Socket connection error`.
+  - Added runtime-verifiable GPS logs and aligned foreground notification text for active trip tracking.
+  - Updated manual alert popup to fullscreen blocking UI and aligned actions to `CALL NOW` + `MARK NOTIFIED`.
+- Local verification:
+  - `flutter analyze` passes (`No issues found`).
+  - Android runtime/device checks still required for locked-screen background GPS and live socket event validation.
+- Remaining gap:
+  - Driver takeover flow still lacks full conductor-mode parity (notably end-trip parity) in current UI wiring.
+- Next action:
+  - Implement complete driver-conductor parity in takeover mode, then run full Android device end-to-end test with provided conductor/driver credentials and capture terminal log evidence for GPS + socket + refresh.
 
 ## 2026-05-05 - Full Web Production E2E Test Run
 
@@ -744,3 +850,35 @@ Implement and validate operator-facing Routes + Templates workflows with backend
 
 ### Next Action
 - full operator audit
+
+## 2026-05-08: Driver App Flow Repair
+
+### Objective
+Repair the Flutter driver flow in `apps/mobile` so the shared login, driver dashboard, driver trip overview, driver profile, conductor-offline overlay, and takeover handoff match the required Bus Alert driver experience.
+
+### Implemented
+- Rebuilt mobile route structure around:
+  - `/welcome`
+  - `/conductor/dashboard`
+  - `/conductor/trip/:id`
+  - `/conductor/active/:id`
+  - `/driver/dashboard`
+  - `/driver/trip/:id`
+  - `/driver/profile`
+- Restricted mobile auth redirects to `conductor` and `driver` roles only.
+- Added driver profile fetch from `/api/auth/me` and new `DriverProfileScreen`.
+- Reworked driver dashboard/trip overview screens and added a blocking conductor-offline overlay flow.
+- Propagated `isDriverMode` into conductor-side trip detail and active passenger screens.
+
+### Local Verification
+- `flutter analyze` passed with no issues in `apps/mobile`.
+- `flutter build apk --debug` passed and produced `build/app/outputs/flutter-apk/app-debug.apk`.
+- `flutter run` launched `com.busalert.mobile/.MainActivity` on device `V2141`.
+
+### Remaining Notes
+- Interactive driver login/profile/trip checks were blocked because the connected device remained locked and required the device password/fingerprint.
+- `flutter clean` partially failed to remove `.dart_tool` because a Flutter startup lock was still held by another process.
+- `adb logcat` captured one Flutter-side `DioException` 401 during the locked-device launch session.
+
+### Next Action
+- Unlock the connected device and rerun the driver and conductor login flows against the live Railway backend for full interactive verification.

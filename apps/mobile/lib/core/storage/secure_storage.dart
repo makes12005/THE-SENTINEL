@@ -49,8 +49,23 @@ class SecureStorage {
   static Future<String?> getUserName() => _storage.read(key: _keyUserName);
 
   static Future<bool> hasValidSession() async {
-    final token = await getAccessToken();
-    return token != null && token.isNotEmpty;
+    final access = await getAccessToken();
+    final refresh = await getRefreshToken();
+    final role = await getRole();
+
+    final valid = access != null &&
+        access.isNotEmpty &&
+        refresh != null &&
+        refresh.isNotEmpty &&
+        role != null &&
+        role.isNotEmpty;
+
+    // Self-heal partially stored/corrupted session data to avoid
+    // repeated phantom session errors on app launch.
+    if (!valid) {
+      await clearAll();
+    }
+    return valid;
   }
 
   static Future<void> clearAll() async => _storage.deleteAll();

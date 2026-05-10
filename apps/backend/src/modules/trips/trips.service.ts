@@ -1,9 +1,10 @@
 import { and, desc, eq, or, sql } from 'drizzle-orm';
 import { db } from '../../db';
 import { agencyWallets, buses, conductorLocations, routes, tripPassengers, trips, users, stops, tripTemplates } from '../../db/schema';
-import { AddPassengerRequest, BatchAddPassengersRequest, CreateTripRequest, TripStatus, TripStatusResponse, UserRole } from '../../lib/shared-types';
+import { AddPassengerRequest, BatchAddPassengersRequest, BoardingChecklistUpdateRequest, CreateTripRequest, TripStatus, TripStatusResponse, UserRole } from '../../lib/shared-types';
 import { deductTripCredit } from '../wallet/wallet.service';
 import { logForbiddenAccess } from './trip-auth.helper';
+import { hasTripTemplateColumn } from './trip-template-column';
 
 export class TripsService {
   static async createTrip(operatorId: string, agencyId: string, payload: CreateTripRequest) {
@@ -121,20 +122,25 @@ export class TripsService {
       finalAssignedOperatorId = assignedOperatorId;
     }
 
+    const tripValues: Record<string, unknown> = {
+      route_id: routeId,
+      owned_by_operator_id: operatorId,
+      assigned_operator_id: finalAssignedOperatorId,
+      conductor_id: conductorId,
+      driver_id: driverId || null,
+      bus_id: busId || null,
+      scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime || null,
+      status: 'scheduled',
+    };
+
+    if (await hasTripTemplateColumn()) {
+      tripValues.template_id = payload.template_id || null;
+    }
+
     const [trip] = await db
       .insert(trips)
-      .values({
-        template_id: payload.template_id || null,
-        route_id: routeId,
-        owned_by_operator_id: operatorId,
-        assigned_operator_id: finalAssignedOperatorId,
-        conductor_id: conductorId,
-        driver_id: driverId || null,
-        bus_id: busId || null,
-        scheduled_date: scheduledDate,
-        scheduled_time: scheduledTime || null,
-        status: 'scheduled',
-      })
+      .values(tripValues as typeof trips.$inferInsert)
       .returning();
 
     return trip;
@@ -149,6 +155,10 @@ export class TripsService {
 
     if (userRole === UserRole.OPERATOR) {
       conditions.push(or(eq(trips.owned_by_operator_id, userId), eq(trips.assigned_operator_id, userId)) as any);
+    } else if (userRole === UserRole.CONDUCTOR) {
+      conditions.push(eq(trips.conductor_id, userId) as any);
+    } else if (userRole === UserRole.DRIVER) {
+      conditions.push(or(eq(trips.driver_id, userId), eq(trips.conductor_id, userId)) as any);
     }
 
     return db
@@ -283,14 +293,25 @@ export class TripsService {
         id: tripPassengers.id,
         passenger_name: tripPassengers.passenger_name,
         passenger_phone: tripPassengers.passenger_phone,
+        name: tripPassengers.passenger_name,
+        phone: tripPassengers.passenger_phone,
+        pickup_point: tripPassengers.pickup_point,
+        seat_no: tripPassengers.seat_no,
+        boarding_status: tripPassengers.boarding_status,
+        boarded_at: tripPassengers.boarded_at,
         alert_status: tripPassengers.alert_status,
         alert_channel: tripPassengers.alert_channel,
         alert_sent_at: tripPassengers.alert_sent_at,
         created_at: tripPassengers.created_at,
+        stop_name: stops.name,
+        stop_sequence: stops.sequence_number,
+        stop_latitude: sql<number>`ST_Y(${stops.coordinates}::geometry)`,
+        stop_longitude: sql<number>`ST_X(${stops.coordinates}::geometry)`,
       })
       .from(tripPassengers)
+      .innerJoin(stops, eq(stops.id, tripPassengers.stop_id))
       .where(eq(tripPassengers.trip_id, tripId))
-      .orderBy(tripPassengers.created_at);
+      .orderBy(stops.sequence_number, tripPassengers.created_at);
   }
 
   static async getTripStatus(tripId: string): Promise<TripStatusResponse> {
@@ -365,7 +386,11 @@ export class TripsService {
     };
   }
 
-  static async startTrip(tripId: string, conductorId: string) {
+  static async startTrip(
+    tripId: string,
+    conductorId: string,
+    checklist?: BoardingChecklistUpdateRequest['passengers']
+  ) {
     const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
     if (!trip) throw Object.assign(new Error('Trip not found'), { statusCode: 404 });
     if (trip.conductor_id !== conductorId) {
@@ -376,6 +401,33 @@ export class TripsService {
       throw Object.assign(new Error('You are not assigned as conductor of this trip'), { statusCode: 403, code: 'FORBIDDEN' });
     }
     if (trip.status !== 'scheduled') throw Object.assign(new Error(`Cannot start a trip with status: ${trip.status}`), { statusCode: 409 });
+
+    if (checklist && checklist.length > 0) {
+      const passengerIds = checklist.map((item: BoardingChecklistUpdateRequest['passengers'][number]) => item.id);
+      const existingPassengers = await db
+        .select({ id: tripPassengers.id })
+        .from(tripPassengers)
+        .where(and(eq(tripPassengers.trip_id, tripId), sql`${tripPassengers.id} = any(${passengerIds})`));
+
+      const existingIds = new Set(existingPassengers.map((row) => row.id));
+      const invalidId = checklist.find((item: BoardingChecklistUpdateRequest['passengers'][number]) => !existingIds.has(item.id));
+      if (invalidId) {
+        throw Object.assign(new Error('Checklist contains passengers from another trip'), {
+          statusCode: 400,
+          code: 'INVALID_BOARDING_CHECKLIST',
+        });
+      }
+
+      for (const item of checklist) {
+        await db
+          .update(tripPassengers)
+          .set({
+            boarding_status: item.boarding_status,
+            boarded_at: item.boarding_status === 'boarded' ? new Date() : null,
+          })
+          .where(eq(tripPassengers.id, item.id));
+      }
+    }
 
     const [updated] = await db.update(trips).set({ status: 'active', started_at: new Date() }).where(eq(trips.id, tripId)).returning();
     return updated;
@@ -418,7 +470,10 @@ export class TripsService {
         passenger_name: payload.passenger_name,
         passenger_phone: payload.passenger_phone,
         stop_id: payload.stop_id,
+        pickup_point: payload.pickup_point ?? null,
+        seat_no: payload.seat_no ?? null,
         alert_status: 'pending',
+        boarding_status: 'pending',
       })
       .returning();
 
@@ -440,7 +495,10 @@ export class TripsService {
             passenger_name: p.passenger_name,
             passenger_phone: p.passenger_phone,
             stop_id: p.stop_id,
+            pickup_point: p.pickup_point ?? null,
+            seat_no: p.seat_no ?? null,
             alert_status: 'pending' as const,
+            boarding_status: 'pending' as const,
           }))
         )
         .returning();

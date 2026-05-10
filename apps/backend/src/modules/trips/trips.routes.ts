@@ -6,6 +6,8 @@ import { emitSocketEvent } from '../../lib/socket';
 import {
   AddPassengerSchema,
   BatchAddPassengersSchema,
+  BoardingChecklistUpdateSchema,
+  ConfirmPassengersSchema,
   AssignTripSchema,
   CreateTripSchema,
   ListTripsQuerySchema,
@@ -16,7 +18,7 @@ import { requireAuth } from '../auth/auth.middleware';
 import { verifyTripAgency } from './trip-auth.helper';
 import { GeoService } from './geo.service';
 import { LocationService } from './location.service';
-import { uploadPassengers } from './passengers.service';
+import { confirmPassengerUpload, previewPassengerUpload } from './passenger-upload.service';
 import { TakeoverService } from './takeover.service';
 import { TripsService } from './trips.service';
 
@@ -62,7 +64,7 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.DRIVER, UserRole.ADMIN])] }, async (req, reply) => {
+  fastify.get('/', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.CONDUCTOR, UserRole.DRIVER, UserRole.ADMIN])] }, async (req, reply) => {
     const parsed = ListTripsQuerySchema.safeParse(req.query ?? {});
     if (!parsed.success) {
       return reply.status(400).send({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid trip filters' } });
@@ -119,7 +121,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
       const agencyId = getAgencyIdOrReply(req, reply);
       if (!agencyId) return;
       await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
-      const trip = await TripsService.startTrip(getTripId(req), req.user.id);
+      const parsed = BoardingChecklistUpdateSchema.safeParse((req.body ?? { passengers: [] }));
+      const checklist = parsed.success ? parsed.data.passengers : undefined;
+      const trip = await TripsService.startTrip(getTripId(req), req.user.id, checklist);
       return reply.send({ success: true, data: trip });
     } catch (err) {
       return handleError(reply, err);
@@ -222,7 +226,27 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
       const chunks: Buffer[] = [];
       for await (const chunk of data.file) chunks.push(chunk);
       const buffer = Buffer.concat(chunks);
-      const result = await uploadPassengers(getTripId(req), agencyId, buffer, data.mimetype, data.filename);
+      const result = await previewPassengerUpload(buffer, data.mimetype, data.filename);
+      return reply.status(200).send({ success: true, data: result });
+    } catch (err) {
+      return handleError(reply, err);
+    }
+  });
+
+  fastify.post('/:id/passengers/confirm', { preHandler: [requireAuth([UserRole.OPERATOR, UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
+    try {
+      const agencyId = getAgencyIdOrReply(req, reply);
+      if (!agencyId) return;
+      await verifyTripAgency(getTripId(req), agencyId, req.user.id, req.user.role);
+      const parsed = ConfirmPassengersSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Please review passenger rows before confirming.' },
+        });
+      }
+
+      const result = await confirmPassengerUpload(getTripId(req), parsed.data);
       return reply.status(201).send({ success: true, data: result });
     } catch (err) {
       return handleError(reply, err);

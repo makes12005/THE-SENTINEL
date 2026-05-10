@@ -15,38 +15,56 @@ class SocketService {
 
   static IO.Socket? _socket;
   static BuildContext? _dialogContext;
+  static String? _activeTripId;
 
   /// Connect to the backend Socket.IO server.
   static Future<void> connect({required String tripId}) async {
-    if (_socket != null && _socket!.connected) return;
+    _activeTripId = tripId;
+
+    if (_socket != null && _socket!.connected) {
+      joinTrip(tripId);
+      return;
+    }
 
     final token = await SecureStorage.getAccessToken();
 
     _socket = IO.io(
-      Env.apiBaseUrl,
+      Env.socketUrl,
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .setAuth({'token': token})
           .setQuery({'tripId': tripId})
           .enableReconnection()
-          .setReconnectionAttempts(999)
+          .setReconnectionAttempts(99999)
           .setReconnectionDelay(2000)
+          .setReconnectionDelayMax(30000)
           .build(),
     );
 
     _socket!.connect();
 
     _socket!.onConnect((_) {
-      debugPrint('[Socket] Connected — tripId: $tripId');
-      _socket!.emit('join_trip', {'tripId': tripId});
+      debugPrint('Socket connected');
+      debugPrint('[Socket] Connected - tripId: $tripId');
+      if (_activeTripId != null) {
+        joinTrip(_activeTripId!);
+      }
     });
 
-    _socket!.onDisconnect((_) {
-      debugPrint('[Socket] Disconnected');
+    _socket!.onDisconnect((reason) {
+      debugPrint('[Socket] Disconnected: $reason');
     });
 
     _socket!.onConnectError((e) {
+      debugPrint('Socket connection error');
       debugPrint('[Socket] Connect error: $e');
+    });
+
+    _socket!.on('reconnect', (attempt) {
+      debugPrint('[Socket] Reconnected after $attempt attempts');
+      if (_activeTripId != null) {
+        joinTrip(_activeTripId!);
+      }
     });
 
     // ── Incoming event: manual alert required ──────────────────────────────
@@ -56,16 +74,31 @@ class SocketService {
         final payload = data as Map<String, dynamic>;
         showManualAlertDialog(
           _dialogContext!,
-          passengerId:   payload['passengerId'] as String,
+          passengerId: payload['passengerId'] as String,
           passengerName: payload['passengerName'] as String,
           passengerPhone: payload['passengerPhone'] as String,
-          stopName:      payload['stopName'] as String,
+          stopName: payload['stopName'] as String,
         );
       }
     });
 
     // ── Incoming event: passenger alert updated ────────────────────────────
     // Handled locally in passengers_provider
+  }
+
+  static void joinTrip(String tripId) {
+    _activeTripId = tripId;
+    _socket?.emit('join_trip', {'tripId': tripId});
+  }
+
+  // ── Update token on refresh ────────────────────────────────────────────────
+  static void updateToken(String newToken) {
+    if (_socket != null) {
+      _socket!.auth = {'token': newToken};
+      if (_socket!.disconnected) {
+        _socket!.connect();
+      }
+    }
   }
 
   /// Register a context so alert dialogs can be shown.
@@ -78,6 +111,7 @@ class SocketService {
     _socket?.dispose();
     _socket = null;
     _dialogContext = null;
+    _activeTripId = null;
   }
 
   static IO.Socket? get socket => _socket;
@@ -85,11 +119,25 @@ class SocketService {
   // ── Instance API (used by driver screens) ────────────────────────────────
 
   /// Connect using instance (delegates to static).
-  Future<void> connectToTrip(String tripId) => SocketService.connect(tripId: tripId);
+  Future<void> connectToTrip(String tripId) =>
+      SocketService.connect(tripId: tripId);
+
+  void joinTripRoom(String tripId) => SocketService.joinTrip(tripId);
 
   /// Subscribe to a Socket.IO event.
   void on(String event, Function(dynamic) handler) {
     _socket?.on(event, handler);
+  }
+
+  /// Driver-specific helper for conductor offline emergency events.
+  void onConductorOffline(void Function(Map<String, dynamic>) handler) {
+    _socket?.on('conductor_offline', (data) {
+      if (data is Map<String, dynamic>) {
+        handler(data);
+      } else {
+        handler(<String, dynamic>{});
+      }
+    });
   }
 
   /// Unsubscribe from a Socket.IO event.
@@ -101,4 +149,3 @@ class SocketService {
     }
   }
 }
-

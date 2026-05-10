@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssignTripSchema = exports.ToggleAgencyMemberSchema = exports.CreateAgencyMemberSchema = exports.UpdateBusSchema = exports.CreateBusSchema = exports.ListTripsQuerySchema = exports.LocationUpdateSchema = exports.PassengerRowSchema = exports.BatchAddPassengersSchema = exports.AddPassengerSchema = exports.CreateTemplateSchema = exports.CreateTripSchema = exports.CreateStopSchema = exports.CreateRouteSchema = exports.CoordinatesSchema = exports.AlertChannelEnum = exports.AlertStatusEnum = exports.TripStatusEnum = exports.LoginRequestSchema = exports.PhoneSchema = exports.UserRole = void 0;
+exports.AssignTripSchema = exports.ToggleAgencyMemberSchema = exports.CreateAgencyMemberSchema = exports.UpdateBusSchema = exports.CreateBusSchema = exports.ListTripsQuerySchema = exports.LocationUpdateSchema = exports.BoardingChecklistUpdateSchema = exports.ConfirmPassengersSchema = exports.PassengerUploadReviewRowSchema = exports.PassengerRowSchema = exports.BatchAddPassengersSchema = exports.AddPassengerSchema = exports.CreateTemplateSchema = exports.CreateTripSchema = exports.CreateStopSchema = exports.CreatePopularRouteSchema = exports.PopularRouteStopSchema = exports.GeoLibraryCreateSchema = exports.CreateRouteSchema = exports.CoordinatesSchema = exports.BoardingStatusEnum = exports.RouteSourceEnum = exports.AlertChannelEnum = exports.AlertStatusEnum = exports.TripStatusEnum = exports.LoginRequestSchema = exports.PhoneSchema = exports.UserRole = void 0;
 const zod_1 = require("zod");
 var UserRole;
 (function (UserRole) {
@@ -21,6 +21,8 @@ exports.LoginRequestSchema = zod_1.z.object({
 exports.TripStatusEnum = zod_1.z.enum(['scheduled', 'active', 'completed']);
 exports.AlertStatusEnum = zod_1.z.enum(['pending', 'sent', 'failed']);
 exports.AlertChannelEnum = zod_1.z.enum(['call', 'sms', 'whatsapp', 'manual']);
+exports.RouteSourceEnum = zod_1.z.enum(['scratch', 'popular', 'library']);
+exports.BoardingStatusEnum = zod_1.z.enum(['pending', 'boarded', 'absent']);
 exports.CoordinatesSchema = zod_1.z.object({
     lat: zod_1.z.number().min(-90).max(90),
     lng: zod_1.z.number().min(-180).max(180),
@@ -32,14 +34,35 @@ exports.CreateRouteSchema = zod_1.z
     from_city: zod_1.z.string().min(1).max(255).optional(),
     toCity: zod_1.z.string().min(1).max(255).optional(),
     to_city: zod_1.z.string().min(1).max(255).optional(),
+    is_published: zod_1.z.boolean().optional(),
+    source: exports.RouteSourceEnum.optional(),
 })
     .transform((data) => ({
     name: data.name,
     from_city: data.from_city ?? data.fromCity ?? '',
     to_city: data.to_city ?? data.toCity ?? '',
+    is_published: data.is_published ?? false,
+    source: data.source ?? 'scratch',
 }))
     .refine((data) => Boolean(data.from_city && data.to_city), {
     message: 'from_city/to_city (or fromCity/toCity) is required',
+});
+exports.GeoLibraryCreateSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255),
+    latitude: zod_1.z.number().min(-90).max(90),
+    longitude: zod_1.z.number().min(-180).max(180),
+});
+exports.PopularRouteStopSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255),
+    lat: zod_1.z.number().min(-90).max(90),
+    lng: zod_1.z.number().min(-180).max(180),
+    sequence: zod_1.z.number().int().positive(),
+});
+exports.CreatePopularRouteSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255),
+    from_city: zod_1.z.string().min(1).max(255),
+    to_city: zod_1.z.string().min(1).max(255),
+    stops: zod_1.z.array(exports.PopularRouteStopSchema).min(2),
 });
 exports.CreateStopSchema = zod_1.z
     .object({
@@ -110,16 +133,34 @@ exports.AddPassengerSchema = zod_1.z.object({
         .string()
         .regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
     stop_id: zod_1.z.string().uuid(),
+    pickup_point: zod_1.z.string().max(255).nullable().optional(),
+    seat_no: zod_1.z.string().max(50).nullable().optional(),
 });
 exports.BatchAddPassengersSchema = zod_1.z.object({
     passengers: zod_1.z.array(exports.AddPassengerSchema).max(100),
 });
 exports.PassengerRowSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1, 'name is required').max(255).nullable().optional(),
+    phone: zod_1.z.string().nullable().optional(),
+    stop_name: zod_1.z.string().nullable().optional(),
+    pickup_point: zod_1.z.string().max(255).nullable().optional(),
+    seat_no: zod_1.z.string().max(50).nullable().optional(),
+});
+exports.PassengerUploadReviewRowSchema = zod_1.z.object({
     name: zod_1.z.string().min(1, 'name is required').max(255),
-    phone: zod_1.z
-        .string()
-        .regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
+    phone: zod_1.z.string().regex(/^\+91\d{10}$/, 'Must be E.164 format (+91XXXXXXXXXX)'),
     stop_name: zod_1.z.string().min(1, 'stop_name is required'),
+    pickup_point: zod_1.z.string().max(255).nullable().optional(),
+    seat_no: zod_1.z.string().max(50).nullable().optional(),
+});
+exports.ConfirmPassengersSchema = zod_1.z.object({
+    passengers: zod_1.z.array(exports.PassengerUploadReviewRowSchema).min(1),
+});
+exports.BoardingChecklistUpdateSchema = zod_1.z.object({
+    passengers: zod_1.z.array(zod_1.z.object({
+        id: zod_1.z.string().uuid(),
+        boarding_status: exports.BoardingStatusEnum,
+    })).min(1),
 });
 exports.LocationUpdateSchema = zod_1.z.object({
     lat: zod_1.z.number().min(-90).max(90),
