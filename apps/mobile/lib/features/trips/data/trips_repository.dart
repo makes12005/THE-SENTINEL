@@ -7,13 +7,17 @@ class TripsRepository {
 
   Future<List<Trip>> listTrips({String? status}) async {
     try {
+      print('[DEBUG] Fetching trips with status: $status');
       final resp = await _dio.get(
         Endpoints.trips,
         queryParameters: status != null ? {'status': status} : null,
       );
+      print('[DEBUG] Trips response data: ${resp.data}');
       final list = resp.data['data'] as List<dynamic>? ?? [];
+      print('[DEBUG] Parsed trips count: ${list.length}');
       return list.map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
+      print('[DEBUG] Error fetching trips: $e');
       throw Exception(ApiClient.parseError(e));
     }
   }

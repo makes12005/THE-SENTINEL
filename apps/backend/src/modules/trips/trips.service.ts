@@ -147,6 +147,7 @@ export class TripsService {
   }
 
   static async listTrips(agencyId: string, userId: string, userRole: string, filters?: { status?: TripStatus; unassigned?: boolean }) {
+    console.log(`[DEBUG] TripsService.listTrips - Agency: ${agencyId}, User: ${userId}, Role: ${userRole}, Filters: ${JSON.stringify(filters)}`);
     const conditions = [
       eq(routes.agency_id, agencyId),
       filters?.status ? eq(trips.status, filters.status) : sql`true`,
@@ -161,7 +162,7 @@ export class TripsService {
       conditions.push(or(eq(trips.driver_id, userId), eq(trips.conductor_id, userId)) as any);
     }
 
-    return db
+    const data = await db
       .select({
         id: trips.id,
         status: trips.status,
@@ -201,6 +202,13 @@ export class TripsService {
         sql`assigned_operator.name`
       )
       .orderBy(desc(trips.scheduled_date), desc(trips.created_at));
+
+    console.log(`[DEBUG] TripsService.listTrips - Found ${data.length} trips for user ${userId}`);
+    if (data.length === 0) {
+      console.log(`[DEBUG] TripsService.listTrips - No trips found. Possible cause: Mismatch in agency_id, role permissions, or assignment.`);
+    }
+
+    return data;
   }
 
   static async getTrip(tripId: string) {

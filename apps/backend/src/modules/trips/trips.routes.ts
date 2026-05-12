@@ -73,6 +73,7 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
     try {
       const agencyId = getAgencyIdOrReply(req, reply);
       if (!agencyId) return;
+      console.log(`[DEBUG] GET /trips - User: ${req.user.id}, Role: ${req.user.role}, Agency: ${agencyId}`);
       const data = await TripsService.listTrips(agencyId, req.user.id, req.user.role, parsed.data);
       return reply.send({ success: true, data, meta: { count: data.length, timestamp: new Date().toISOString() } });
     } catch (err) {

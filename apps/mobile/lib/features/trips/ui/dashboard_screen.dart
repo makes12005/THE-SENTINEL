@@ -40,6 +40,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsProvider);
 
+    print('[DEBUG] DashboardScreen building. tripsAsync: $tripsAsync');
+    if (tripsAsync is AsyncData) {
+      print('[DEBUG] tripsAsync has data: ${tripsAsync.value?.length} items');
+    } else if (tripsAsync is AsyncError) {
+      print('[DEBUG] tripsAsync has error: ${tripsAsync.error}');
+    }
+
     return Scaffold(
       body: Stack(
         children: [
