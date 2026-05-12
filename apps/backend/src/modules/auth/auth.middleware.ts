@@ -36,9 +36,11 @@ export function requireAuth(roles?: string[]) {
       const secret = process.env.JWT_SECRET;
       if (!secret) throw new Error('JWT_SECRET is not configured');
 
+      console.log(`[AUTH] Verifying token: ${token.substring(0, 10)}...`);
       const payload = jwt.verify(token, secret) as TokenPayload;
       const userId = payload.id ?? payload.sub;
       if (!userId || !payload.role) {
+        console.error('[AUTH] Invalid token payload:', payload);
         return reply.status(401).send({
           success: false,
           error: { code: 'INVALID_TOKEN', message: 'Invalid token payload' }
@@ -48,6 +50,7 @@ export function requireAuth(roles?: string[]) {
       const blacklistKey = payload.jti ? `${PREFIX_BLACKLIST}${payload.jti}` : `${PREFIX_BLACKLIST}${token}`;
       const isBlacklisted = await redis.get(blacklistKey);
       if (isBlacklisted) {
+        console.error('[AUTH] Token blacklisted:', token.substring(0, 10));
         return reply.status(401).send({
           success: false,
           error: { code: 'TOKEN_REVOKED', message: 'Token has been revoked' }
@@ -55,6 +58,7 @@ export function requireAuth(roles?: string[]) {
       }
 
       if (roles?.length && !roles.includes(payload.role)) {
+        console.error(`[AUTH] Forbidden: Role ${payload.role} not in [${roles.join(', ')}]`);
         return reply.status(403).send({
           success: false,
           error: { code: 'FORBIDDEN', message: 'Insufficient permissions' }
@@ -69,7 +73,9 @@ export function requireAuth(roles?: string[]) {
         agency_id: agencyId,
         name: payload.name
       } satisfies AuthUser;
+      console.log(`[AUTH] Success: User ${userId} (${payload.role})`);
     } catch (err: any) {
+      console.error('[AUTH] Verification failed:', err.message);
       return reply.status(401).send({
         success: false,
         error: { code: 'UNAUTHORIZED', message: err?.message ?? 'Invalid token' }

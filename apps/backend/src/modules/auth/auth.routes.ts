@@ -329,12 +329,46 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ success: true, data: { loggedOut: true } });
   });
 
-  // â”€â”€ GET /me â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  fastify.get('/me', { preHandler: requireAuth() }, async (request) => {
-    return { success: true, data: (request as any).user };
+  // ── GET /me ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  fastify.get('/me', { preHandler: requireAuth() }, async (request, reply) => {
+    const authUser = (request as any).user as { id: string };
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        phone: users.phone,
+        email: users.email,
+        role: users.role,
+        agency_id: users.agency_id,
+        is_active: users.is_active,
+        agency: {
+          id: agencies.id,
+          name: agencies.name,
+        }
+      })
+      .from(users)
+      .leftJoin(agencies, eq(users.agency_id, agencies.id))
+      .where(eq(users.id, authUser.id))
+      .limit(1);
+
+    if (!user) {
+      return reply.status(401).send({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'User no longer exists' }
+      });
+    }
+
+    if (!user.is_active) {
+      return reply.status(401).send({
+        success: false,
+        error: { code: 'USER_DISABLED', message: 'Account has been disabled' }
+      });
+    }
+
+    return { success: true, data: user };
   });
 
-  // â”€â”€ POST /change-password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── POST /change-password ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   fastify.post('/change-password', { preHandler: requireAuth() }, async (request, reply) => {
     const schema = z.object({
       current_password: z.string().min(1),
