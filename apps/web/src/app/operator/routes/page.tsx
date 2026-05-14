@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 import GoogleRouteMap, { useGoogleMapsReady } from '@/components/google-route-map';
-import { get, post } from '@/lib/api';
+import { del, get, post } from '@/lib/api';
 
 type PlaceResult = {
   name: string;
@@ -43,6 +44,17 @@ type PopularRoute = {
   use_count: number;
 };
 
+type RouteListItem = {
+  id: string;
+  name: string;
+  from_city: string;
+  to_city: string;
+  is_active: boolean;
+  stop_count: number;
+  created_at: string;
+  created_by_name: string | null;
+};
+
 declare global {
   interface Window {
     google?: any;
@@ -54,6 +66,7 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 export default function OperatorRoutesPage() {
   const qc = useQueryClient();
   const { ready: mapsReady } = useGoogleMapsReady(API_KEY);
+  const [tab, setTab] = useState<'create' | 'list'>('list');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [routeName, setRouteName] = useState('');
   const [fromInput, setFromInput] = useState('');
@@ -70,6 +83,12 @@ export default function OperatorRoutesPage() {
   const [fromSuggestions, setFromSuggestions] = useState<Array<{ description: string }>>([]);
   const [toSuggestions, setToSuggestions] = useState<Array<{ description: string }>>([]);
   const [stopSuggestions, setStopSuggestions] = useState<Array<{ description: string }>>([]);
+  const [routeSearch, setRouteSearch] = useState('');
+
+  const routesList = useQuery<RouteListItem[]>({
+    queryKey: ['routes'],
+    queryFn: () => get<RouteListItem[]>('/api/routes'),
+  });
 
   const libraryQuery = useQuery<LibraryEntry[]>({
     queryKey: ['geo-library', 'all'],
@@ -119,6 +138,15 @@ export default function OperatorRoutesPage() {
     [stops]
   );
 
+  const deleteRouteMut = useMutation({
+    mutationFn: (id: string) => del(`/api/routes/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routes'] });
+      toast.success('Route deleted');
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to delete route'),
+  });
+
   const saveRoute = useMutation({
     mutationFn: async () => {
       if (!fromPlace || !toPlace) {
@@ -133,8 +161,8 @@ export default function OperatorRoutesPage() {
         source: stops.some((stop) => stop.source === 'popular')
           ? 'popular'
           : stops.some((stop) => stop.source === 'library')
-            ? 'library'
-            : 'scratch',
+          ? 'library'
+          : 'scratch',
       });
 
       const fullStops = [
@@ -175,8 +203,9 @@ export default function OperatorRoutesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['routes'] });
       qc.invalidateQueries({ queryKey: ['popular-routes'] });
-      toast.success('Route saved locally.');
+      toast.success('Route saved!');
       resetBuilder();
+      setTab('list');
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.error?.message ?? error?.message ?? 'Failed to save route');
@@ -287,208 +316,314 @@ export default function OperatorRoutesPage() {
     ...(toPlace ? [{ id: 'to', name: toPlace.name, lat: toPlace.lat, lng: toPlace.lng, sequence: orderedStops.length + 2 }] : []),
   ];
 
+  const filteredRoutes = (routesList.data ?? []).filter((r) => {
+    if (!routeSearch) return true;
+    const q = routeSearch.toLowerCase();
+    return (
+      r.name.toLowerCase().includes(q) ||
+      r.from_city?.toLowerCase().includes(q) ||
+      r.to_city?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-[#f3f8fc] px-6 py-8 text-[#102132]">
       <div className="mx-auto max-w-[1440px]">
         <div className="mb-8 flex items-end justify-between gap-6">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#0f9ae8]">Route Creation</p>
-            <h1 className="mt-2 text-4xl font-black">Create New Route</h1>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#0f9ae8]">Routes</p>
+            <h1 className="mt-2 text-4xl font-black">Manage Routes</h1>
             <p className="mt-2 max-w-3xl text-sm text-[#526579]">
-              Build routes with Google Maps, pull shared coordinates from the field, and publish reusable routes for every agency.
+              Create, edit, and delete routes. Build with Google Maps, pull shared coordinates, and publish reusable routes.
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-full bg-white px-4 py-2 shadow-sm">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${step >= item ? 'bg-[#0f9ae8] text-white' : 'bg-[#e5edf5] text-[#526579]'}`}>
-                {item}
-              </div>
-            ))}
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-full bg-white p-1 shadow-sm">
+              <button
+                onClick={() => setTab('list')}
+                className={`rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] transition ${tab === 'list' ? 'bg-[#0f9ae8] text-white' : 'text-[#526579] hover:text-[#102132]'}`}
+              >
+                My Routes
+              </button>
+              <button
+                onClick={() => { setTab('create'); resetBuilder(); }}
+                className={`rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] transition ${tab === 'create' ? 'bg-[#0f9ae8] text-white' : 'text-[#526579] hover:text-[#102132]'}`}
+              >
+                Create Route
+              </button>
+            </div>
           </div>
         </div>
 
-        {step === 1 && (
+        {tab === 'list' && (
           <section className="rounded-[36px] bg-white p-8 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <AutocompleteField
-                label="From city"
-                value={fromInput}
-                suggestions={fromSuggestions}
-                onChange={setFromInput}
-                onPick={(description) => selectPrediction(description, 'from')}
-              />
-              <AutocompleteField
-                label="To city"
-                value={toInput}
-                suggestions={toSuggestions}
-                onChange={setToInput}
-                onPick={(description) => selectPrediction(description, 'to')}
-              />
-            </div>
-
-            {(fromPlace || toPlace) && (
-              <div className="mt-8">
-                <GoogleRouteMap apiKey={API_KEY} fromPlace={fromPlace} toPlace={toPlace} stops={[]} height={420} />
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black">My Routes</h2>
+                <p className="text-sm text-[#526579]">{filteredRoutes.length} routes in your agency</p>
               </div>
-            )}
-
-            <div className="mt-8 flex justify-end">
-              <button
-                onClick={() => {
-                  if (!fromPlace || !toPlace) {
-                    toast.error('Select both cities first.');
-                    return;
-                  }
-                  setStep(2);
-                }}
-                className="rounded-full bg-[#0f9ae8] px-8 py-4 text-sm font-black uppercase tracking-[0.18em] text-white"
-              >
-                Next
-              </button>
-            </div>
-          </section>
-        )}
-
-        {step === 2 && (
-          <section className="grid gap-6 lg:grid-cols-[0.4fr_0.6fr]">
-            <div className="rounded-[36px] bg-white p-6 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-black">Add Stops</h2>
-                  <p className="text-sm text-[#526579]">Search, tap the map, pull from the GPS library, or load a shared route.</p>
-                </div>
-                <button
-                  onClick={() => setClickToAdd((current) => !current)}
-                  className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${clickToAdd ? 'bg-[#102132] text-white' : 'bg-[#e5edf5] text-[#102132]'}`}
-                >
-                  {clickToAdd ? 'Click to add: On' : 'Click to add: Off'}
-                </button>
-              </div>
-
-              <AutocompleteField
-                label="Search by stop name"
-                value={stopSearch}
-                suggestions={stopSuggestions}
-                onChange={setStopSearch}
-                onPick={(description) => selectPrediction(description, 'stop')}
-              />
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button onClick={() => setShowLibrary(true)} className="rounded-full border border-[#d8e5f1] px-4 py-2 text-sm font-bold text-[#102132]">
-                  From Library
-                </button>
-                <button onClick={() => setShowPopular(true)} className="rounded-full border border-[#d8e5f1] px-4 py-2 text-sm font-bold text-[#102132]">
-                  Load Popular Route
-                </button>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                {orderedStops.length === 0 && (
-                  <div className="rounded-[24px] border border-dashed border-[#d8e5f1] bg-[#f7fbff] px-4 py-6 text-sm text-[#526579]">
-                    No stops yet. Search above, turn on map click mode, or pull from the shared library.
-                  </div>
-                )}
-                {orderedStops.map((stop, index) => (
-                  <div
-                    key={stop.id}
-                    draggable
-                    onDragStart={() => setDraggingId(stop.id)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={() => {
-                      if (draggingId) moveStop(draggingId, stop.id);
-                      setDraggingId(null);
-                    }}
-                    className="flex items-center gap-3 rounded-[24px] border border-[#d8e5f1] bg-[#f7fbff] px-4 py-4"
-                  >
-                    <div className="text-[#526579]">::</div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f9ae8] text-sm font-black text-white">
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-black">{stop.name}</div>
-                      <div className="text-xs text-[#526579] capitalize">{stop.source} stop</div>
-                    </div>
-                    <button
-                      onClick={() => setStops((current) => current.filter((item) => item.id !== stop.id))}
-                      className="rounded-full bg-[#ffe1e1] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#b42318]"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 flex justify-between">
-                <button onClick={() => setStep(1)} className="rounded-full border border-[#d8e5f1] px-6 py-3 text-sm font-black uppercase tracking-[0.16em]">
-                  Back
-                </button>
-                <button onClick={() => setStep(3)} className="rounded-full bg-[#0f9ae8] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white">
-                  Review
-                </button>
-              </div>
-            </div>
-
-            <GoogleRouteMap
-              apiKey={API_KEY}
-              fromPlace={fromPlace}
-              toPlace={toPlace}
-              stops={orderedStops}
-              clickToAdd={clickToAdd}
-              onMapClick={addMapStop}
-              height={760}
-            />
-          </section>
-        )}
-
-        {step === 3 && (
-          <section className="grid gap-6 lg:grid-cols-[0.38fr_0.62fr]">
-            <div className="rounded-[36px] bg-white p-6 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
-              <h2 className="text-2xl font-black">Review & Save</h2>
-              <div className="mt-5">
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#526579]">Route name</label>
+              <div className="relative w-72">
                 <input
-                  value={routeName}
-                  onChange={(event) => setRouteName(event.target.value)}
-                  className="w-full rounded-[22px] border border-[#d8e5f1] bg-[#f7fbff] px-4 py-3 text-sm font-semibold outline-none"
+                  value={routeSearch}
+                  onChange={(e) => setRouteSearch(e.target.value)}
+                  placeholder="Search routes..."
+                  className="w-full rounded-full border border-[#d8e5f1] bg-[#f7fbff] px-5 py-3 text-sm font-semibold outline-none focus:border-[#0f9ae8]/50"
                 />
               </div>
-              <div className="mt-5 rounded-[24px] bg-[#f7fbff] p-4">
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-[#526579]">From {'->'} To</div>
-                <div className="mt-2 text-sm font-black">{fromPlace?.name} {'->'} {toPlace?.name}</div>
-              </div>
-              <div className="mt-5 space-y-2">
-                {fullStopList.map((stop) => (
-                  <div key={stop.id} className="flex items-center gap-3 rounded-[20px] border border-[#d8e5f1] px-4 py-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#102132] text-xs font-black text-white">
-                      {stop.sequence}
-                    </div>
-                    <div className="text-sm font-semibold">{stop.name}</div>
+            </div>
+
+            {routesList.isLoading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="animate-pulse rounded-[24px] border border-[#d8e5f1] bg-[#f7fbff] px-5 py-5">
+                    <div className="h-4 w-1/3 rounded-full bg-[#e5edf5]" />
+                    <div className="mt-3 h-3 w-1/5 rounded-full bg-[#e5edf5]" />
                   </div>
                 ))}
               </div>
-              <label className="mt-5 flex items-center gap-3 rounded-[20px] bg-[#f7fbff] px-4 py-4">
-                <input type="checkbox" checked={publishRoute} onChange={(event) => setPublishRoute(event.target.checked)} />
-                <div>
-                  <div className="text-sm font-black">Publish this route</div>
-                  <div className="text-xs text-[#526579]">Share it with all agencies as a popular route draft.</div>
-                </div>
-              </label>
-              <div className="mt-6 flex justify-between">
-                <button onClick={() => setStep(2)} className="rounded-full border border-[#d8e5f1] px-6 py-3 text-sm font-black uppercase tracking-[0.16em]">
-                  Back
-                </button>
+            ) : filteredRoutes.length === 0 ? (
+              <div className="rounded-[24px] border border-dashed border-[#d8e5f1] bg-[#f7fbff] px-5 py-16 text-center">
+                <p className="text-xl font-black text-[#102132]">No routes yet</p>
+                <p className="mt-2 text-sm text-[#526579]">Create your first route to get started.</p>
                 <button
-                  onClick={() => saveRoute.mutate()}
-                  disabled={saveRoute.isPending}
-                  className="rounded-full bg-[#16a34a] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white disabled:opacity-60"
+                  onClick={() => { setTab('create'); resetBuilder(); }}
+                  className="mt-6 rounded-full bg-[#0f9ae8] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white"
                 >
-                  {saveRoute.isPending ? 'Saving...' : 'Save Route'}
+                  Create Route
                 </button>
               </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredRoutes.map((r) => (
+                  <div key={r.id} className="flex items-center gap-4 rounded-[24px] border border-[#d8e5f1] bg-[#f7fbff] px-5 py-5 transition hover:border-[#0f9ae8]/30 hover:shadow-sm">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0f9ae8]/10 text-sm font-black text-[#0f9ae8]">
+                      {r.stop_count}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-black text-[#102132]">{r.name}</p>
+                      <p className="mt-1 text-xs text-[#526579]">
+                        {r.from_city} → {r.to_city} &middot; {r.stop_count} stops
+                        {r.created_by_name && <span> &middot; Created by {r.created_by_name}</span>}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/operator/routes/${r.id}`}
+                        className="rounded-full bg-[#0f9ae8]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0f9ae8] hover:bg-[#0f9ae8] hover:text-white transition"
+                      >
+                        View
+                      </Link>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete route "${r.name}"? This cannot be undone.`)) deleteRouteMut.mutate(r.id);
+                        }}
+                        disabled={deleteRouteMut.isPending}
+                        className="rounded-full bg-[#ffe1e1] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#b42318] hover:bg-[#b42318] hover:text-white transition disabled:opacity-60"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {tab === 'create' && (
+          <>
+            <div className="mb-6 flex items-center gap-3 rounded-full bg-white px-4 py-2 shadow-sm">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${step >= item ? 'bg-[#0f9ae8] text-white' : 'bg-[#e5edf5] text-[#526579]'}`}>
+                  {item}
+                </div>
+              ))}
             </div>
 
-            <GoogleRouteMap apiKey={API_KEY} fromPlace={fromPlace} toPlace={toPlace} stops={orderedStops} height={760} />
-          </section>
+            {step === 1 && (
+              <section className="rounded-[36px] bg-white p-8 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <AutocompleteField
+                    label="From city"
+                    value={fromInput}
+                    suggestions={fromSuggestions}
+                    onChange={setFromInput}
+                    onPick={(description) => selectPrediction(description, 'from')}
+                  />
+                  <AutocompleteField
+                    label="To city"
+                    value={toInput}
+                    suggestions={toSuggestions}
+                    onChange={setToInput}
+                    onPick={(description) => selectPrediction(description, 'to')}
+                  />
+                </div>
+
+                {(fromPlace || toPlace) && (
+                  <div className="mt-8">
+                    <GoogleRouteMap apiKey={API_KEY} fromPlace={fromPlace} toPlace={toPlace} stops={[]} height={420} />
+                  </div>
+                )}
+
+                <div className="mt-8 flex justify-end">
+                  <button
+                    onClick={() => {
+                      if (!fromPlace || !toPlace) {
+                        toast.error('Select both cities first.');
+                        return;
+                      }
+                      setStep(2);
+                    }}
+                    className="rounded-full bg-[#0f9ae8] px-8 py-4 text-sm font-black uppercase tracking-[0.18em] text-white"
+                  >
+                    Next
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {step === 2 && (
+              <section className="grid gap-6 lg:grid-cols-[0.4fr_0.6fr]">
+                <div className="rounded-[36px] bg-white p-6 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-black">Add Stops</h2>
+                      <p className="text-sm text-[#526579]">Search, tap the map, pull from the GPS library, or load a shared route.</p>
+                    </div>
+                    <button
+                      onClick={() => setClickToAdd((current) => !current)}
+                      className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${clickToAdd ? 'bg-[#102132] text-white' : 'bg-[#e5edf5] text-[#102132]'}`}
+                    >
+                      {clickToAdd ? 'Click to add: On' : 'Click to add: Off'}
+                    </button>
+                  </div>
+
+                  <AutocompleteField
+                    label="Search by stop name"
+                    value={stopSearch}
+                    suggestions={stopSuggestions}
+                    onChange={setStopSearch}
+                    onPick={(description) => selectPrediction(description, 'stop')}
+                  />
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button onClick={() => setShowLibrary(true)} className="rounded-full border border-[#d8e5f1] px-4 py-2 text-sm font-bold text-[#102132]">
+                      From Library
+                    </button>
+                    <button onClick={() => setShowPopular(true)} className="rounded-full border border-[#d8e5f1] px-4 py-2 text-sm font-bold text-[#102132]">
+                      Load Popular Route
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    {orderedStops.length === 0 && (
+                      <div className="rounded-[24px] border border-dashed border-[#d8e5f1] bg-[#f7fbff] px-4 py-6 text-sm text-[#526579]">
+                        No stops yet. Search above, turn on map click mode, or pull from the shared library.
+                      </div>
+                    )}
+                    {orderedStops.map((stop, index) => (
+                      <div
+                        key={stop.id}
+                        draggable
+                        onDragStart={() => setDraggingId(stop.id)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => {
+                          if (draggingId) moveStop(draggingId, stop.id);
+                          setDraggingId(null);
+                        }}
+                        className="flex items-center gap-3 rounded-[24px] border border-[#d8e5f1] bg-[#f7fbff] px-4 py-4"
+                      >
+                        <div className="text-[#526579]">::</div>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f9ae8] text-sm font-black text-white">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-black">{stop.name}</div>
+                          <div className="text-xs text-[#526579] capitalize">{stop.source} stop</div>
+                        </div>
+                        <button
+                          onClick={() => setStops((current) => current.filter((item) => item.id !== stop.id))}
+                          className="rounded-full bg-[#ffe1e1] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#b42318]"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 flex justify-between">
+                    <button onClick={() => setStep(1)} className="rounded-full border border-[#d8e5f1] px-6 py-3 text-sm font-black uppercase tracking-[0.16em]">
+                      Back
+                    </button>
+                    <button onClick={() => setStep(3)} className="rounded-full bg-[#0f9ae8] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white">
+                      Review
+                    </button>
+                  </div>
+                </div>
+
+                <GoogleRouteMap
+                  apiKey={API_KEY}
+                  fromPlace={fromPlace}
+                  toPlace={toPlace}
+                  stops={orderedStops}
+                  clickToAdd={clickToAdd}
+                  onMapClick={addMapStop}
+                  height={760}
+                />
+              </section>
+            )}
+
+            {step === 3 && (
+              <section className="grid gap-6 lg:grid-cols-[0.38fr_0.62fr]">
+                <div className="rounded-[36px] bg-white p-6 shadow-[0_24px_80px_rgba(9,33,56,0.08)]">
+                  <h2 className="text-2xl font-black">Review & Save</h2>
+                  <div className="mt-5">
+                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#526579]">Route name</label>
+                    <input
+                      value={routeName}
+                      onChange={(event) => setRouteName(event.target.value)}
+                      className="w-full rounded-[22px] border border-[#d8e5f1] bg-[#f7fbff] px-4 py-3 text-sm font-semibold outline-none"
+                    />
+                  </div>
+                  <div className="mt-5 rounded-[24px] bg-[#f7fbff] p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#526579]">From {'->'} To</div>
+                    <div className="mt-2 text-sm font-black">{fromPlace?.name} {'->'} {toPlace?.name}</div>
+                  </div>
+                  <div className="mt-5 space-y-2">
+                    {fullStopList.map((stop) => (
+                      <div key={stop.id} className="flex items-center gap-3 rounded-[20px] border border-[#d8e5f1] px-4 py-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#102132] text-xs font-black text-white">
+                          {stop.sequence}
+                        </div>
+                        <div className="text-sm font-semibold">{stop.name}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="mt-5 flex items-center gap-3 rounded-[20px] bg-[#f7fbff] px-4 py-4">
+                    <input type="checkbox" checked={publishRoute} onChange={(event) => setPublishRoute(event.target.checked)} />
+                    <div>
+                      <div className="text-sm font-black">Publish this route</div>
+                      <div className="text-xs text-[#526579]">Share it with all agencies as a popular route draft.</div>
+                    </div>
+                  </label>
+                  <div className="mt-6 flex justify-between">
+                    <button onClick={() => setStep(2)} className="rounded-full border border-[#d8e5f1] px-6 py-3 text-sm font-black uppercase tracking-[0.16em]">
+                      Back
+                    </button>
+                    <button
+                      onClick={() => saveRoute.mutate()}
+                      disabled={saveRoute.isPending}
+                      className="rounded-full bg-[#16a34a] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-white disabled:opacity-60"
+                    >
+                      {saveRoute.isPending ? 'Saving...' : 'Save Route'}
+                    </button>
+                  </div>
+                </div>
+
+                <GoogleRouteMap apiKey={API_KEY} fromPlace={fromPlace} toPlace={toPlace} stops={orderedStops} height={760} />
+              </section>
+            )}
+          </>
         )}
       </div>
 
@@ -505,7 +640,7 @@ export default function OperatorRoutesPage() {
             >
               <div className="text-sm font-black">{entry.name}</div>
               <div className="mt-1 text-xs text-[#526579]">
-                Captured by {entry.captured_by_name} • {entry.agency_name} • Used {entry.use_count} times
+                Captured by {entry.captured_by_name} &middot; {entry.agency_name} &middot; Used {entry.use_count} times
               </div>
             </button>
           ))}
@@ -525,7 +660,7 @@ export default function OperatorRoutesPage() {
             >
               <div className="text-sm font-black">{route.name}</div>
               <div className="mt-1 text-xs text-[#526579]">
-                {route.from_city} {'->'} {route.to_city} • {route.stops.length} stops • Used {route.use_count} times
+                {route.from_city} {'->'} {route.to_city} &middot; {route.stops.length} stops &middot; Used {route.use_count} times
               </div>
             </button>
           ))}

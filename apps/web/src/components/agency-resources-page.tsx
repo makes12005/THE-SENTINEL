@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { PageHeader, StatusBadge, TableSkeleton } from '@/components/ui';
@@ -26,6 +26,11 @@ interface Member {
   added_by_name?: string | null;
   trips_count?: number;
   last_active_at?: string | null;
+  upcoming_trip?: {
+    id: string;
+    scheduled_date: string | null;
+    status: string | null;
+  } | null;
 }
 
 function AddBusModal({ onClose }: { onClose: () => void }) {
@@ -122,6 +127,7 @@ export default function AgencyResourcesPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('buses');
   const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState('');
 
   const busesQuery = useQuery<Bus[]>({ queryKey: ['agency-buses'], queryFn: () => get('/api/agency/buses') });
   const membersQuery = useQuery<Member[]>({ queryKey: ['agency-members'], queryFn: () => get('/api/agency/members') });
@@ -145,9 +151,17 @@ export default function AgencyResourcesPage() {
   });
 
   const members = membersQuery.data ?? [];
-  const conductors = members.filter((member) => member.role === 'conductor');
-  const drivers = members.filter((member) => member.role === 'driver');
-  const rows = tab === 'buses' ? busesQuery.data ?? [] : tab === 'conductors' ? conductors : drivers;
+  const conductors = members.filter((m) => m.role === 'conductor');
+  const drivers = members.filter((m) => m.role === 'driver');
+  const rawRows = tab === 'buses' ? busesQuery.data ?? [] : tab === 'conductors' ? conductors : drivers;
+  const rows = useMemo(() => {
+    if (!search.trim()) return rawRows;
+    const q = search.toLowerCase();
+    return rawRows.filter((r: any) =>
+      (r.name ?? r.number_plate ?? '').toLowerCase().includes(q) ||
+      (r.phone ?? '').toLowerCase().includes(q)
+    );
+  }, [rawRows, search]);
   const isLoading = tab === 'buses' ? busesQuery.isLoading : membersQuery.isLoading;
 
   return (
@@ -158,10 +172,22 @@ export default function AgencyResourcesPage() {
           <h1 className="text-2xl font-black text-[#cee5ff] tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>FLEET HQ</h1>
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#8c9198] mt-0.5">Agency-wide shared resources</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center gap-2 rounded-lg bg-[#a3cbf2] hover:bg-[#cee5ff] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#003352] transition-colors shadow-lg">
-          <span className="material-symbols-outlined text-[16px]">add</span>
-          Add {tab === 'buses' ? 'Bus' : tab === 'conductors' ? 'Conductor' : 'Driver'}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8c9198] text-[16px]">search</span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search ${tab}…`}
+              className="bg-[#1c2024] border border-[#42474e]/60 rounded-lg pl-9 pr-4 h-10 text-[#e0e3e8] text-xs focus:outline-none focus:border-[#a3cbf2]/50 transition-all w-48 placeholder:text-[#42474e]"
+            />
+          </div>
+          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 rounded-lg bg-[#a3cbf2] hover:bg-[#cee5ff] px-5 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#003352] transition-colors shadow-lg">
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Add {tab === 'buses' ? 'Bus' : tab === 'conductors' ? 'Conductor' : 'Driver'}
+          </button>
+        </div>
       </header>
 
       <div className="space-y-6 px-8 pt-8 max-w-7xl mx-auto relative z-10">
@@ -194,6 +220,7 @@ export default function AgencyResourcesPage() {
                       <th className="px-6 pb-2">Phone</th>
                       <th className="px-6 pb-2">Trips</th>
                       <th className="px-6 pb-2">Last Active</th>
+                      <th className="px-6 pb-2">Duty Status</th>
                       <th className="px-6 pb-2">Added By</th>
                       <th className="px-6 pb-2">Status</th>
                       <th className="px-6 pb-2 text-right">Action</th>
@@ -215,25 +242,52 @@ export default function AgencyResourcesPage() {
                         </td>
                       </tr>
                     ))
-                  : rows.map((member) => (
-                      <tr key={member.id} className="group border-b border-[#ffffff0a] hover:bg-[#1c2024] transition-colors">
-                        <td className="px-6 py-4 font-bold text-[#e0e2e8]">{(member as Member).name}</td>
-                        <td className="px-6 py-4 text-sm text-[#c2c7ce]">{(member as Member).phone || '—'}</td>
-                        <td className="px-6 py-4 text-sm text-[#c2c7ce]">{(member as Member).trips_count ?? 0}</td>
-                        <td className="px-6 py-4 text-sm text-[#c2c7ce]">{(member as Member).last_active_at ? new Date((member as Member).last_active_at as string).toLocaleString('en-IN') : '—'}</td>
-                        <td className="px-6 py-4 text-sm text-[#c2c7ce]">Added by: {(member as Member).added_by_name || 'Unknown'}</td>
-                        <td className="px-6 py-4"><StatusBadge status={(member as Member).is_active ? 'active' : 'completed'} /></td>
-                        <td className="px-6 py-4 text-right">
-                          <button onClick={() => toggleMember.mutate({ id: (member as Member).id, is_active: !(member as Member).is_active })} className={`text-[0.625rem] font-bold uppercase tracking-[0.15em] transition-colors ${(member as Member).is_active ? 'text-[#ffb4ab] hover:text-[#ff897d]' : 'text-[#a3cbf2] hover:text-[#8ab4f8]'}`}>
-                            {(member as Member).is_active ? 'Deactivate' : 'Activate'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                  : rows.map((member) => {
+                      const m = member as Member;
+                      const hasDutyConflict = !!m.upcoming_trip;
+                      return (
+                        <tr key={m.id} className="group border-b border-[#ffffff0a] hover:bg-[#1c2024] transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#e0e2e8]">{m.name}</span>
+                              {hasDutyConflict && (
+                                <span
+                                  title={`On duty: trip scheduled ${m.upcoming_trip?.scheduled_date}`}
+                                  className="inline-flex items-center gap-1 rounded-full bg-[#FF7A00]/15 border border-[#FF7A00]/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#FF7A00]"
+                                >
+                                  <span className="material-symbols-outlined text-[11px]">warning</span>
+                                  On Duty
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-[#c2c7ce]">{m.phone || '—'}</td>
+                          <td className="px-6 py-4 text-sm text-[#c2c7ce]">{m.trips_count ?? 0}</td>
+                          <td className="px-6 py-4 text-sm text-[#c2c7ce]">{m.last_active_at ? new Date(m.last_active_at).toLocaleString('en-IN') : '—'}</td>
+                          <td className="px-6 py-4">
+                            {hasDutyConflict ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#FF7A00]/10 border border-[#FF7A00]/30 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[#FF7A00]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00] animate-pulse" />
+                                Duty in 12h
+                              </span>
+                            ) : (
+                              <span className="text-[0.625rem] text-[#42474e] uppercase tracking-wider">—</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-[#c2c7ce]">{m.added_by_name || 'Unknown'}</td>
+                          <td className="px-6 py-4"><StatusBadge status={m.is_active ? 'active' : 'completed'} /></td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => toggleMember.mutate({ id: m.id, is_active: !m.is_active })} className={`text-[0.625rem] font-bold uppercase tracking-[0.15em] transition-colors ${m.is_active ? 'text-[#ffb4ab] hover:text-[#ff897d]' : 'text-[#a3cbf2] hover:text-[#8ab4f8]'}`}>
+                              {m.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 {!rows.length && (
                   <tr>
-                    <td colSpan={tab === 'buses' ? 6 : 7} className="rounded-xl bg-[#181c20] px-6 py-10 text-center text-sm text-[#8c9198]">
-                      No {tab} found for this agency.
+                    <td colSpan={tab === 'buses' ? 6 : 9} className="rounded-xl bg-[#181c20] px-6 py-10 text-center text-sm text-[#8c9198]">
+                      No {tab} found{search ? ` matching "${search}"` : ' for this agency'}.
                     </td>
                   </tr>
                 )}

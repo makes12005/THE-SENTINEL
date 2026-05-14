@@ -8,6 +8,9 @@
  *   - If last ping > 2 minutes ago → emit conductor_offline (once per state change)
  *   - If conductor recovered (new ping) → emit conductor_online
  *
+ * Every 5 minutes:
+ *   - Find scheduled trips > 30 min past due → mark expired
+ *
  * In-memory state Map prevents duplicate events:
  *   offlineTrips: Set<tripId>  — currently offline trips
  *
@@ -15,8 +18,8 @@
  */
 
 import { db }                 from '../db';
-import { trips, conductorLocations, auditLogs, agencyWallets } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { trips, conductorLocations, auditLogs, agencyWallets, routes, users } from '../db/schema';
+import { eq, desc, and, lt, sql } from 'drizzle-orm';
 import { emitSocketEvent } from '../lib/socket';
 import cron from 'node-cron';
 
@@ -164,6 +167,74 @@ async function poll() {
   }
 }
 
+/**
+ * Mark scheduled trips as expired if their scheduled_date+time is
+ * more than 30 minutes in the past.
+ */
+async function checkExpiredTrips() {
+  try {
+    // Find scheduled trips where scheduled_date < NOW() - 30 minutes
+    const expiredRows = await db.execute<{
+      id: string;
+      conductor_id: string;
+      assigned_to_operator_id: string | null;
+      route_name: string;
+    }>(sql`
+      SELECT t.id, t.conductor_id, t.assigned_to_operator_id,
+             r.name as route_name, r.from_city, r.to_city
+      FROM trips t
+      INNER JOIN routes r ON r.id = t.route_id
+      WHERE t.status = 'scheduled'
+        AND (
+          -- If scheduled_time is set, combine date+time; otherwise treat as start of day
+          CASE
+            WHEN t.scheduled_time IS NOT NULL
+              THEN (t.scheduled_date::text || ' ' || t.scheduled_time)::timestamp AT TIME ZONE 'Asia/Kolkata'
+            ELSE t.scheduled_date::timestamp AT TIME ZONE 'Asia/Kolkata'
+          END
+        ) < (NOW() - INTERVAL '30 minutes')
+    `);
+
+    for (const row of Array.from(expiredRows)) {
+      // Update status to 'expired' via raw SQL since the enum doesn't have it yet
+      await db.execute(sql`
+        UPDATE trips SET status = 'expired' WHERE id = ${row.id}
+      `);
+
+      // Audit log
+      await db.insert(auditLogs).values({
+        action: 'TRIP_EXPIRED',
+        entity_type: 'trip',
+        entity_id: row.id,
+        metadata: {
+          route_name: row.route_name,
+          conductor_id: row.conductor_id,
+          operator_id: row.assigned_to_operator_id,
+        },
+      }).catch((e: any) => console.error('[HeartbeatWorker] TRIP_EXPIRED audit log error:', e?.message));
+
+      // Emit socket event
+      await emitSocketEvent(`trip:${row.id}`, 'trip_expired', {
+        tripId: row.id,
+        routeName: row.route_name,
+        conductorId: row.conductor_id,
+        operatorId: row.assigned_to_operator_id,
+      });
+
+      if (row.assigned_to_operator_id) {
+        await emitSocketEvent(`user:${row.assigned_to_operator_id}`, 'trip_expired', {
+          tripId: row.id,
+          routeName: row.route_name,
+        });
+      }
+
+      console.log(`[HeartbeatWorker] Trip ${row.id} marked EXPIRED`);
+    }
+  } catch (err: any) {
+    console.error('[HeartbeatWorker] Expired trip check failed:', err?.message);
+  }
+}
+
 async function main() {
   console.log('Heartbeat worker started');
 
@@ -187,6 +258,14 @@ async function main() {
     } catch (err: any) {
       console.error('[HeartbeatWorker] Monthly reset failed:', err?.message);
     }
+  }, {
+    timezone: 'Asia/Kolkata'
+  });
+
+  // ── Expired Trip Check Cron ─────────────────────────────────────────────
+  // Every 5 minutes, mark scheduled trips that are 30+ min past due as expired
+  cron.schedule('*/5 * * * *', async () => {
+    await checkExpiredTrips();
   }, {
     timezone: 'Asia/Kolkata'
   });

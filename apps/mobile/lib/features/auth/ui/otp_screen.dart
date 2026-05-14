@@ -1,114 +1,45 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
-import '../provider/auth_provider.dart';
-import '../../../core/router/app_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../provider/auth_provider.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key});
+  final String contact;
+  final bool isSignup;
+  
+  const OtpScreen({super.key, required this.contact, this.isSignup = false});
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
 class _OtpScreenState extends ConsumerState<OtpScreen> {
-
-  final _otpCon = TextEditingController();
-  
-  Timer? _timer;
-  int _secondsRemaining = 30;
-  bool _canResend = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _canResend = false;
-    _secondsRemaining = 30;
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_secondsRemaining > 0) {
-          _secondsRemaining--;
-        } else {
-          _canResend = true;
-          _timer?.cancel();
-        }
-      });
-    });
-  }
+  final pinController = TextEditingController();
+  final focusNode = FocusNode();
 
   @override
   void dispose() {
-    _otpCon.dispose();
-    _timer?.cancel();
+    pinController.dispose();
+    focusNode.dispose();
     super.dispose();
-  }
-
-  Future<void> _onVerifyOtp() async {
-    final otp = _otpCon.text.trim();
-    if (otp.length != 6) return;
-    
-    // Returns true if logged in, false if needs signup, null if error
-    final isExistingUser = await ref.read(authProvider.notifier).verifyOtp(otp);
-    
-    if (!mounted) return;
-    
-    if (isExistingUser == true) {
-      final role = ref.read(authProvider).role;
-      context.go(routeForRole(role));
-    } else if (isExistingUser == false) {
-      context.push(AppRoutes.signup);
-    }
-  }
-
-  Future<void> _onResendOtp() async {
-    if (!_canResend) return;
-    
-    final auth = ref.read(authProvider);
-    if (auth.identifier == null) return;
-    
-    final success = await ref.read(authProvider.notifier).sendOtp(auth.identifier!);
-    if (success) {
-      _startTimer();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('OTP sent successfully'),
-          backgroundColor: AppColors.success,
-        ));
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authProvider);
-    final contact = auth.identifier ?? '';
-    final isEmail = contact.contains('@');
-
-    ref.listen<AuthState>(authProvider, (prev, next) {
-      if (next.error != null && next.error != prev?.error) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(next.error!),
-          backgroundColor: AppColors.errorContainer,
-        ));
-      }
-    });
+    final authState = ref.watch(authControllerProvider);
+    final isLoading = authState.isLoading;
 
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: GoogleFonts.manrope(
-        fontSize: 24,
+      textStyle: AppTextStyles.headlineMedium.copyWith(
         color: AppColors.primary,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.bold,
+        fontFamily: 'Manrope',
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
@@ -116,220 +47,267 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       ),
     );
 
-    final focusedPinTheme = defaultPinTheme.copyWith(
-      decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: AppColors.primary, width: 2),
-        color: AppColors.surfaceContainerHighest,
-      ),
+    final focusedPinTheme = defaultPinTheme.copyDecorationWith(
+      color: AppColors.surfaceContainerHighest,
+      border: Border.all(color: AppColors.primary, width: 2),
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Verify OTP',
-          style: GoogleFonts.manrope(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        ),
-      ),
       body: Stack(
         children: [
-          // Background Gradient decoration
-          Positioned(
-            bottom: 0, left: 0, right: 0,
+          // Background Gradient (matching noise-bg in 2.html)
+          Positioned.fill(
             child: Container(
-              height: 256,
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 1.0,
+                  colors: [
+                    Color(0x0DFA3CBF2), // Primary with 5% opacity
+                    AppColors.background,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Contextual Visual (from 2.html)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 256,
+            child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    AppColors.primaryContainer.withValues(alpha: 0.2),
+                    AppColors.primaryContainer.withOpacity(0.2),
                     Colors.transparent,
                   ],
                 ),
               ),
             ),
           ),
-          
+
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 56),
-                  // Header Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.shield_outlined, // Closer to shield_lock
-                      color: AppColors.primary,
-                      size: 48,
-                    ),
+            child: Column(
+              children: [
+                // Top App Bar
+                Container(
+                  height: 64,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF181C20), // Exact color from 2.html header
                   ),
-                  const SizedBox(height: 28),
-                  // Header Text
-                  Text(
-                    'Enter Code',
-                    style: GoogleFonts.manrope(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.onSurface,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    isEmail
-                        ? 'Enter the 6-digit code sent to your email.'
-                        : 'Enter the 6-digit code sent to your phone.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      color: AppColors.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 42),
-                  
-                  // OTP Input Grid
-                  Pinput(
-                    length: 6,
-                    controller: _otpCon,
-                    defaultPinTheme: defaultPinTheme,
-                    focusedPinTheme: focusedPinTheme,
-                    onCompleted: (_) => _onVerifyOtp(),
-                    hapticFeedbackType: HapticFeedbackType.lightImpact,
-                    showCursor: true,
-                    cursor: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 9),
-                          width: 22,
-                          height: 1,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 48),
-                  
-                  // Verify Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      onPressed: auth.isLoading ? null : _onVerifyOtp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.onTertiaryContainer,
-                        foregroundColor: AppColors.onTertiary,
-                        elevation: 8,
-                        shadowColor: AppColors.tertiaryContainer.withValues(alpha: 0.2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: auth.isLoading
-                          ? const CircularProgressIndicator(color: AppColors.onTertiary)
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'VERIFY',
-                                  style: GoogleFonts.manrope(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 18,
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.chevron_right, size: 24),
-                              ],
-                            ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Timer & Resend
-                  Column(
+                  child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.timer_outlined,
-                              color: AppColors.secondary,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '00:${_secondsRemaining.toString().padLeft(2, '0')}',
-                              style: GoogleFonts.manrope(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.secondary,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
+                      IconButton(
+                        onPressed: () => context.pop(),
+                        icon: const Icon(Symbols.arrow_back_rounded, color: AppColors.primary),
+                        style: IconButton.styleFrom(
+                          hoverColor: AppColors.surfaceContainerHigh,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: _canResend ? _onResendOtp : null,
-                        child: Text(
-                          'RESEND OTP',
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            letterSpacing: 1.5,
-                            color: _canResend 
-                                ? AppColors.primary 
-                                : AppColors.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Verify OTP',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Manrope',
+                          fontSize: 18,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'SENTINEL SECURE NODE v4.2.0',
-                    style: GoogleFonts.manrope(
-                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.35),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 3,
+                ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 60),
+                        
+                        // Header Icon
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(12), // rounded-xl from 2.html
+                          ),
+                          child: const Icon(
+                            Symbols.shield_lock_rounded,
+                            color: AppColors.primary,
+                            size: 48, // text-5xl from 2.html
+                            fill: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'Enter Code',
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            fontWeight: FontWeight.w800, // font-extrabold
+                            fontSize: 30, // text-3xl
+                            fontFamily: 'Manrope',
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Enter the 6-digit code sent to your phone.',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Inter',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 48),
+
+                        // OTP Grid
+                        Pinput(
+                          controller: pinController,
+                          focusNode: focusNode,
+                          length: 6,
+                          defaultPinTheme: defaultPinTheme,
+                          focusedPinTheme: focusedPinTheme,
+                          separatorBuilder: (index) => const SizedBox(width: 8),
+                          hapticFeedbackType: HapticFeedbackType.lightImpact,
+                          onCompleted: (pin) => _verifyOtp(pin),
+                        ),
+                        const SizedBox(height: 48),
+
+                        // Primary Action
+                        SizedBox(
+                          width: double.infinity,
+                          height: 64, // h-16
+                          child: ElevatedButton(
+                            onPressed: isLoading ? null : () => _verifyOtp(pinController.text),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.onTertiaryContainer, // bg-on-tertiary-container
+                              foregroundColor: AppColors.onTertiary, // text-on-tertiary
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
+                              elevation: 8,
+                              shadowColor: AppColors.tertiaryContainer.withOpacity(0.2),
+                            ),
+                            child: isLoading 
+                              ? const CircularProgressIndicator(color: AppColors.onTertiary) 
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'VERIFY', 
+                                      style: AppTextStyles.labelLarge.copyWith(
+                                        fontWeight: FontWeight.w800, // font-extrabold
+                                        fontFamily: 'Manrope',
+                                        letterSpacing: 2, // tracking-widest
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Symbols.chevron_right_rounded),
+                                  ],
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Secondary Actions & Timer
+                        Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(9999), // rounded-full
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Symbols.timer_rounded, color: AppColors.secondary, size: 18, fill: 1),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '00:30',
+                                    style: AppTextStyles.labelLarge.copyWith(
+                                      color: AppColors.secondary,
+                                      fontWeight: FontWeight.w800,
+                                      fontFamily: 'Manrope',
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: null, // TODO: Implement resend
+                              child: Text(
+                                'Resend OTP',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold, // font-bold
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  letterSpacing: 1,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                ],
-              ),
+                ),
+                
+                // Footer (as in 2.html)
+                Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Text(
+                    'SENTINEL SECURE NODE V4.2.0',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.onSurfaceVariant.withOpacity(0.3),
+                      letterSpacing: 3,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  Future<void> _verifyOtp(String pin) async {
+    if (pin.length < 6) return;
+    
+    final success = await ref.read(authControllerProvider.notifier).verifyOtp(widget.contact, pin);
+    if (!mounted) return;
+    
+    if (success) {
+      if (widget.isSignup) {
+        context.go('/profile-setup');
+      } else {
+        context.go('/conductor');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.errorContainer,
+          content: Text('Invalid OTP', style: TextStyle(color: AppColors.onErrorContainer)),
+        ),
+      );
+      pinController.clear();
+      focusNode.requestFocus();
+    }
+  }
 }
+

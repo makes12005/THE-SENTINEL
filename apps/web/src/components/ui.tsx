@@ -40,6 +40,7 @@ export function StatusBadge({ status }: { status: string }) {
     active:    { bg: 'bg-[#a3cbf2]/10', text: 'text-[#a3cbf2]', dot: 'bg-[#a3cbf2]' },
     scheduled: { bg: 'bg-[#42474e]/30', text: 'text-[#c2c7ce]', dot: 'bg-[#8c9198]' },
     completed: { bg: 'bg-[#31353a]/50', text: 'text-[#8c9198]', dot: 'bg-[#42474e]' },
+    expired:   { bg: 'bg-[#FF7A00]/10', text: 'text-[#FF7A00]', dot: 'bg-[#FF7A00]' },
     sent:      { bg: 'bg-[#a3cbf2]/10', text: 'text-[#a3cbf2]', dot: 'bg-[#a3cbf2]' },
     failed:    { bg: 'bg-[#ffb4ab]/10', text: 'text-[#ffb4ab]', dot: 'bg-[#ffb4ab]' },
     pending:   { bg: 'bg-[#ffb68b]/10', text: 'text-[#ffb68b]', dot: 'bg-[#ffb68b]' },

@@ -1,80 +1,79 @@
-import 'app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'app_colors.dart';
+import 'app_text_styles.dart';
 
 class AppTheme {
-  AppTheme._();
-
-  static ThemeData get dark {
+  static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
-      canvasColor: AppColors.surface,
-
-      // ── Color scheme ──────────────────────────────────────────────────────
       colorScheme: const ColorScheme.dark(
-        surface:          AppColors.surface,
-        primary:          AppColors.primary,
+        primary: AppColors.primary,
+        onPrimary: AppColors.onPrimary,
         primaryContainer: AppColors.primaryContainer,
-        onPrimary:        AppColors.onPrimary,
         onPrimaryContainer: AppColors.onPrimaryContainer,
-        secondary:        AppColors.secondary,
+        secondary: AppColors.secondary,
+        onSecondary: AppColors.onSecondary,
         secondaryContainer: AppColors.secondaryContainer,
         onSecondaryContainer: AppColors.onSecondaryContainer,
-        tertiary:         AppColors.tertiary,
+        tertiary: AppColors.tertiary,
+        onTertiary: AppColors.onTertiary,
         tertiaryContainer: AppColors.tertiaryContainer,
         onTertiaryContainer: AppColors.onTertiaryContainer,
-        onSurface:        AppColors.onSurface,
+        surface: AppColors.surface,
+        onSurface: AppColors.onSurface,
+        surfaceVariant: AppColors.surfaceVariant,
         onSurfaceVariant: AppColors.onSurfaceVariant,
-        outline:          AppColors.outline,
-        outlineVariant:   AppColors.outlineVariant,
-        error:            AppColors.error,
-        errorContainer:   AppColors.errorContainer,
+        error: AppColors.error,
+        onError: AppColors.onError,
+        errorContainer: AppColors.errorContainer,
+        onErrorContainer: AppColors.onErrorContainer,
+        outline: AppColors.outline,
+        outlineVariant: AppColors.outlineVariant,
+        inverseSurface: AppColors.inverseSurface,
+        onInverseSurface: AppColors.inverseOnSurface,
+        inversePrimary: AppColors.inversePrimary,
+        surfaceTint: AppColors.surfaceTint,
       ),
-
-      // ── Typography ────────────────────────────────────────────────────────
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.manrope(
-          color: AppColors.onSurface, fontWeight: FontWeight.w800, fontSize: 36,
-        ),
-        displayMedium: GoogleFonts.manrope(
-          color: AppColors.onSurface, fontWeight: FontWeight.w700, fontSize: 28,
-        ),
-        headlineLarge: GoogleFonts.manrope(
-          color: AppColors.onSurface, fontWeight: FontWeight.w800, fontSize: 24,
-        ),
-        headlineMedium: GoogleFonts.manrope(
-          color: AppColors.onSurface, fontWeight: FontWeight.w700, fontSize: 20,
-        ),
-        titleLarge: GoogleFonts.manrope(
-          color: AppColors.onSurface, fontWeight: FontWeight.w700, fontSize: 18,
-        ),
-        bodyLarge: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
-        bodyMedium: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 14),
-        labelSmall: GoogleFonts.inter(
-          color: AppColors.onSurfaceVariant,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.5,
-        ),
-      ),
-
-      // ── App bar ───────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primary),
-        titleTextStyle: GoogleFonts.manrope(
-          color: AppColors.onSurface,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1,
+        centerTitle: false,
+        titleTextStyle: AppTextStyles.headlineSmall,
+        iconTheme: const IconThemeData(color: AppColors.onSurface),
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surfaceContainerLow,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
-
-      // ── Input fields ──────────────────────────────────────────────────────
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          textStyle: AppTextStyles.labelLarge,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.onSurface,
+          side: const BorderSide(color: AppColors.outlineVariant),
+          textStyle: AppTextStyles.labelLarge,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceContainerHigh,
@@ -88,55 +87,40 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1),
         ),
-        labelStyle: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 11),
-        hintStyle: GoogleFonts.inter(color: AppColors.outline, fontSize: 14),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.error, width: 1),
+        ),
+        labelStyle: AppTextStyles.bodyMedium,
+        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant.withOpacity(0.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       ),
-
-      // ── Elevated button ───────────────────────────────────────────────────
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryContainer,
-          foregroundColor: AppColors.onPrimaryContainer,
-          minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 4,
-          textStyle: GoogleFonts.manrope(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 2),
-        ),
-      ),
-
-      // ── Card ──────────────────────────────────────────────────────────────
-      cardTheme: CardThemeData(
-        color: AppColors.surfaceContainerHigh,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        margin: EdgeInsets.zero,
-      ),
-
-      // ── Divider ───────────────────────────────────────────────────────────
-      dividerTheme: const DividerThemeData(
-        color: AppColors.outlineVariant,
-        thickness: 1,
-        space: 0,
-      ),
-
-      // ── Bottom navigation ─────────────────────────────────────────────────
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surfaceContainerLow,
-        selectedItemColor: AppColors.tertiary,
+        backgroundColor: AppColors.surfaceContainerLowest,
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
       ),
-
-      // ── Snack bar ─────────────────────────────────────────────────────────
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.surfaceContainerHighest,
-        contentTextStyle: GoogleFonts.inter(color: AppColors.onSurface),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        behavior: SnackBarBehavior.floating,
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surfaceContainerLowest,
+        indicatorColor: AppColors.primaryContainer,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTextStyles.labelSmall.copyWith(color: AppColors.onSurface);
+          }
+          return AppTextStyles.labelSmall.copyWith(color: AppColors.onSurfaceVariant);
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.onPrimaryContainer);
+          }
+          return const IconThemeData(color: AppColors.onSurfaceVariant);
+        }),
       ),
     );
   }

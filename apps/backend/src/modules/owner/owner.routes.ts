@@ -6,6 +6,7 @@ import {
   agencies,
   agencyWallets,
   alertLogs,
+  auditLogs,
   buses,
   conductorLocations,
   routes,
@@ -449,65 +450,59 @@ export default async function ownerRoutes(fastify: FastifyInstance) {
   fastify.get('/owner/logs', { preHandler: [requireAuth([UserRole.OWNER, UserRole.ADMIN])] }, async (req, reply) => {
     try {
       const agencyId = req.user.agencyId as string;
-      const query = (req.query as { page?: string; channel?: string; status?: string; date?: string; operator?: string }) ?? {};
+      const query = (req.query as { page?: string; action_type?: string; date?: string; search?: string }) ?? {};
       const page = Math.max(1, Number(query.page ?? 1));
       const pageSize = 50;
       const offset = (page - 1) * pageSize;
 
       const whereParts = [
-        sql`r.agency_id = ${agencyId}`,
-        query.channel ? sql`al.channel = ${query.channel}` : sql`true`,
-        query.status ? sql`al.status = ${query.status}` : sql`true`,
-        query.date ? sql`(al.attempted_at at time zone 'Asia/Kolkata')::date = ${query.date}::date` : sql`true`,
-        query.operator?.trim()
-          ? sql`owner_user.name ilike ${'%' + query.operator.trim() + '%'}`
+        // Scope to agency: join through users table
+        sql`(au.agency_id = ${agencyId} OR al_user.agency_id = ${agencyId})`,
+        query.action_type ? sql`al.action = ${query.action_type}` : sql`true`,
+        query.date ? sql`(al.created_at at time zone 'Asia/Kolkata')::date = ${query.date}::date` : sql`true`,
+        query.search?.trim()
+          ? sql`(al.action ilike ${'%' + query.search.trim() + '%'} OR au.name ilike ${'%' + query.search.trim() + '%'})`
           : sql`true`,
       ];
 
       const rows = await db.execute<{
         id: string;
-        channel: string;
-        status: string;
-        attempted_at: string;
-        response_code: string | null;
-        error_message: string | null;
-        passenger_name: string;
-        passenger_phone: string;
-        owner_name: string | null;
+        action: string;
+        entity_type: string;
+        entity_id: string | null;
+        metadata: Record<string, unknown> | null;
+        created_at: string;
+        actor_name: string | null;
+        actor_role: string | null;
       }>(sql`
         select
           al.id,
-          al.channel,
-          al.status,
-          al.attempted_at::text as attempted_at,
-          al.response_code,
-          al.error_message,
-          tp.passenger_name,
-          tp.passenger_phone,
-          owner_user.name as owner_name
-        from alert_logs al
-        inner join trip_passengers tp on tp.id = al.trip_passenger_id
-        inner join trips t on t.id = tp.trip_id
-        inner join routes r on r.id = t.route_id
-        left join users owner_user on owner_user.id = t.operator_id
+          al.action,
+          al.entity_type,
+          al.entity_id,
+          al.metadata,
+          al.created_at::text as created_at,
+          au.name as actor_name,
+          au.role as actor_role
+        from audit_logs al
+        left join users au on au.id = al.user_id
+        left join users al_user on al_user.id = al.user_id
         where ${sql.join(whereParts, sql` and `)}
-        order by al.attempted_at desc
+        order by al.created_at desc
         limit ${pageSize} offset ${offset}
       `);
 
       const [countRow] = await db.execute<{ total: string }>(sql`
         select count(*)::text as total
-        from alert_logs al
-        inner join trip_passengers tp on tp.id = al.trip_passenger_id
-        inner join trips t on t.id = tp.trip_id
-        inner join routes r on r.id = t.route_id
-        left join users owner_user on owner_user.id = t.operator_id
+        from audit_logs al
+        left join users au on au.id = al.user_id
+        left join users al_user on al_user.id = al.user_id
         where ${sql.join(whereParts, sql` and `)}
       `);
 
       return reply.send({
         success: true,
-        data: rows.map((row) => ({ ...row, operator_name: row.owner_name })),
+        data: rows,
         meta: { page, page_size: pageSize, total: Number(countRow?.total ?? 0) },
       });
     } catch (err) {

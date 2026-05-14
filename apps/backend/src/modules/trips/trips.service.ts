@@ -146,20 +146,41 @@ export class TripsService {
     return trip;
   }
 
-  static async listTrips(agencyId: string, userId: string, userRole: string, filters?: { status?: TripStatus; unassigned?: boolean }) {
+  static async listTrips(agencyId: string | null, userId: string, userRole: string, filters?: { status?: TripStatus; unassigned?: boolean; startDate?: string; endDate?: string }) {
     console.log(`[DEBUG] TripsService.listTrips - Agency: ${agencyId}, User: ${userId}, Role: ${userRole}, Filters: ${JSON.stringify(filters)}`);
-    const conditions = [
-      eq(routes.agency_id, agencyId),
-      filters?.status ? eq(trips.status, filters.status) : sql`true`,
-      filters?.unassigned ? sql`${trips.assigned_operator_id} is null` : sql`true`,
-    ];
+    
+    const conditions = [];
 
+    // Agency scoping - skip for global admins
+    if (userRole !== UserRole.ADMIN && agencyId) {
+      conditions.push(eq(routes.agency_id, agencyId));
+    }
+
+    // Status filtering
+    if (filters?.status) {
+      conditions.push(eq(trips.status, filters.status));
+    }
+
+    // Date range filtering
+    if (filters?.startDate) {
+      conditions.push(sql`${trips.scheduled_date} >= ${filters.startDate}`);
+    }
+    if (filters?.endDate) {
+      conditions.push(sql`${trips.scheduled_date} <= ${filters.endDate}`);
+    }
+
+    // Unassigned (operator queue)
+    if (filters?.unassigned) {
+      conditions.push(sql`${trips.assigned_operator_id} is null`);
+    }
+
+    // Role-based visibility
     if (userRole === UserRole.OPERATOR) {
-      conditions.push(or(eq(trips.owned_by_operator_id, userId), eq(trips.assigned_operator_id, userId)) as any);
+      conditions.push(or(eq(trips.owned_by_operator_id, userId), eq(trips.assigned_operator_id, userId)));
     } else if (userRole === UserRole.CONDUCTOR) {
-      conditions.push(eq(trips.conductor_id, userId) as any);
+      conditions.push(eq(trips.conductor_id, userId));
     } else if (userRole === UserRole.DRIVER) {
-      conditions.push(or(eq(trips.driver_id, userId), eq(trips.conductor_id, userId)) as any);
+      conditions.push(or(eq(trips.driver_id, userId), eq(trips.conductor_id, userId)));
     }
 
     const data = await db
@@ -167,11 +188,15 @@ export class TripsService {
         id: trips.id,
         status: trips.status,
         scheduled_date: trips.scheduled_date,
+        scheduled_time: trips.scheduled_time,
         started_at: trips.started_at,
         completed_at: trips.completed_at,
         created_at: trips.created_at,
         owned_by_operator_id: trips.owned_by_operator_id,
         assigned_operator_id: trips.assigned_operator_id,
+        conductor_id: trips.conductor_id,
+        driver_id: trips.driver_id,
+        route_id: trips.route_id,
         route: {
           name: routes.name,
           from_city: routes.from_city,
@@ -277,10 +302,13 @@ export class TripsService {
         id: tripPassengers.id,
         passenger_name: tripPassengers.passenger_name,
         passenger_phone: tripPassengers.passenger_phone,
+        seat_no: tripPassengers.seat_no,
         alert_status: tripPassengers.alert_status,
         alert_sent_at: tripPassengers.alert_sent_at,
+        stop_name: stops.name,
       })
       .from(tripPassengers)
+      .leftJoin(stops, eq(stops.id, tripPassengers.stop_id))
       .where(eq(tripPassengers.trip_id, tripId));
 
     return {
@@ -545,5 +573,50 @@ export class TripsService {
       battery_level: row.battery_level ? Number(row.battery_level) : null,
       accuracy_meters: row.accuracy_meters ? Number(row.accuracy_meters) : null,
     };
+  }
+
+  static async retryAlert(passengerId: string) {
+    const updated = await db
+      .update(tripPassengers)
+      .set({
+        alert_status: 'pending',
+        alert_channel: null,
+        alert_sent_at: null,
+      })
+      .where(eq(tripPassengers.id, passengerId))
+      .returning();
+    return updated[0];
+  }
+
+  static async markAlertAsManuallyInformed(passengerId: string) {
+    const updated = await db
+      .update(tripPassengers)
+      .set({
+        alert_status: 'sent',
+        alert_channel: 'manual',
+        alert_sent_at: new Date(),
+      })
+      .where(eq(tripPassengers.id, passengerId))
+      .returning();
+    return updated[0];
+  }
+
+  static async broadcastAlert(tripId: string, type: string) {
+    const passengers = await db
+      .select()
+      .from(tripPassengers)
+      .where(eq(tripPassengers.trip_id, tripId));
+
+    // In a real system, this would enqueue jobs for each passenger
+    // For now, we'll just return the count and mark as broadcasted in logs
+    await db.insert(auditLogs).values({
+      user_id: 'system', // or get from request context if passed
+      action: 'TRIP_ALERT_BROADCAST',
+      entity_type: 'trip',
+      entity_id: tripId,
+      metadata: { type, passenger_count: passengers.length },
+    });
+
+    return { passenger_count: passengers.length, type };
   }
 }

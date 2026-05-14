@@ -300,9 +300,15 @@ export async function updateStop(
     throw Object.assign(new Error('Stop not found'), { statusCode: 404 });
   }
 
-  const lat = payload.latitude ?? 0;
-  const lng = payload.longitude ?? 0;
-  return { ...updated, latitude: lat, longitude: lng };
+  if (payload.latitude !== undefined && payload.longitude !== undefined) {
+    return { ...updated, latitude: payload.latitude, longitude: payload.longitude };
+  }
+
+  const [coords] = await db.execute<{ lat: string; lng: string }>(sql`
+    SELECT ST_Y(coordinates::geometry)::text as lat, ST_X(coordinates::geometry)::text as lng
+    FROM stops WHERE id = ${stopId}
+  `);
+  return { ...updated, latitude: parseFloat(coords?.lat ?? '0'), longitude: parseFloat(coords?.lng ?? '0') };
 }
 
 // ── Delete Stop ───────────────────────────────────────────────────────────────

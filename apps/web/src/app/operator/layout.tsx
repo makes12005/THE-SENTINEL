@@ -28,13 +28,13 @@ export default function OperatorLayout({ children }: { children: React.ReactNode
       router.push('/login');
       return;
     }
-    // Strict operator-only guard for /operator/*
-    if (user.role !== 'operator') {
+    // Allow both operator and owner roles to access /operator/*
+    if (user.role !== 'operator' && user.role !== 'owner') {
       router.push(ROLE_REDIRECTS[user.role] ?? '/login');
     }
   }, [isHydrated, token, user, router]);
 
-  if (!isHydrated || !token || !user || user.role !== 'operator') {
+  if (!isHydrated || !token || !user || (user.role !== 'operator' && user.role !== 'owner')) {
     return <div className="min-h-screen bg-[#101418]" />;
   }
 

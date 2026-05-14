@@ -1,72 +1,25 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Thin wrapper around flutter_secure_storage.
-/// All keys are namespaced under the busalert. prefix.
 class SecureStorage {
-  SecureStorage._();
+  static const _storage = FlutterSecureStorage();
 
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
-  );
+  static Future<void> saveToken(String token) async => await _storage.write(key: 'access_token', value: token);
+  static Future<String?> getToken() async => await _storage.read(key: 'access_token');
+  
+  static Future<void> saveRefreshToken(String token) async => await _storage.write(key: 'refresh_token', value: token);
+  static Future<String?> getRefreshToken() async => await _storage.read(key: 'refresh_token');
 
-  // ── Keys ──────────────────────────────────────────────────────────────────
-  static const _keyAccessToken  = 'busalert.access_token';
-  static const _keyRefreshToken = 'busalert.refresh_token';
-  static const _keyRole         = 'busalert.role';
-  static const _keyUserId       = 'busalert.user_id';
-  static const _keyUserName     = 'busalert.user_name';
+  static Future<void> saveUserId(String id) async => await _storage.write(key: 'user_id', value: id);
+  static Future<String?> getUserId() async => await _storage.read(key: 'user_id');
 
-  // ── Accessors ─────────────────────────────────────────────────────────────
-  static Future<void> saveTokens({
-    required String accessToken,
-    required String refreshToken,
-  }) async {
-    await Future.wait([
-      _storage.write(key: _keyAccessToken,  value: accessToken),
-      _storage.write(key: _keyRefreshToken, value: refreshToken),
-    ]);
-  }
+  static Future<void> saveUserRole(String role) async => await _storage.write(key: 'user_role', value: role);
+  static Future<String?> getUserRole() async => await _storage.read(key: 'user_role');
 
-  static Future<String?> getAccessToken()  => _storage.read(key: _keyAccessToken);
-  static Future<String?> getRefreshToken() => _storage.read(key: _keyRefreshToken);
+  static Future<void> saveUserName(String name) async => await _storage.write(key: 'user_name', value: name);
+  static Future<String?> getUserName() async => await _storage.read(key: 'user_name');
 
-  static Future<void> saveUserInfo({
-    required String role,
-    required String userId,
-    required String userName,
-  }) async {
-    await Future.wait([
-      _storage.write(key: _keyRole,     value: role),
-      _storage.write(key: _keyUserId,   value: userId),
-      _storage.write(key: _keyUserName, value: userName),
-    ]);
-  }
+  static Future<void> saveAgencyId(String id) async => await _storage.write(key: 'agency_id', value: id);
+  static Future<String?> getAgencyId() async => await _storage.read(key: 'agency_id');
 
-  static Future<String?> getRole()     => _storage.read(key: _keyRole);
-  static Future<String?> getUserId()   => _storage.read(key: _keyUserId);
-  static Future<String?> getUserName() => _storage.read(key: _keyUserName);
-
-  static Future<bool> hasValidSession() async {
-    final access = await getAccessToken();
-    final refresh = await getRefreshToken();
-    final role = await getRole();
-
-    final valid = access != null &&
-        access.isNotEmpty &&
-        refresh != null &&
-        refresh.isNotEmpty &&
-        role != null &&
-        role.isNotEmpty;
-
-    // Self-heal partially stored/corrupted session data to avoid
-    // repeated phantom session errors on app launch.
-    if (!valid) {
-      await clearAll();
-    }
-    return valid;
-  }
-
-  static Future<void> clearAll() async => _storage.deleteAll();
+  static Future<void> clearAll() async => await _storage.deleteAll();
 }

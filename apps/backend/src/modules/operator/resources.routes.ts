@@ -60,6 +60,9 @@ async function listAgencyMembers(agencyId: string, role?: 'conductor' | 'driver'
     trips_count: string;
     last_active_at: string | null;
     created_at: string;
+    upcoming_trip_id: string | null;
+    upcoming_trip_date: string | null;
+    upcoming_trip_status: string | null;
   }>(sql`
     select
       u.id,
@@ -69,23 +72,49 @@ async function listAgencyMembers(agencyId: string, role?: 'conductor' | 'driver'
       u.is_active,
       u.added_by,
       creator.name as added_by_name,
-      count(t.id)::text as trips_count,
+      count(distinct t.id)::text as trips_count,
       max(t.created_at)::text as last_active_at,
-      u.created_at::text as created_at
+      u.created_at::text as created_at,
+      upcoming.id as upcoming_trip_id,
+      upcoming.scheduled_date::text as upcoming_trip_date,
+      upcoming.status as upcoming_trip_status
     from users u
     left join users creator on creator.id = u.added_by
     left join trips t
       on (t.conductor_id = u.id or t.driver_id = u.id)
+    -- Find a trip within the next 12 hours for this member
+    left join lateral (
+      select t2.id, t2.scheduled_date, t2.status
+      from trips t2
+      where (t2.conductor_id = u.id or t2.driver_id = u.id)
+        and t2.status in ('scheduled', 'active')
+        and (
+          CASE
+            WHEN t2.scheduled_time IS NOT NULL
+              THEN (t2.scheduled_date::text || ' ' || t2.scheduled_time)::timestamp AT TIME ZONE 'Asia/Kolkata'
+            ELSE t2.scheduled_date::timestamp AT TIME ZONE 'Asia/Kolkata'
+          END
+        ) between NOW() and (NOW() + INTERVAL '12 hours')
+      order by t2.scheduled_date asc
+      limit 1
+    ) upcoming on true
     where u.agency_id = ${agencyId}
       and u.role in ('conductor', 'driver')
       ${role ? sql`and u.role = ${role}` : sql``}
-    group by u.id, creator.name
+    group by u.id, creator.name, upcoming.id, upcoming.scheduled_date, upcoming.status
     order by u.role asc, u.created_at desc
   `);
 
   return rows.map((row) => ({
     ...row,
     trips_count: Number(row.trips_count ?? 0),
+    upcoming_trip: row.upcoming_trip_id
+      ? {
+          id: row.upcoming_trip_id,
+          scheduled_date: row.upcoming_trip_date,
+          status: row.upcoming_trip_status,
+        }
+      : null,
   }));
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -38,12 +38,19 @@ type PlaceResult = {
 export default function RouteDetailsPage() {
   const params = useParams<{ id: string }>();
   const routeId = params.id;
+  const router = useRouter();
   const qc = useQueryClient();
   const [showStopEditor, setShowStopEditor] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [editingStop, setEditingStop] = useState<Stop | null>(null);
   const [pickedPlace, setPickedPlace] = useState<PlaceResult | null>(null);
   const [stopName, setStopName] = useState('');
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  const [showRouteEditor, setShowRouteEditor] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editFromCity, setEditFromCity] = useState('');
+  const [editToCity, setEditToCity] = useState('');
 
   const route = useQuery<RouteDetails>({
     queryKey: ['route-detail', routeId],
@@ -88,6 +95,27 @@ export default function RouteDetailsPage() {
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to delete stop'),
   });
 
+  const deleteRoute = useMutation({
+    mutationFn: () => del(`/api/routes/${routeId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routes'] });
+      toast.success('Route deleted');
+      router.push('/operator/routes');
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to delete route'),
+  });
+
+  const updateRoute = useMutation({
+    mutationFn: (data: any) => put(`/api/routes/${routeId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['route-detail', routeId] });
+      qc.invalidateQueries({ queryKey: ['routes'] });
+      toast.success('Route updated');
+      setShowRouteEditor(false);
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to update route'),
+  });
+
   const mapStops = useMemo<MapStop[]>(
     () =>
       stops.map((stop) => ({
@@ -108,6 +136,8 @@ export default function RouteDetailsPage() {
     setPickedPlace(null);
     setStopName('');
     setSearchText('');
+    setManualLat('');
+    setManualLng('');
     setShowStopEditor(true);
   };
 
@@ -121,6 +151,8 @@ export default function RouteDetailsPage() {
     });
     setStopName(stop.name);
     setSearchText(stop.name);
+    setManualLat(String(stop.latitude));
+    setManualLng(String(stop.longitude));
     setShowStopEditor(true);
   };
 
@@ -130,6 +162,15 @@ export default function RouteDetailsPage() {
     setPickedPlace(null);
     setStopName('');
     setSearchText('');
+    setManualLat('');
+    setManualLng('');
+  };
+
+  const openRouteEditor = () => {
+    setEditName(route.data?.name ?? '');
+    setEditFromCity(route.data?.from_city ?? '');
+    setEditToCity(route.data?.to_city ?? '');
+    setShowRouteEditor(true);
   };
 
   const reorderStop = (stop: Stop, direction: -1 | 1) => {
@@ -146,26 +187,48 @@ export default function RouteDetailsPage() {
     try {
       const place = await reverseLookup(lat, lng);
       setPickedPlace(place);
+      setManualLat(String(lat));
+      setManualLng(String(lng));
       if (!stopName.trim()) {
         setStopName(place.shortLabel);
       }
       toast.success('Stop location selected from map.');
     } catch {
-      toast.error('Could not name that map point.');
+      setPickedPlace({ label: `${lat.toFixed(6)}, ${lng.toFixed(6)}`, shortLabel: `Point`, latitude: lat, longitude: lng });
+      setManualLat(String(lat));
+      setManualLng(String(lng));
+      toast.success('Coordinates set from map click.');
     }
   };
 
+  const applyManualCoords = () => {
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      toast.error('Enter valid latitude (-90 to 90) and longitude (-180 to 180).');
+      return;
+    }
+    setPickedPlace({
+      label: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+      shortLabel: stopName.trim() || `Stop`,
+      latitude: lat,
+      longitude: lng,
+    });
+    toast.success('Manual coordinates applied.');
+  };
+
   const saveStop = () => {
-    if (!pickedPlace) {
-      toast.error('Select a stop by search or map first.');
+    const placeToUse = pickedPlace;
+    if (!placeToUse) {
+      toast.error('Select a stop by search, map click, or enter manual coordinates.');
       return;
     }
 
     const payload = {
-      name: stopName.trim() || pickedPlace.shortLabel,
+      name: stopName.trim() || placeToUse.shortLabel,
       sequence_number: editingStop?.sequence_number ?? nextSequence,
-      latitude: pickedPlace.latitude,
-      longitude: pickedPlace.longitude,
+      latitude: placeToUse.latitude,
+      longitude: placeToUse.longitude,
       trigger_radius_km: Number(editingStop?.trigger_radius_km ?? '10'),
     };
 
@@ -175,6 +238,30 @@ export default function RouteDetailsPage() {
     }
 
     addStop.mutate(payload);
+  };
+
+  const handleDeleteRoute = () => {
+    if (confirm(`Delete route "${route.data?.name}"? This cannot be undone.`)) {
+      deleteRoute.mutate();
+    }
+  };
+
+  const handleSaveRoute = () => {
+    if (!editName.trim()) {
+      toast.error('Route name is required.');
+      return;
+    }
+    if (!editFromCity.trim() || !editToCity.trim()) {
+      toast.error('Both From and To cities are required.');
+      return;
+    }
+    updateRoute.mutate({
+      name: editName.trim(),
+      from_city: editFromCity.trim(),
+      to_city: editToCity.trim(),
+      is_published: false,
+      source: 'scratch',
+    });
   };
 
   return (
@@ -188,7 +275,7 @@ export default function RouteDetailsPage() {
     >
       <div className="mx-auto max-w-[1260px] space-y-6">
         <Link href="/operator/routes" className="inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#dbeafe] transition hover:border-white/20 hover:bg-white/10">
-          Back to route builder
+          Back to routes
         </Link>
 
         <div className="flex flex-col gap-4 rounded-[32px] border border-white/10 bg-[#081120]/80 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)] backdrop-blur lg:flex-row lg:items-end lg:justify-between">
@@ -199,12 +286,27 @@ export default function RouteDetailsPage() {
               {route.data?.from_city} to {route.data?.to_city}
             </p>
           </div>
-          <button
-            onClick={openNewStop}
-            className="rounded-2xl bg-[#f97316] px-5 py-3 text-sm font-extrabold text-white shadow-[0_18px_40px_rgba(249,115,22,0.25)]"
-          >
-            Add Stop
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={openRouteEditor}
+              className="rounded-2xl border border-[#38bdf8]/20 bg-[#38bdf8]/10 px-5 py-3 text-sm font-extrabold text-[#7dd3fc]"
+            >
+              Edit Route
+            </button>
+            <button
+              onClick={handleDeleteRoute}
+              disabled={deleteRoute.isPending}
+              className="rounded-2xl border border-[#ef4444]/20 bg-[#ef4444]/10 px-5 py-3 text-sm font-extrabold text-[#fca5a5] disabled:opacity-60"
+            >
+              {deleteRoute.isPending ? 'Deleting...' : 'Delete Route'}
+            </button>
+            <button
+              onClick={openNewStop}
+              className="rounded-2xl bg-[#f97316] px-5 py-3 text-sm font-extrabold text-white shadow-[0_18px_40px_rgba(249,115,22,0.25)]"
+            >
+              Add Stop
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
@@ -235,7 +337,9 @@ export default function RouteDetailsPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-extrabold text-white">{stop.name}</p>
-                        <p className="mt-1 text-xs text-[#94a3b8]">Radius {stop.trigger_radius_km} km</p>
+                        <p className="mt-1 text-xs text-[#94a3b8]">
+                          Radius {stop.trigger_radius_km} km &middot; {stop.latitude.toFixed(4)}, {stop.longitude.toFixed(4)}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -274,110 +378,211 @@ export default function RouteDetailsPage() {
             )}
           </div>
         </div>
-      </div>
 
-      {showStopEditor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#081120] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#7dd3fc]">Stop Editor</p>
-                <h2 className="mt-2 text-2xl font-black text-white">{editingStop ? 'Update stop' : 'Add a new stop'}</h2>
-                <p className="mt-2 text-sm text-[#cbd5e1]">Search the place or tap the map. Coordinates stay hidden from the operator.</p>
+        {showRouteEditor && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-[#081120] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#7dd3fc]">Edit Route</p>
+                  <h2 className="mt-2 text-2xl font-black text-white">Update route details</h2>
+                </div>
+                <button
+                  onClick={() => setShowRouteEditor(false)}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#e2e8f0]"
+                >
+                  Close
+                </button>
               </div>
-              <button
-                onClick={resetEditor}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#e2e8f0]"
-              >
-                Close
-              </button>
-            </div>
 
-            <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
-              <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
-                <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Search stop name</label>
-                <input
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="Search village, landmark, or bus stand"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
-                />
-                <div className="space-y-2">
-                  {(stopSearch.data ?? []).map((place) => (
-                    <button
-                      key={`${place.shortLabel}-${place.latitude}-${place.longitude}`}
-                      onClick={() => {
-                        setPickedPlace(place);
-                        setStopName(place.shortLabel);
-                      }}
-                      className="flex w-full items-start justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[#38bdf8]/35 hover:bg-[#0f2036]"
-                    >
-                      <div>
-                        <p className="text-sm font-extrabold text-white">{place.shortLabel}</p>
-                        <p className="mt-1 text-xs text-[#94a3b8]">{place.label}</p>
-                      </div>
-                      <span className="rounded-full bg-[#38bdf8]/10 px-3 py-1 text-xs font-bold text-[#7dd3fc]">Use</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="rounded-[24px] border border-white/10 bg-[#091321] p-4">
-                  <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Stop display name</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Route Name</label>
                   <input
-                    value={stopName}
-                    onChange={(event) => setStopName(event.target.value)}
-                    placeholder="Auto-filled after you select a place"
-                    className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
                   />
-                  {pickedPlace ? (
-                    <p className="mt-3 text-xs text-[#94a3b8]">Selected place: {pickedPlace.label}</p>
-                  ) : (
-                    <p className="mt-3 text-xs text-[#94a3b8]">Select a place from search or by tapping the map.</p>
-                  )}
                 </div>
-
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">From City</label>
+                    <input
+                      value={editFromCity}
+                      onChange={(e) => setEditFromCity(e.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">To City</label>
+                    <input
+                      value={editToCity}
+                      onChange={(e) => setEditToCity(e.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
                   <button
-                    onClick={resetEditor}
+                    onClick={() => setShowRouteEditor(false)}
                     className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#e2e8f0]"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={saveStop}
-                    disabled={addStop.isPending || updateStop.isPending}
+                    onClick={handleSaveRoute}
+                    disabled={updateRoute.isPending}
                     className="rounded-2xl bg-[#f97316] px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60"
                   >
-                    {editingStop ? 'Save changes' : 'Add stop'}
+                    {updateRoute.isPending ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              <div className="rounded-[28px] border border-white/10 bg-[#081321] p-4">
-                <RouteMap
-                  stops={
-                    pickedPlace
-                      ? [
-                          ...mapStops,
-                          {
-                            id: editingStop?.id ?? 'preview',
-                            name: stopName || pickedPlace.shortLabel,
-                            latitude: pickedPlace.latitude,
-                            longitude: pickedPlace.longitude,
-                            sequence_number: editingStop?.sequence_number ?? nextSequence,
-                            trigger_radius_km: editingStop?.trigger_radius_km ?? '10',
-                          },
-                        ]
-                      : mapStops
-                  }
-                  onMapClick={handleMapClick}
-                  height="560px"
-                />
+        {showStopEditor && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#081120] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#7dd3fc]">Stop Editor</p>
+                  <h2 className="mt-2 text-2xl font-black text-white">{editingStop ? 'Update stop' : 'Add a new stop'}</h2>
+                  <p className="mt-2 text-sm text-[#cbd5e1]">Search the place, tap the map, or enter coordinates manually.</p>
+                </div>
+                <button
+                  onClick={resetEditor}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#e2e8f0]"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+                <div className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+                  <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Search stop name</label>
+                  <input
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    placeholder="Search village, landmark, or bus stand"
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                  />
+                  <div className="space-y-2">
+                    {(stopSearch.data ?? []).map((place) => (
+                      <button
+                        key={`${place.shortLabel}-${place.latitude}-${place.longitude}`}
+                        onClick={() => {
+                          setPickedPlace(place);
+                          setStopName(place.shortLabel);
+                          setManualLat(String(place.latitude));
+                          setManualLng(String(place.longitude));
+                        }}
+                        className="flex w-full items-start justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[#38bdf8]/35 hover:bg-[#0f2036]"
+                      >
+                        <div>
+                          <p className="text-sm font-extrabold text-white">{place.shortLabel}</p>
+                          <p className="mt-1 text-xs text-[#94a3b8]">{place.label}</p>
+                        </div>
+                        <span className="rounded-full bg-[#38bdf8]/10 px-3 py-1 text-xs font-bold text-[#7dd3fc]">Use</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="rounded-[24px] border border-white/10 bg-[#091321] p-4">
+                    <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#94a3b8]">Stop display name</label>
+                    <input
+                      value={stopName}
+                      onChange={(event) => setStopName(event.target.value)}
+                      placeholder="Auto-filled after you select a place"
+                      className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                    />
+                    {pickedPlace ? (
+                      <p className="mt-3 text-xs text-[#94a3b8]">Selected place: {pickedPlace.label}</p>
+                    ) : (
+                      <p className="mt-3 text-xs text-[#94a3b8]">Select a place from search, by tapping the map, or enter coordinates below.</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#38bdf8]/15 bg-[#38bdf8]/[0.04] p-4">
+                    <label className="text-xs font-extrabold uppercase tracking-[0.24em] text-[#7dd3fc]">Manual Coordinates</label>
+                    <p className="mt-1 text-[10px] text-[#94a3b8]">Enter latitude and longitude directly if search/map doesn't work.</p>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#94a3b8]">Latitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={manualLat}
+                          onChange={(e) => setManualLat(e.target.value)}
+                          placeholder="e.g. 21.1702"
+                          className="mt-1 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#94a3b8]">Longitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={manualLng}
+                          onChange={(e) => setManualLng(e.target.value)}
+                          placeholder="e.g. 72.8311"
+                          className="mt-1 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-[#475569] focus:border-[#38bdf8]/50 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={applyManualCoords}
+                      disabled={!manualLat.trim() || !manualLng.trim()}
+                      className="mt-3 w-full rounded-2xl bg-[#38bdf8]/15 px-4 py-2.5 text-xs font-extrabold uppercase tracking-[0.16em] text-[#7dd3fc] disabled:opacity-40"
+                    >
+                      Apply Coordinates
+                    </button>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={resetEditor}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-[#e2e8f0]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveStop}
+                      disabled={addStop.isPending || updateStop.isPending}
+                      className="rounded-2xl bg-[#f97316] px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60"
+                    >
+                      {editingStop ? 'Save changes' : 'Add stop'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-white/10 bg-[#081321] p-4">
+                  <RouteMap
+                    stops={
+                      pickedPlace
+                        ? [
+                            ...mapStops,
+                            {
+                              id: editingStop?.id ?? 'preview',
+                              name: stopName || pickedPlace.shortLabel,
+                              latitude: pickedPlace.latitude,
+                              longitude: pickedPlace.longitude,
+                              sequence_number: editingStop?.sequence_number ?? nextSequence,
+                              trigger_radius_km: editingStop?.trigger_radius_km ?? '10',
+                            },
+                          ]
+                        : mapStops
+                    }
+                    onMapClick={handleMapClick}
+                    height="560px"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

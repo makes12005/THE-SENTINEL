@@ -213,5 +213,7 @@ export const ListTripsQuerySchema = z.object({
     .union([z.boolean(), z.enum(['true', 'false'])])
     .optional()
     .transform((value) => value === true || value === 'true'),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 export type ListTripsQuery = z.infer<typeof ListTripsQuerySchema>;

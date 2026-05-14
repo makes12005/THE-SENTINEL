@@ -1,232 +1,96 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
-import '../../../core/auth/session_notifier.dart';
 import '../../../core/storage/secure_storage.dart';
-import '../../../core/network/api_client.dart';
 
-// ── State ─────────────────────────────────────────────────────────────────────
+final authRepositoryProvider = Provider((ref) => AuthRepository());
 
-class AuthState {
-  final bool isLoading;
-  final String? error;
-  final bool isAuthenticated;
-  final String? role;
-  final String? userId;
-  final String? userName;
-  final String? tempToken; // For new user registration flow
-  final String? identifier; // Store email/phone during OTP flow
+final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
+  return AuthController(ref.read(authRepositoryProvider));
+});
 
-  const AuthState({
-    this.isLoading = false,
-    this.error,
-    this.isAuthenticated = false,
-    this.role,
-    this.userId,
-    this.userName,
-    this.tempToken,
-    this.identifier,
-  });
+final userProfileProvider = FutureProvider<Map<String, String?>>((ref) async {
+  final name = await SecureStorage.getUserName();
+  final role = await SecureStorage.getUserRole();
+  final id = await SecureStorage.getUserId();
+  return {
+    'name': name,
+    'role': role,
+    'id': id,
+  };
+});
 
-  AuthState copyWith({
-    bool? isLoading,
-    String? error,
-    bool? isAuthenticated,
-    String? role,
-    String? userId,
-    String? userName,
-    String? tempToken,
-    String? identifier,
-  }) {
-    return AuthState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error, // null clears error
-      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      role: role ?? this.role,
-      userId: userId ?? this.userId,
-      userName: userName ?? this.userName,
-      tempToken: tempToken ?? this.tempToken,
-      identifier: identifier ?? this.identifier,
-    );
-  }
-}
+class AuthController extends StateNotifier<AsyncValue<void>> {
+  final AuthRepository _repository;
+  
+  AuthController(this._repository) : super(const AsyncValue.data(null));
 
-// ── Notifier ──────────────────────────────────────────────────────────────────
-
-class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository _repo;
-
-  AuthNotifier(this._repo) : super(const AuthState());
-
-  String _normalizeContact(String value) {
-    final raw = value.trim();
-    final isEmail = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(raw);
-    if (isEmail) return raw.toLowerCase();
-
-    var digits = raw.replaceAll(RegExp(r'\D'), '');
-    if (digits.startsWith('91') && digits.length == 12) {
-      digits = digits.substring(2);
-    }
-    if (digits.length == 10) {
-      return '+91$digits';
-    }
-    if (!raw.startsWith('+91') && raw.startsWith('+')) {
-      return raw;
-    }
-    if (!raw.startsWith('+91') && digits.isNotEmpty) {
-      return '+91$digits';
-    }
-    return raw;
-  }
-
-  void setIdentifier(String identifier) {
-    state = state.copyWith(identifier: identifier, error: null);
-  }
-
-  Future<bool> sendOtp(String identifier) async {
-    final normalized = _normalizeContact(identifier);
-    state =
-        state.copyWith(isLoading: true, error: null, identifier: normalized);
+  Future<bool> login(String contact, String password) async {
+    state = const AsyncValue.loading();
     try {
-      await _repo.sendOtp(normalized);
-      state = state.copyWith(isLoading: false);
+      final response = await _repository.login(contact, password);
+      final data = response['data'];
+      await _saveAuthData(data);
+      state = const AsyncValue.data(null);
       return true;
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
       return false;
     }
   }
 
-  Future<bool> loginWithPassword({
-    required String contact,
-    required String password,
-  }) async {
-    final normalized = _normalizeContact(contact);
-    state =
-        state.copyWith(isLoading: true, error: null, identifier: normalized);
+  Future<bool> sendOtp(String contact) async {
+    state = const AsyncValue.loading();
     try {
-      final result = await _repo.login(contact: normalized, password: password);
-      return await _handleAuthSuccess(result);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
+      await _repository.sendOtp(contact);
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
       return false;
     }
   }
 
-  /// Returns true if existing user (logged in).
-  /// Returns false if new user (needs signup).
-  /// Throws or sets error if failed.
-  Future<bool?> verifyOtp(String otp) async {
-    if (state.identifier == null) {
-      state =
-          state.copyWith(error: 'Identifier is missing. Please restart login.');
-      return null;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
+  Future<bool> verifyOtp(String contact, String otp) async {
+    state = const AsyncValue.loading();
     try {
-      final result = await _repo.verifyOtp(state.identifier!, otp);
-
-      if (result.isNewUser) {
-        state = state.copyWith(
-          isLoading: false,
-          tempToken: result.tempToken,
-        );
-        return false; // Not fully authenticated yet, needs signup
-      } else {
-        final authResult = result.authResult!;
-        return await _handleAuthSuccess(authResult);
-      }
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
-      return null;
+      final response = await _repository.verifyOtp(contact, otp);
+      final data = response['data'];
+      await _saveAuthData(data);
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
     }
   }
 
-  Future<bool> signup({
-    required String name,
-    required String password,
-    String? inviteCode,
-  }) async {
-    if (state.tempToken == null) {
-      state =
-          state.copyWith(error: 'Session expired. Please verify OTP again.');
-      return false;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
+  Future<bool> joinAgency(String agencyCode) async {
+    state = const AsyncValue.loading();
     try {
-      final result = await _repo.signup(
-        tempToken: state.tempToken!,
-        name: name,
-        password: password,
-        inviteCode: inviteCode,
-      );
-
-      return await _handleAuthSuccess(result);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: ApiClient.parseError(e));
+      await _repository.joinAgency(agencyCode);
+      state = const AsyncValue.data(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
       return false;
     }
-  }
-
-  Future<bool> _handleAuthSuccess(AuthResult result) async {
-    const allowedRoles = ['conductor', 'driver'];
-
-    if (result.role.isEmpty) {
-      state = state.copyWith(
-        isLoading: false,
-        error:
-            'Account not found / એકાઉન્ટ મળ્યું નહીં. Please check your credentials.',
-      );
-      return false;
-    }
-
-    if (!allowedRoles.contains(result.role)) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'This app is for conductors and drivers only.',
-      );
-      return false;
-    }
-
-    await SecureStorage.saveTokens(
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-    );
-    await SecureStorage.saveUserInfo(
-      role: result.role,
-      userId: result.userId,
-      userName: result.userName,
-    );
-
-    state = state.copyWith(
-      isLoading: false,
-      isAuthenticated: true,
-      role: result.role,
-      userId: result.userId,
-      userName: result.userName,
-      tempToken: null, // Clear temp token
-    );
-
-    // Trigger GoRouter to re-evaluate its redirect guard
-    SessionNotifier.instance.invalidate();
-
-    return true;
   }
 
   Future<void> logout() async {
-    await _repo.logout();
-    state = const AuthState();
-    // Notify GoRouter to re-run its redirect guard → /welcome
-    SessionNotifier.instance.invalidate();
+    state = const AsyncValue.loading();
+    await _repository.logout();
+    state = const AsyncValue.data(null);
+  }
+
+  Future<void> _saveAuthData(Map<String, dynamic> data) async {
+    if (data.containsKey('access_token')) await SecureStorage.saveToken(data['access_token']);
+    if (data.containsKey('refresh_token')) await SecureStorage.saveRefreshToken(data['refresh_token']);
+    if (data.containsKey('user')) {
+      final user = data['user'];
+      if (user['id'] != null) await SecureStorage.saveUserId(user['id'].toString());
+      if (user['role'] != null) await SecureStorage.saveUserRole(user['role']);
+      if (user['name'] != null) await SecureStorage.saveUserName(user['name']);
+      if (user['agency_id'] != null) await SecureStorage.saveAgencyId(user['agency_id'].toString());
+    }
   }
 }
-
-// ── Providers ─────────────────────────────────────────────────────────────────
-
-final authRepositoryProvider =
-    Provider<AuthRepository>((_) => AuthRepository());
-
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(ref.read(authRepositoryProvider)),
-);

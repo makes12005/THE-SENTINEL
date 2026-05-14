@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { StatusBadge, TableSkeleton } from '@/components/ui';
 import { getSocket } from '@/lib/socket';
-import { get, post, put } from '@/lib/api';
+import { del, get, post, put } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 
 interface Trip {
@@ -219,7 +219,9 @@ function ReassignTripModal({ trip, onClose }: { trip: Trip; onClose: () => void 
       </form>
     </div>
   );
-}type TabType = 'hub' | 'active' | 'upcoming' | 'completed';
+}
+
+type TabType = 'hub' | 'active' | 'upcoming' | 'completed' | 'expired';
 
 export default function TripsPage() {
   const { user } = useAuthStore();
@@ -233,15 +235,14 @@ export default function TripsPage() {
 
   const trips = useQuery<Trip[]>({ queryKey: ['trips'], queryFn: () => get('/api/trips'), refetchInterval: 30000 });
 
-  useEffect(() => {
-    const socket = getSocket();
-    const handler = (payload: { tripName: string; assignedBy: string }) => {
-      toast.success(`Trip ${payload.tripName} assigned by ${payload.assignedBy}`);
+  const deleteTrip = useMutation({
+    mutationFn: (id: string) => del(`/api/trips/${id}`),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
-    };
-    socket.on('trip_assigned', handler);
-    return () => { socket.off('trip_assigned', handler); };
-  }, [queryClient]);
+      toast.success('Trip deleted');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.error?.message ?? 'Cannot delete this trip'),
+  });
 
   const allTrips = (trips.data ?? []).filter((trip) => {
     if (statusFilter && trip.status !== statusFilter) return false;
@@ -253,9 +254,10 @@ export default function TripsPage() {
     }
     return true;
   });
-  const activeTrips = allTrips.filter((t) => ['active', 'in_progress', 'started'].includes(t.status));
-  const upcomingTrips = allTrips.filter((t) => ['scheduled', 'pending', 'confirmed'].includes(t.status));
+  const activeTrips    = allTrips.filter((t) => ['active', 'in_progress', 'started'].includes(t.status));
+  const upcomingTrips  = allTrips.filter((t) => ['scheduled', 'pending', 'confirmed'].includes(t.status));
   const completedTrips = allTrips.filter((t) => ['completed', 'done', 'finished'].includes(t.status));
+  const expiredTrips   = allTrips.filter((t) => t.status === 'expired');
   const pendingUploads = allTrips.filter((t) => t.passenger_count === 0 && t.status !== 'completed');
 
   const TripTable = ({ data }: { data: Trip[] }) => (
@@ -288,8 +290,19 @@ export default function TripsPage() {
                 <td className="px-6 py-5"><StatusBadge status={trip.status} /></td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex justify-end gap-5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                    {user?.id === trip.owned_by_operator_id && (
+                    {/* Reassign: owner only */}
+                    {user?.role === 'owner' && (
                       <button onClick={() => setSelectedTrip(trip)} className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#ffb68b] hover:text-[#ffdcca] transition-colors">Reassign</button>
+                    )}
+                    {/* Delete: own trips or owner, only for scheduled/expired */}
+                    {(user?.id === trip.owned_by_operator_id || user?.role === 'owner') && ['scheduled', 'expired'].includes(trip.status) && (
+                      <button
+                        onClick={() => { if (confirm('Delete this trip? This cannot be undone.')) deleteTrip.mutate(trip.id); }}
+                        disabled={deleteTrip.isPending}
+                        className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#ffb4ab] hover:text-[#ff897d] transition-colors disabled:opacity-40"
+                      >
+                        Delete
+                      </button>
                     )}
                     <Link href={`/operator/trips/${trip.id}`} className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#a3cbf2] hover:text-[#cee5ff] flex items-center gap-1.5 transition-colors">
                       MISSION DATA <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
@@ -343,6 +356,7 @@ export default function TripsPage() {
               <option value="scheduled">SCHEDULED</option>
               <option value="active">ACTIVE</option>
               <option value="completed">COMPLETED</option>
+              <option value="expired">EXPIRED</option>
             </select>
             <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#8c9198] pointer-events-none">expand_more</span>
           </div>
@@ -355,10 +369,11 @@ export default function TripsPage() {
         {/* Tab pills */}
         <div className="flex gap-1 border-b border-[#42474e]/30">
           {([
-            { key: 'hub', label: 'TACTICAL OVERVIEW', icon: 'grid_view' },
-            { key: 'active', label: `ACTIVE MISSIONS (${activeTrips.length})`, icon: 'explore' },
-            { key: 'upcoming', label: `UPCOMING (${upcomingTrips.length})`, icon: 'calendar_month' },
-            { key: 'completed', label: `LOGGED (${completedTrips.length})`, icon: 'check_circle' },
+          { key: 'hub',       label: 'TACTICAL OVERVIEW',                     icon: 'grid_view'      },
+            { key: 'active',   label: `ACTIVE MISSIONS (${activeTrips.length})`,   icon: 'explore'        },
+            { key: 'upcoming', label: `UPCOMING (${upcomingTrips.length})`,          icon: 'calendar_month' },
+            { key: 'completed',label: `LOGGED (${completedTrips.length})`,           icon: 'check_circle'   },
+            { key: 'expired',  label: `EXPIRED (${expiredTrips.length})`,            icon: 'timer_off'      },
           ] as { key: TabType; label: string; icon: string }[]).map((tab) => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-3 px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] border-b-2 transition-all duration-500 relative group ${activeTab === tab.key
@@ -451,14 +466,39 @@ export default function TripsPage() {
                 </div>
               </div>
             </Link>
+
+            {/* Expired */}
+            <button onClick={() => setActiveTab('expired')}
+              className="group relative bg-[#181c20]/80 rounded-[2rem] p-10 border border-[#42474e]/30 hover:border-[#FF7A00]/40 hover:bg-[#1c2024] transition-all duration-500 text-left overflow-hidden h-64 flex flex-col justify-between shadow-2xl backdrop-blur-md opacity-80 hover:opacity-100 w-full">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#FF7A00]/5 blur-[60px] rounded-full group-hover:bg-[#FF7A00]/10 transition-all duration-700" />
+              <div className="flex justify-between items-start relative z-10">
+                <div className="w-16 h-16 rounded-2xl bg-[#0b0f12] border border-[#42474e]/50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                  <span className="material-symbols-outlined text-[#FF7A00] text-[32px]">timer_off</span>
+                </div>
+                {expiredTrips.length > 0 && (
+                  <div className="flex items-center gap-2 bg-[#FF7A00]/10 px-4 py-2 rounded-full border border-[#FF7A00]/30">
+                    <div className="w-2 h-2 rounded-full bg-[#FF7A00]" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF7A00]">NEEDS ACTION</span>
+                  </div>
+                )}
+              </div>
+              <div className="relative z-10">
+                <h2 className="text-2xl font-black text-[#e0e3e8] mb-2 group-hover:text-[#FF7A00] transition-colors tracking-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>EXPIRED</h2>
+                <div className="flex items-baseline gap-3">
+                  <span className="font-mono text-4xl font-black text-[#FF7A00]">{expiredTrips.length}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8c9198]">TRIPS NOT STARTED</span>
+                </div>
+              </div>
+            </button>
           </div>
         )}
 
         {/* List views */}
         {activeTab !== 'hub' && (
           trips.isLoading ? <div className="bg-[#181c20] rounded-2xl border border-[#42474e]/20 p-10 shadow-2xl"><TableSkeleton rows={8} /></div>
-            : activeTab === 'active' ? <TripTable data={activeTrips} />
-            : activeTab === 'upcoming' ? <TripTable data={upcomingTrips} />
+            : activeTab === 'active'    ? <TripTable data={activeTrips} />
+            : activeTab === 'upcoming'  ? <TripTable data={upcomingTrips} />
+            : activeTab === 'expired'   ? <TripTable data={expiredTrips} />
             : <TripTable data={completedTrips} />
         )}
       </div>

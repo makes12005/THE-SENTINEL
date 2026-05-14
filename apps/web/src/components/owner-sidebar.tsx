@@ -14,15 +14,21 @@ interface NavItem {
   label: string;
 }
 
-const navItems: NavItem[] = [
-  { href: '/owner/dashboard', icon: 'grid_view',               label: 'Overview'      },
+const ownerNavItems: NavItem[] = [
+  { href: '/owner/dashboard', icon: 'grid_view',               label: 'Dashboard'      },
   { href: '/owner/operators', icon: 'badge',                 label: 'Operators'     },
-  { href: '/owner/trips',     icon: 'directions_bus',       label: 'Fleet / Trips' },
-  { href: '/owner/logs',      icon: 'history',               label: 'Logs'          },
-  { href: '/owner/resources', icon: 'warehouse',            label: 'Resources'    },
-  { href: '/owner/wallet',    icon: 'account_balance_wallet', label: 'Trip Wallet' },
-  { href: '/owner/schedules', icon: 'calendar_month',       label: 'Schedules'     },
-  { href: '/owner/analytics', icon: 'insights',              label: 'Analytics'    },
+  { href: '/owner/trips',     icon: 'directions_bus',       label: 'Trip Monitoring' },
+  { href: '/owner/logs',      icon: 'history',               label: 'Global Logs'          },
+  { href: '/owner/wallet',    icon: 'account_balance_wallet', label: 'Wallet' },
+];
+
+const operatorNavItems: NavItem[] = [
+  { href: '/operator/routes',    icon: 'route',           label: 'Routes' },
+  { href: '/operator/templates', icon: 'bookmarks',       label: 'Templates' },
+  { href: '/operator/trips',     icon: 'directions_bus',  label: 'Trips (own trips)' },
+  { href: '/operator/monitor',   icon: 'radar',           label: 'Live Monitor' },
+  { href: '/operator/resources', icon: 'warehouse',       label: 'Resources' },
+  { href: '/operator/logs',      icon: 'receipt_long',    label: 'Alert Logs' },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -73,30 +79,68 @@ export default function OwnerSidebar() {
       </div>
 
       {/* Main Nav */}
-      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 no-scrollbar">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.6875rem] font-bold uppercase tracking-wider transition-all ${
-                active
-                  ? 'bg-[#1e293b] text-[#F1F5F9]'
-                  : 'text-[#475569] hover:bg-[#1e293b]/50 hover:text-[#94a3b8]'
-              }`}
-            >
-              <span
-                className={`material-symbols-outlined text-[18px] transition-colors ${
-                  active ? 'text-[#6C63FF]' : ''
-                }`}
-              >
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-4 no-scrollbar">
+        <div>
+          <h2 className="px-3 mb-2 text-[0.65rem] font-black uppercase tracking-widest text-[#64748b]">
+            Owner Section
+          </h2>
+          <div className="space-y-0.5">
+            {ownerNavItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.6875rem] font-bold uppercase tracking-wider transition-all ${
+                    active
+                      ? 'bg-[#1e293b] text-[#F1F5F9]'
+                      : 'text-[#475569] hover:bg-[#1e293b]/50 hover:text-[#94a3b8]'
+                  }`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-[18px] transition-colors ${
+                      active ? 'text-[#6C63FF]' : ''
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="px-3 mb-2 text-[0.65rem] font-black uppercase tracking-widest text-[#64748b]">
+            My Operations
+          </h2>
+          <div className="space-y-0.5">
+            {operatorNavItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[0.6875rem] font-bold uppercase tracking-wider transition-all ${
+                    active
+                      ? 'bg-[#1e293b] text-[#F1F5F9]'
+                      : 'text-[#475569] hover:bg-[#1e293b]/50 hover:text-[#94a3b8]'
+                  }`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-[18px] transition-colors ${
+                      active ? 'text-[#6C63FF]' : ''
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       {/* Bottom Nav */}
