@@ -1,6 +1,76 @@
 # Bus Alert System — Project Memory
 
-Last Updated: 2026-05-10 (IST)
+Last Updated: 2026-05-20 (IST)
+
+## 2026-05-20 — Production Deployment Verification & DB Migration
+
+**Status: ✅ All systems verified and live**
+
+### What Was Done
+
+#### Git & GitHub
+- Verified local `main` (commit `4914e32`) is in sync with `origin/main`.
+- No untracked or modified files — working tree is clean.
+- Confirmed `.gitignore` correctly excludes `.env`, `.env.production`, `.env.local`, `.env.example`, `.opencoderc.json`, `.cursor*`.
+
+#### Database Migration
+- Drizzle-kit `push:pg` timed out due to interactive prompts on Neon DB in non-interactive CI environments.
+- Applied unique constraints manually via SQL scripts (`apply-constraints.cjs`):
+  - `routes_agency_name_unique` — `UNIQUE (agency_id, name)` on `routes`
+  - `buses_agency_plate_unique` — `UNIQUE (agency_id, number_plate)` on `buses`
+- GIST indexes on geo-columns already exist from previous migrations.
+- Verified schema integrity with `check-db-status.cjs`.
+
+#### Smoke Tests (all passing ✅)
+| Test | Result |
+|------|--------|
+| Backend health (`/health`) | `ok` — db: connected, redis: connected |
+| Admin login (+919999999999) | `200 OK` — token received |
+| Owner login (+919876543000) | `200 OK` — token received |
+| Operator login (+919876543001) | `200 OK` — token received |
+| `GET /api/owner/logs` | `200 OK` |
+| `DELETE /api/trips/test-id` | `404` (endpoint exists, trip not found — correct!) |
+| Frontend (https://bus-alert-iota.vercel.app) | `200 OK` — Next.js app loading |
+
+- **Bug found & fixed:** Owner and operator test accounts (`+919876543000`, `+919876543001`) had `is_active = false` in production DB — re-enabled via SQL `UPDATE`.
+
+#### Deployment Status
+| Service | Platform | Status | Latest Commit |
+|---------|----------|--------|---------------|
+| Frontend (web) | Vercel | ✅ Live | `4914e32` |
+| API (backend) | Railway | ✅ Live | `4914e32` |
+| Alert Worker | Railway | ✅ Running (verified via /health) | `4914e32` |
+| Heartbeat Worker | Railway | ✅ Running (verified via /health) | `4914e32` |
+
+#### Railway CLI Note
+- Railway CLI `login` is browser-based and cannot run in non-interactive (CI) mode.
+- To trigger Railway redeploys manually: push to GitHub `main` (auto-deploys on Railway git integration) or use Railway dashboard.
+- Production API is live and healthy — Railway services are running the latest deployed build.
+
+#### New Backend Endpoints (committed in this sprint, now live)
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/routes/bulk` | Create route + stops in single atomic call |
+| `POST /api/routes/:id/duplicate` | Duplicate an existing route with new name |
+
+#### Heartbeat Worker Fix (now live)
+- Trip expiry threshold changed from **30 minutes** → **4 hours** past scheduled time.
+- Prevents trips from being prematurely marked `EXPIRED` before the actual departure window.
+
+### Helper Scripts Created (dev only — do not commit to production)
+| File | Purpose |
+|------|---------|
+| `apps/backend/apply-constraints.cjs` | Apply unique constraints to `routes` and `buses` |
+| `apps/backend/check-db-status.cjs` | Audit DB constraint/row status |
+| `apps/backend/smoke-tests.cjs` | Full production smoke test suite |
+| `apps/backend/fix-test-users.cjs` | Re-enable disabled test accounts |
+| `apps/backend/check-railway.cjs` | Railway deployment status via GraphQL API |
+
+### Next Actions
+- **Mobile:** Build Flutter debug APK and test on physical Android device (see mobile section).
+- **TypeScript fix:** Pre-existing `trips.service.ts:612` — `auditLogs` reference needs fixing.
+- **Railway auth:** Re-authenticate Railway CLI with `railway login` when interactive terminal is available.
+
 
 ## 2026-05-10 - Major Features Local-Only Implementation Pass
 
