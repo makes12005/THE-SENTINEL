@@ -99,6 +99,25 @@ export const CreateRouteSchema = z
   });
 export type CreateRouteRequest = z.infer<typeof CreateRouteSchema>;
 
+export const RouteStopInputSchema = z.object({
+  name: z.string().min(1).max(255),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  sequence: z.number().int().positive().optional(),
+  trigger_radius_km: z.number().positive().optional(),
+});
+export type RouteStopInput = z.infer<typeof RouteStopInputSchema>;
+
+export const CreateRouteWithStopsSchema = z.object({
+  name: z.string().min(1).max(255),
+  from_city: z.string().min(1).max(255),
+  to_city: z.string().min(1).max(255),
+  is_published: z.boolean().optional(),
+  source: RouteSourceEnum.optional(),
+  stops: z.array(RouteStopInputSchema).min(2).max(50),
+});
+export type CreateRouteWithStopsRequest = z.infer<typeof CreateRouteWithStopsSchema>;
+
 export const GeoLibraryCreateSchema = z.object({
   name: z.string().min(1).max(255),
   latitude: z.number().min(-90).max(90),

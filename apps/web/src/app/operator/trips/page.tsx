@@ -191,42 +191,11 @@ function CreateTripModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ReassignTripModal({ trip, onClose }: { trip: Trip; onClose: () => void }) {
-  const qc = useQueryClient();
-  const [assignedOperatorId, setAssignedOperatorId] = useState(trip.assigned_operator_id ?? '');
-  const operators = useQuery<Operator[]>({ queryKey: ['agency-operators'], queryFn: () => get('/api/agency/operators') });
-  const mutation = useMutation({
-    mutationFn: () => put(`/api/trips/${trip.id}/reassign`, { assigned_operator_id: assignedOperatorId }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['trips'] }); toast.success('Trip reassigned'); onClose(); },
-    onError: (err: any) => toast.error(err?.response?.data?.error?.message ?? 'Failed to reassign trip'),
-  });
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-      <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="w-full max-w-md rounded-xl border border-[#42474e]/40 bg-[#181c20] p-8 shadow-2xl">
-        <h2 className="mb-1 text-lg font-black text-[#cee5ff]" style={{ fontFamily: 'Manrope, sans-serif' }}>REASSIGN TRIP</h2>
-        <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#8c9198]">Current: {trip.assigned_operator_name || 'Unassigned'}</p>
-        <select required value={assignedOperatorId} onChange={(e) => setAssignedOperatorId(e.target.value)}
-          className="w-full bg-[#0b0f12] border border-[#42474e]/60 rounded-lg px-4 py-3 text-[#e0e3e8] text-sm focus:outline-none focus:border-[#a3cbf2]/50 transition-colors">
-          <option value="">Select operator</option>
-          {(operators.data ?? []).filter((o) => o.is_active).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-        </select>
-        <div className="mt-6 flex gap-3">
-          <button type="button" onClick={onClose} className="flex-1 rounded-lg bg-[#1c2024] border border-[#42474e]/50 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#c2c7ce] hover:bg-[#262a2f] transition-colors">Cancel</button>
-          <button type="submit" disabled={mutation.isPending} className="flex-1 rounded-lg bg-[#a3cbf2] py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-[#003352] hover:bg-[#cee5ff] transition-colors disabled:opacity-50">
-            {mutation.isPending ? 'Saving...' : 'Confirm'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 type TabType = 'hub' | 'active' | 'upcoming' | 'completed' | 'expired';
 
 export default function TripsPage() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('hub');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
@@ -290,10 +259,6 @@ export default function TripsPage() {
                 <td className="px-6 py-5"><StatusBadge status={trip.status} /></td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex justify-end gap-5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                    {/* Reassign: owner only */}
-                    {user?.role === 'owner' && (
-                      <button onClick={() => setSelectedTrip(trip)} className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#ffb68b] hover:text-[#ffdcca] transition-colors">Reassign</button>
-                    )}
                     {/* Delete: own trips or owner, only for scheduled/expired */}
                     {(user?.id === trip.owned_by_operator_id || user?.role === 'owner') && ['scheduled', 'expired'].includes(trip.status) && (
                       <button
@@ -502,8 +467,6 @@ export default function TripsPage() {
             : <TripTable data={completedTrips} />
         )}
       </div>
-
-      {selectedTrip && <ReassignTripModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} />}
     </div>
   );
 }

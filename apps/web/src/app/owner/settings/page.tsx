@@ -84,12 +84,20 @@ export default function OwnerSettingsPage() {
           <p className="text-[0.625rem] font-bold uppercase tracking-[0.15em] text-[#475569]">Velox Fleet Noir</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="h-8 w-8 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#475569]">
+          <a 
+            href="/owner/logs" 
+            className="h-8 w-8 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#475569] hover:text-[#F1F5F9] hover:bg-[#262a2f] transition-colors"
+            title="View Alert Logs"
+          >
             <span className="material-symbols-outlined text-[18px]">notifications</span>
-          </button>
-          <div className="h-8 w-8 rounded-full bg-[#6C63FF]/30 flex items-center justify-center">
+          </a>
+          <a 
+            href="/owner/dashboard" 
+            className="h-8 w-8 rounded-full bg-[#6C63FF]/30 flex items-center justify-center hover:bg-[#6C63FF]/50 transition-colors"
+            title="Dashboard"
+          >
             <span className="material-symbols-outlined text-[14px] text-[#6C63FF]">person</span>
-          </div>
+          </a>
         </div>
       </header>
 

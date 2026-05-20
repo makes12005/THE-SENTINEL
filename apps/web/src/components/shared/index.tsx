@@ -44,6 +44,7 @@ export function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     active:    'bg-[#002516]/60 text-[#7dffd4] border border-[#7dffd4]/30',
     scheduled: 'bg-[#0b3c5d]/60 text-[#a3cbf2] border border-[#a3cbf2]/30',
+    expired:   'bg-[#93000a]/30 text-[#ffb4ab] border border-[#93000a]/30',
     completed: 'bg-[#1c2024] text-[#8c9198] border border-[#42474e]/30',
   };
   return (
@@ -66,6 +67,8 @@ export interface TripRow {
   passenger_count?: number;
   /** e.g. "Alerts: 4 sent · 1 failed · 12 pax" — owner trip monitoring */
   alert_summary?: string;
+  /** Mark trip as expired/overdue */
+  isExpired?: boolean;
 }
 
 interface TripTableProps {
@@ -98,51 +101,59 @@ export function TripTable({ trips, basePath, showOperator, extraActions }: TripT
           </tr>
         </thead>
         <tbody>
-          {trips.map((trip) => (
-            <tr key={trip.id} className="bg-[#181c20] hover:bg-[#1c2024] transition-colors">
-              <td className="px-6 py-4 rounded-l-xl font-bold text-[#e0e2e8] text-sm">
-                <div>
-                  {trip.route
-                    ? `${trip.route.from_city} → ${trip.route.to_city}`
-                    : <span className="text-[#8c9198]">—</span>}
-                  {trip.route?.name ? (
-                    <p className="text-[0.625rem] font-normal text-[#8c9198] mt-0.5">{trip.route.name}</p>
-                  ) : null}
-                  {trip.alert_summary ? (
-                    <p className="text-[0.625rem] font-normal text-[#8c9198] mt-0.5">{trip.alert_summary}</p>
-                  ) : null}
-                </div>
-              </td>
-              {showOperator && (
-                <td className="px-6 py-4 text-sm text-[#c2c7ce]">
-                  <p>{trip.operator_name ?? '—'}</p>
-                  {trip.conductor?.name ? (
-                    <p className="text-[0.625rem] text-[#8c9198] mt-1">Conductor · {trip.conductor.name}</p>
-                  ) : null}
-                  {trip.passenger_count !== undefined ? (
-                    <p className="text-[0.625rem] text-[#8c9198] mt-1">{trip.passenger_count} passengers</p>
-                  ) : null}
+          {trips.map((trip) => {
+            const isExpired = trip.isExpired || trip.status === 'expired' || (trip.status === 'scheduled' && new Date(trip.scheduled_date) < new Date());
+            return (
+              <tr key={trip.id} className={`transition-colors ${isExpired ? 'bg-gradient-to-r from-[#93000a]/10 to-[#181c20] hover:from-[#93000a]/20' : 'bg-[#181c20] hover:bg-[#1c2024]'}`}>
+                <td className={`px-6 py-4 font-bold text-[#e0e2e8] text-sm ${isExpired ? 'rounded-l-xl' : 'rounded-l-xl'}`}>
+                  <div>
+                    {trip.route
+                      ? `${trip.route.from_city} → ${trip.route.to_city}`
+                      : <span className="text-[#8c9198]">—</span>}
+                    {trip.route?.name ? (
+                      <p className="text-[0.625rem] font-normal text-[#8c9198] mt-0.5">{trip.route.name}</p>
+                    ) : null}
+                    {trip.alert_summary ? (
+                      <p className="text-[0.625rem] font-normal text-[#8c9198] mt-0.5">{trip.alert_summary}</p>
+                    ) : null}
+                  </div>
                 </td>
-              )}
-              <td className="px-6 py-4 text-xs font-mono text-[#8c9198]">
-                {trip.scheduled_date}
-              </td>
-              <td className="px-6 py-4">
-                <StatusBadge status={trip.status} />
-              </td>
-              <td className="px-6 py-4 rounded-r-xl text-right">
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <Link
-                    href={`${basePath}/${trip.id}`}
-                    className="text-xs text-[#a3cbf2] hover:underline uppercase tracking-wider"
-                  >
-                    View →
-                  </Link>
-                  {extraActions?.(trip)}
-                </div>
-              </td>
-            </tr>
-          ))}
+                {showOperator && (
+                  <td className="px-6 py-4 text-sm text-[#c2c7ce]">
+                    <p>{trip.operator_name ?? '—'}</p>
+                    {trip.conductor?.name ? (
+                      <p className="text-[0.625rem] text-[#8c9198] mt-1">Conductor · {trip.conductor.name}</p>
+                    ) : null}
+                    {trip.passenger_count !== undefined ? (
+                      <p className="text-[0.625rem] text-[#8c9198] mt-1">{trip.passenger_count} passengers</p>
+                    ) : null}
+                  </td>
+                )}
+                <td className="px-6 py-4 text-xs font-mono">
+                  <span className={isExpired ? 'text-[#ffb4ab]' : 'text-[#8c9198]'}>
+                    {trip.scheduled_date}
+                    {isExpired && trip.status === 'scheduled' && (
+                      <span className="ml-2 text-[9px] font-bold uppercase tracking-wider bg-[#93000a]/30 text-[#ffb4ab] px-1.5 py-0.5 rounded">OVERDUE</span>
+                    )}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <StatusBadge status={trip.status} />
+                </td>
+                <td className="px-6 py-4 rounded-r-xl text-right">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Link
+                      href={`${basePath}/${trip.id}`}
+                      className="text-xs text-[#a3cbf2] hover:underline uppercase tracking-wider"
+                    >
+                      View →
+                    </Link>
+                    {extraActions?.(trip)}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

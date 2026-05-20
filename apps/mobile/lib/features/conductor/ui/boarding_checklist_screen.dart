@@ -1,458 +1,270 @@
+import 'package:bus_alert/core/theme/app_colors.dart';
+import 'package:bus_alert/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../provider/trip_provider.dart';
 
-class BoardingChecklistScreen extends ConsumerStatefulWidget {
+class BoardingChecklistScreen extends StatefulWidget {
   final String tripId;
+
   const BoardingChecklistScreen({super.key, required this.tripId});
 
   @override
-  ConsumerState<BoardingChecklistScreen> createState() => _BoardingChecklistScreenState();
+  State<BoardingChecklistScreen> createState() => _BoardingChecklistScreenState();
 }
 
-class _BoardingChecklistScreenState extends ConsumerState<BoardingChecklistScreen> {
-  final Set<String> _boardedPassengerIds = {};
+class _BoardingChecklistScreenState extends State<BoardingChecklistScreen> {
+  final List<Map<String, dynamic>> _passengers = List.generate(40, (index) => {
+    'id': '${index + 1}',
+    'name': 'Passenger ${index + 1}',
+    'seatNo': index + 1,
+    'pickupPoint': index % 2 == 0 ? 'Stop ${index + 1}' : 'Stop ${index % 5 + 1}',
+    'isBoarded': false,
+  });
+
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+  int get _boardedCount => _passengers.where((p) => p['isBoarded'] as bool).length;
+  int get _totalCount => _passengers.length;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleBoarded(int index) {
+    setState(() {
+      _passengers[index]['isBoarded'] = !_passengers[index]['isBoarded'];
+    });
+  }
+
+  List<Map<String, dynamic>> get _filteredPassengers {
+    if (_searchQuery.isEmpty) return _passengers;
+    return _passengers.where((p) {
+      final name = p['name'].toString().toLowerCase();
+      final seatNo = p['seatNo'].toString();
+      return name.contains(_searchQuery.toLowerCase()) || seatNo.contains(_searchQuery);
+    }).toList();
+  }
+
+  Future<void> _startTrip() async {
+    final unboarded = _totalCount - _boardedCount;
+    if (unboarded > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.surfaceContainer,
+          title: Text('Confirm Start', style: AppTextStyles.headlineSmall),
+          content: Text(
+            '$unboarded passengers not boarded. Continue anyway?',
+            style: AppTextStyles.bodyMedium,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('No', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.tertiaryContainer,
+                foregroundColor: AppColors.onTertiaryContainer,
+              ),
+              child: const Text('Yes, Start'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    context.push('/conductor/active/${widget.tripId}');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final tripAsync = ref.watch(tripDetailsProvider(widget.tripId));
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: AppColors.background,
         leading: IconButton(
-          icon: const Icon(Symbols.arrow_back_rounded, color: AppColors.onSurface),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'BOARDING CHECKLIST',
-          style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.onSurface,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 2,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Boarding Check', style: AppTextStyles.titleMedium),
+            Text(
+              'Ahmedabad → Una',
+              style: AppTextStyles.labelExtraSmall.copyWith(color: AppColors.textOnSurfaceVariant),
+            ),
+          ],
         ),
-        centerTitle: true,
       ),
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      body: Column(
         children: [
-          // Background Gradient
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.0,
-                  colors: [
-                    Color(0x0DFA3CBF2), // Primary with 5% opacity
-                    AppColors.background,
-                  ],
-                ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchQuery = value),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnSurface),
+              decoration: InputDecoration(
+                hintText: 'Search by name or seat...',
+                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
               ),
             ),
           ),
-
-          // Noise Overlay
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.02,
-              child: Image.network(
-                'https://www.transparenttextures.com/patterns/carbon-fibre.png',
-                repeat: ImageRepeat.repeat,
-                errorBuilder: (context, error, stackTrace) => const SizedBox(),
-              ),
-            ),
-          ),
-
-          tripAsync.when(
-            data: (trip) => _buildContent(context, trip),
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-            error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.error))),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, Map<String, dynamic> trip) {
-    final passengers = (trip['passengers'] as List<dynamic>?) ?? [];
-    final filteredPassengers = passengers.where((p) {
-      final name = (p['name'] ?? '').toString().toLowerCase();
-      final seat = (p['seat_number'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery.toLowerCase()) || seat.contains(_searchQuery.toLowerCase());
-    }).toList();
-
-    final totalCount = passengers.length;
-    final boardedCount = _boardedPassengerIds.length;
-
-    return Column(
-      children: [
-        SizedBox(height: MediaQuery.of(context).padding.top + 56),
-        // Summary Card
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Container(
-            padding: const EdgeInsets.all(24),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.primary.withOpacity(0.1), width: 1),
+              color: AppColors.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(Symbols.group_rounded, color: AppColors.primary, size: 28, fill: 1),
-                ),
-                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'PASSENGER SUMMARY',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 9,
-                          letterSpacing: 1.5,
-                        ),
+                        'Boarded',
+                        style: AppTextStyles.labelExtraSmall.copyWith(color: AppColors.textOnSurfaceVariant),
                       ),
                       const SizedBox(height: 4),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '$boardedCount',
-                              style: AppTextStyles.headlineSmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 32,
-                                fontFamily: 'Manrope',
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' / $totalCount ',
-                              style: AppTextStyles.headlineSmall.copyWith(
-                                color: AppColors.onSurfaceVariant.withOpacity(0.5),
-                                fontWeight: FontWeight.w400,
-                                fontSize: 24,
-                                fontFamily: 'Manrope',
-                              ),
-                            ),
-                            TextSpan(
-                              text: 'READY',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: boardedCount == totalCount ? const Color(0xFF10B981) : AppColors.onSurfaceVariant,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        '$_boardedCount / $_totalCount',
+                        style: AppTextStyles.headlineSmall.copyWith(color: AppColors.tertiary),
                       ),
                     ],
+                  ),
+                ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: _boardedCount / _totalCount,
+                      backgroundColor: AppColors.surfaceContainerHigh,
+                      color: AppColors.tertiary,
+                      minHeight: 12,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _filteredPassengers.length,
+              itemBuilder: (context, index) {
+                final passenger = _filteredPassengers[index];
+                final originalIndex = _passengers.indexWhere((p) => p['id'] == passenger['id']);
+                final isBoarded = passenger['isBoarded'] as bool;
 
-        // Search Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: TextField(
-            onChanged: (val) => setState(() => _searchQuery = val),
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurface, fontWeight: FontWeight.w600),
-            decoration: InputDecoration(
-              hintText: 'Search manifest...',
-              hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant.withOpacity(0.4)),
-              prefixIcon: const Icon(Symbols.search_rounded, color: AppColors.primary, size: 20),
-              filled: true,
-              fillColor: AppColors.surfaceContainerLow,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 18),
-            ),
-          ),
-        ),
-
-        // List
-        Expanded(
-          child: filteredPassengers.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Symbols.person_search_rounded, size: 64, color: AppColors.onSurfaceVariant.withOpacity(0.1)),
-                      const SizedBox(height: 16),
-                      Text(
-                        'NO PASSENGERS MATCHING',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    leading: Checkbox(
+                      value: isBoarded,
+                      onChanged: (_) => _toggleBoarded(originalIndex),
+                      fillColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AppColors.tertiary;
+                        }
+                        return AppColors.outlineVariant;
+                      }),
+                    ),
+                    title: Text(
+                      passenger['name'],
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                    subtitle: Text(
+                      'Seat ${passenger['seatNo']} • ${passenger['pickupPoint']}',
+                      style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isBoarded ? AppColors.success.withOpacity(0.2) : AppColors.textSecondary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isBoarded ? 'Boarded' : 'Pending',
+                        style: AppTextStyles.labelExtraSmall.copyWith(
+                          color: isBoarded ? AppColors.success : AppColors.textSecondary,
                         ),
                       ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 140),
-                  itemCount: filteredPassengers.length,
-                  itemBuilder: (context, index) {
-                    final p = filteredPassengers[index];
-                    final pId = p['id'].toString();
-                    final seat = p['seat_number'] ?? '??';
-                    final name = p['name'] ?? 'Unknown Passenger';
-                    final stop = p['boarding_stop'] ?? 'Main Terminal';
-                    final isBoarded = _boardedPassengerIds.contains(pId);
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _BoardingCard(
-                        pId: pId,
-                        seat: seat,
-                        name: name,
-                        stop: stop,
-                        isBoarded: isBoarded,
-                        onToggle: () {
-                          setState(() {
-                            if (isBoarded) {
-                              _boardedPassengerIds.remove(pId);
-                            } else {
-                              _boardedPassengerIds.add(pId);
-                            }
-                          });
-                        },
-                      ),
-                    );
-                  },
-                ),
-        ),
-
-        // Depart Trip Footer
-        Container(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 24),
-          decoration: BoxDecoration(
-            color: AppColors.background.withOpacity(0.8),
-            border: Border(top: BorderSide(color: AppColors.outline.withOpacity(0.05))),
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            height: 64,
-            child: ElevatedButton(
-              onPressed: () => _handleDepart(context, boardedCount, totalCount),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: boardedCount == totalCount ? const Color(0xFF10B981) : AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Symbols.local_shipping_rounded, fill: 1, size: 24),
-                  const SizedBox(width: 12),
-                  Text(
-                    'CONFIRM DEPARTURE',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                      letterSpacing: 1.2,
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _handleDepart(BuildContext context, int boardedCount, int totalCount) async {
-    if (boardedCount < totalCount) {
-      final proceed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: AppColors.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          title: Row(
-            children: [
-              const Icon(Symbols.warning_rounded, color: AppColors.tertiary),
-              const SizedBox(width: 12),
-              const Text('INCOMPLETE BOARDING', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          content: Text(
-            'You have $boardedCount out of $totalCount passengers boarded. Do you want to depart anyway?',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceVariant),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('WAIT', style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurfaceVariant)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.tertiary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('DEPART NOW'),
-            ),
-          ],
-        ),
-      );
-      if (proceed != true) return;
-    }
-
-    try {
-      await ref.read(tripRepositoryProvider).departTrip(widget.tripId);
-      if (context.mounted) {
-        context.go('/conductor/active/${widget.tripId}');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Text('Failed to depart: $e', style: const TextStyle(color: Colors.white)),
-          ),
-        );
-      }
-    }
-  }
-}
-
-class _BoardingCard extends StatelessWidget {
-  final String pId;
-  final String seat;
-  final String name;
-  final String stop;
-  final bool isBoarded;
-  final VoidCallback onToggle;
-
-  const _BoardingCard({
-    required this.pId,
-    required this.seat,
-    required this.name,
-    required this.stop,
-    required this.isBoarded,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        ],
+      ),
+      bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isBoarded ? const Color(0xFF10B981).withOpacity(0.05) : AppColors.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isBoarded ? const Color(0xFF10B981).withOpacity(0.2) : Colors.transparent,
-            width: 1,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.background.withOpacity(0), AppColors.background],
           ),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Seat Badge
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: isBoarded ? const Color(0xFF10B981).withOpacity(0.1) : AppColors.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _boardedCount == _totalCount ? _startTrip : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryContainer,
+                  foregroundColor: AppColors.surfaceTint,
+                  disabledBackgroundColor: AppColors.surfaceContainerHigh,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
                 child: Text(
-                  seat,
-                  style: AppTextStyles.headlineSmall.copyWith(
-                    color: isBoarded ? const Color(0xFF10B981) : AppColors.onSurface,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Manrope',
-                  ),
+                  'START TRIP (${_boardedCount}/$_totalCount boarded)',
+                  style: AppTextStyles.buttonLarge,
                 ),
               ),
             ),
-            const SizedBox(width: 16),
-            // Passenger Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name.toUpperCase(),
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                      color: isBoarded ? AppColors.onSurface : AppColors.onSurface.withOpacity(0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Symbols.location_on_rounded, size: 14, color: AppColors.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Text(
-                        stop,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Interactive Checkbox
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isBoarded ? const Color(0xFF10B981) : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isBoarded ? Colors.transparent : AppColors.outline.withOpacity(0.2),
-                  width: 2,
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                onPressed: _startTrip,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textOnSurface,
+                  side: BorderSide(color: AppColors.outline),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
+                child: Text('Start Anyway', style: AppTextStyles.labelLarge),
               ),
-              child: isBoarded
-                  ? const Icon(Symbols.check_rounded, color: Colors.white, size: 24, weight: 700)
-                  : null,
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 }
-

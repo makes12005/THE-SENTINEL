@@ -50,7 +50,6 @@ function statusChip(status: string, delay?: string) {
 /* ─── Component ─────────────────────────────────────────────────────────── */
 export default function OwnerDashboardPage() {
   const [now, setNow] = useState(new Date());
-  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60_000);
@@ -157,29 +156,34 @@ export default function OwnerDashboardPage() {
         </h2>
 
         <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="flex items-center gap-2 rounded-xl bg-[#1e293b] px-4 py-2 text-sm text-[#475569] w-64">
-            <span className="material-symbols-outlined text-[18px]">search</span>
-            <span className="text-[0.8125rem]">Search fleet, routes or drivers…</span>
-          </div>
+          <Link 
+            href="/owner/trips"
+            className="flex items-center gap-2 rounded-xl bg-[#6C63FF] px-4 py-2 text-sm font-bold text-white hover:bg-[#5a52d9] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">directions_bus</span>
+            <span className="text-[0.75rem] uppercase tracking-wide">View Trips</span>
+          </Link>
 
-          {/* Notifications bell */}
-          <button className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[#1e293b] text-[#94a3b8] hover:text-[#F1F5F9] transition-colors">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
+          <Link
+            href="/owner/logs"
+            className="relative flex items-center gap-2 rounded-xl bg-[#1e293b] px-4 py-2 text-sm text-[#94a3b8] hover:text-[#F1F5F9] hover:bg-[#262a2f] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">notifications</span>
+            <span className="text-[0.75rem]">Alerts</span>
             {failedAlertsToday > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF7A00] text-[9px] font-black text-white">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#FF7A00] text-[10px] font-black text-white">
                 {failedAlertsToday > 9 ? '9+' : failedAlertsToday}
               </span>
             )}
-          </button>
+          </Link>
 
-          {/* Dark / light toggle */}
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1e293b] text-[#94a3b8] hover:text-[#F1F5F9] transition-colors"
+          <Link
+            href="/owner/wallet"
+            className="flex items-center gap-2 rounded-xl bg-[#1e293b] px-4 py-2 text-sm text-[#94a3b8] hover:text-[#F1F5F9] hover:bg-[#262a2f] transition-colors"
           >
-            <span className="material-symbols-outlined text-[20px]">{darkMode ? 'light_mode' : 'dark_mode'}</span>
-          </button>
+            <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+            <span className="text-[0.75rem]">Wallet</span>
+          </Link>
         </div>
       </header>
 

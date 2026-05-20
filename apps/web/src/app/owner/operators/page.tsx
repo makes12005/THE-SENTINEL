@@ -124,15 +124,27 @@ function OperatorsContent() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="h-9 w-9 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#94a3b8] hover:text-[#F1F5F9]">
+          <Link 
+            href="/owner/logs" 
+            className="h-9 w-9 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#94a3b8] hover:text-[#F1F5F9] hover:bg-[#262a2f] transition-colors"
+            title="View Alert Logs"
+          >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
-          </button>
-          <button className="h-9 w-9 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#94a3b8] hover:text-[#F1F5F9]">
+          </Link>
+          <Link 
+            href="/owner/settings" 
+            className="h-9 w-9 rounded-xl bg-[#1e293b] flex items-center justify-center text-[#94a3b8] hover:text-[#F1F5F9] hover:bg-[#262a2f] transition-colors"
+            title="Open Settings"
+          >
             <span className="material-symbols-outlined text-[20px]">settings</span>
-          </button>
-          <div className="h-9 w-9 rounded-full bg-[#6C63FF]/30 flex items-center justify-center">
+          </Link>
+          <Link 
+            href="/owner/dashboard" 
+            className="h-9 w-9 rounded-full bg-[#6C63FF]/30 flex items-center justify-center hover:bg-[#6C63FF]/50 transition-colors"
+            title="Dashboard"
+          >
             <span className="material-symbols-outlined text-[18px] text-[#6C63FF]">person</span>
-          </div>
+          </Link>
         </div>
       </header>
 

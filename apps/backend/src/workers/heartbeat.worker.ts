@@ -9,7 +9,7 @@
  *   - If conductor recovered (new ping) → emit conductor_online
  *
  * Every 5 minutes:
- *   - Find scheduled trips > 30 min past due → mark expired
+ *   - Find scheduled trips > 4 hours past due → mark expired
  *
  * In-memory state Map prevents duplicate events:
  *   offlineTrips: Set<tripId>  — currently offline trips
@@ -169,11 +169,11 @@ async function poll() {
 
 /**
  * Mark scheduled trips as expired if their scheduled_date+time is
- * more than 30 minutes in the past.
+ * more than 4 hours in the past.
  */
 async function checkExpiredTrips() {
   try {
-    // Find scheduled trips where scheduled_date < NOW() - 30 minutes
+    // Find scheduled trips where scheduled_date < NOW() - 4 hours
     const expiredRows = await db.execute<{
       id: string;
       conductor_id: string;
@@ -192,7 +192,7 @@ async function checkExpiredTrips() {
               THEN (t.scheduled_date::text || ' ' || t.scheduled_time)::timestamp AT TIME ZONE 'Asia/Kolkata'
             ELSE t.scheduled_date::timestamp AT TIME ZONE 'Asia/Kolkata'
           END
-        ) < (NOW() - INTERVAL '30 minutes')
+        ) < (NOW() - INTERVAL '4 hours')
     `);
 
     for (const row of Array.from(expiredRows)) {
@@ -263,7 +263,7 @@ async function main() {
   });
 
   // ── Expired Trip Check Cron ─────────────────────────────────────────────
-  // Every 5 minutes, mark scheduled trips that are 30+ min past due as expired
+  // Every 5 minutes, mark scheduled trips that are 4+ hours past due as expired
   cron.schedule('*/5 * * * *', async () => {
     await checkExpiredTrips();
   }, {

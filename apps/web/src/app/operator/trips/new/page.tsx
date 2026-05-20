@@ -27,6 +27,16 @@ interface Member {
   name: string;
   role: 'conductor' | 'driver';
   is_active: boolean;
+  upcoming_trip?: {
+    id: string;
+    route_name: string | null;
+    from_city: string | null;
+    to_city: string | null;
+    scheduled_date: string | null;
+    scheduled_time: string | null;
+    status: string | null;
+    hours_until_trip: number | null;
+  } | null;
 }
 
 interface Operator {
@@ -246,6 +256,7 @@ export default function CreateTripPage() {
 
   const selectedRoute = routes.data?.find(r => r.id === form.route_id);
   const selectedConductor = members.data?.find(s => s.id === form.conductor_id);
+  const selectedDriver = members.data?.find(s => s.id === form.driver_id);
   const selectedBus = buses.data?.find(b => b.id === form.bus_id);
 
   return (
@@ -415,6 +426,18 @@ export default function CreateTripPage() {
                     </select>
                     <span className="material-symbols-outlined absolute right-8 top-1/2 -translate-y-1/2 text-[#8c9198] pointer-events-none">badge</span>
                   </div>
+                  {selectedConductor?.upcoming_trip && (
+                    <div className="mt-2 ml-4 flex items-start gap-2 bg-[#FF7A00]/10 border border-[#FF7A00]/30 rounded-lg px-3 py-2">
+                      <span className="material-symbols-outlined text-[#FF7A00] text-[16px] mt-0.5">warning</span>
+                      <p className="text-[11px] text-[#FFB978]">
+                        <span className="font-bold">{selectedConductor.name}</span> has a trip:{' '}
+                        {selectedConductor.upcoming_trip.from_city} → {selectedConductor.upcoming_trip.to_city}
+                        {selectedConductor.upcoming_trip.scheduled_time && (
+                          <> starting at {selectedConductor.upcoming_trip.scheduled_time.slice(0, 5)} today</>
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -434,6 +457,18 @@ export default function CreateTripPage() {
                     </select>
                     <span className="material-symbols-outlined absolute right-8 top-1/2 -translate-y-1/2 text-[#8c9198] pointer-events-none">steering_wheel</span>
                   </div>
+                  {selectedDriver?.upcoming_trip && (
+                    <div className="mt-2 ml-4 flex items-start gap-2 bg-[#FF7A00]/10 border border-[#FF7A00]/30 rounded-lg px-3 py-2">
+                      <span className="material-symbols-outlined text-[#FF7A00] text-[16px] mt-0.5">warning</span>
+                      <p className="text-[11px] text-[#FFB978]">
+                        <span className="font-bold">{selectedDriver.name}</span> has a trip:{' '}
+                        {selectedDriver.upcoming_trip.from_city} → {selectedDriver.upcoming_trip.to_city}
+                        {selectedDriver.upcoming_trip.scheduled_time && (
+                          <> starting at {selectedDriver.upcoming_trip.scheduled_time.slice(0, 5)} today</>
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

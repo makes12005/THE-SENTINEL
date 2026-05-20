@@ -14,9 +14,12 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { requireAuth } from '../auth/auth.middleware';
-import { CreateRouteSchema, CreateStopSchema } from '../../lib/shared-types';
+import { CreateRouteSchema, CreateStopSchema, CreateRouteWithStopsSchema } from '../../lib/shared-types';
 import * as RoutesService from './routes.service';
 import { geocodePlace, reverseGeocodePlace } from './maps.service';
+import { db } from '../../db';
+import { routes } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export default async function routesRoutes(fastify: FastifyInstance) {
   const getAgencyIdOrReply = (req: FastifyRequest, reply: FastifyReply): string | null => {
@@ -77,6 +80,25 @@ export default async function routesRoutes(fastify: FastifyInstance) {
       return handleErr(reply, err);
     }
   });
+
+  // ── POST /api/routes/bulk — Create route with stops in single call ─────────────────────────────────────────────────────
+  fastify.post('/bulk', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const parsed = CreateRouteWithStopsSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return reply.status(400).send({ success: false, error: 'Validation failed', data: parsed.error.issues });
+        }
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const route = await RoutesService.createRouteWithStops(agencyId, parsed.data, req.user.id);
+        return reply.status(201).send({
+          success: true, data: route,
+          meta: { timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) },
+        });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
 
   // ── POST /api/routes ─────────────────────────────────────────────────────
   fastify.post('/', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
@@ -145,6 +167,28 @@ export default async function routesRoutes(fastify: FastifyInstance) {
         if (!agencyId) return;
         const result = await RoutesService.softDeleteRoute(getRouteId(req), agencyId);
         return reply.send({ success: true, data: result });
+      } catch (err: any) { return handleErr(reply, err); }
+    }
+  );
+
+  // ── POST /api/routes/:routeId/duplicate — Duplicate a route ────────────
+  fastify.post('/:routeId/duplicate', { preHandler: [requireAuth(['operator', 'owner', 'admin'])] },
+    async (req, reply) => {
+      try {
+        const agencyId = getAgencyIdOrReply(req, reply);
+        if (!agencyId) return;
+        const body = req.body as { new_name?: string } | undefined;
+        const routeId = getRouteId(req);
+        
+        const [original] = await db
+          .select({ name: routes.name })
+          .from(routes)
+          .where(eq(routes.id, routeId))
+          .limit(1);
+        
+        const newName = body?.new_name || `${original?.name || 'Route'} (Copy)`;
+        const duplicated = await RoutesService.duplicateRoute(routeId, agencyId, newName, req.user.id);
+        return reply.status(201).send({ success: true, data: duplicated });
       } catch (err: any) { return handleErr(reply, err); }
     }
   );

@@ -1,4 +1,4 @@
-# mobile
+# bus_alert
 
 A new Flutter project.
 

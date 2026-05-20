@@ -1,12 +1,11 @@
+import 'dart:async';
+import 'package:bus_alert/core/theme/app_colors.dart';
+import 'package:bus_alert/core/theme/app_text_styles.dart';
+import 'package:bus_alert/features/auth/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
-import 'package:material_symbols_icons/symbols.dart';
-
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../provider/auth_provider.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -16,77 +15,116 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  final _contactCtrl = TextEditingController();
-  final _otpCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  final _confirmCtrl = TextEditingController();
-  final _pinFocusNode = FocusNode();
+  final _contactController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   
-  int _step = 1; // 1: Contact, 2: OTP, 3: New Password
-  bool _obscurePassword = true;
-  bool _obscureConfirm = true;
+  int _step = 0;
+  bool _isLoading = false;
+  int _countdown = 30;
+  Timer? _timer;
+  bool _canResend = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _contactCtrl.dispose();
-    _otpCtrl.dispose();
-    _passwordCtrl.dispose();
-    _confirmCtrl.dispose();
-    _pinFocusNode.dispose();
+    _timer?.cancel();
+    _contactController.dispose();
+    _otpController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _sendOtp() async {
-    final success = await ref.read(authControllerProvider.notifier).sendOtp(_contactCtrl.text);
-    if (success && mounted) {
-      setState(() => _step = 2);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.errorContainer,
-          content: Text('Failed to send OTP', style: TextStyle(color: AppColors.onErrorContainer)),
-        ),
-      );
+    if (_contactController.text.isEmpty) {
+      setState(() => _errorMessage = 'Please enter your phone or email');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final success = await ref.read(authProvider.notifier).sendOtp(
+      contact: _contactController.text.trim(),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (success) {
+      setState(() => _step = 1);
+      _startTimer();
     }
   }
 
-  Future<void> _verifyOtp(String pin) async {
-    if (pin.length < 6) return;
-    final success = await ref.read(authControllerProvider.notifier).verifyOtp(_contactCtrl.text, pin);
-    if (success && mounted) {
-      setState(() => _step = 3);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.errorContainer,
-          content: Text('Invalid OTP', style: TextStyle(color: AppColors.onErrorContainer)),
-        ),
-      );
-      _otpCtrl.clear();
-      _pinFocusNode.requestFocus();
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _countdown = 30;
+      _canResend = false;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() => _countdown--);
+      } else {
+        setState(() => _canResend = true);
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _verifyOtp() async {
+    if (_otpController.text.length != 6) {
+      setState(() => _errorMessage = 'Please enter 6-digit OTP');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final success = await ref.read(authProvider.notifier).verifyOtp(
+      otp: _otpController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (success) {
+      setState(() => _step = 2);
     }
   }
 
   Future<void> _resetPassword() async {
-    if (_passwordCtrl.text != _confirmCtrl.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+    if (_newPasswordController.text.length < 8) {
+      setState(() => _errorMessage = 'Password must be at least 8 characters');
       return;
     }
-    
-    // TODO: Implement reset password in auth_provider
-    // For now, we simulate success
-    setState(() {}); // Trigger loading if we had it
-    
-    // Simulate API call
+
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      setState(() => _errorMessage = 'Passwords do not match');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     await Future.delayed(const Duration(seconds: 1));
-    
+
+    setState(() => _isLoading = false);
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: AppColors.successContainer,
-          content: Text('Password updated successfully', style: TextStyle(color: AppColors.onSuccessContainer)),
+        SnackBar(
+          content: const Text('Password reset successful'),
+          backgroundColor: AppColors.success,
         ),
       );
       context.go('/welcome');
@@ -95,439 +133,286 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState.isLoading;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Background Gradient
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.0,
-                  colors: [
-                    Color(0x0DFA3CBF2), // Primary with 5% opacity
-                    AppColors.background,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Header matching OtpScreen
-                _buildHeader(),
-
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: SingleChildScrollView(
-                      key: ValueKey(_step),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: _buildStepContent(isLoading),
-                    ),
-                  ),
-                ),
-
-                // Footer
-                _buildFooter(),
-              ],
-            ),
-          ),
-        ],
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Reset Password',
+          style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: _buildCurrentStep(),
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: const BoxDecoration(
-        color: Color(0xFF181C20),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () {
-              if (_step > 1) {
-                setState(() => _step--);
-              } else {
-                context.pop();
-              }
-            },
-            icon: const Icon(Symbols.arrow_back_rounded, color: AppColors.primary),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _step == 3 ? 'RESET PASSWORD' : 'FORGOT PASSWORD',
-            style: AppTextStyles.labelLarge.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Manrope',
-              fontSize: 14,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepContent(bool isLoading) {
+  Widget _buildCurrentStep() {
     switch (_step) {
+      case 0:
+        return _buildContactStep();
       case 1:
-        return _buildStep1(isLoading);
+        return _buildOtpStep();
       case 2:
-        return _buildStep2(isLoading);
-      case 3:
-        return _buildStep3(isLoading);
+        return _buildNewPasswordStep();
       default:
-        return const SizedBox();
+        return _buildContactStep();
     }
   }
 
-  Widget _buildStep1(bool isLoading) {
+  Widget _buildContactStep() {
     return Column(
       children: [
-        const SizedBox(height: 60),
-        _buildIconHeader(Symbols.shield_lock_rounded),
+        const Spacer(),
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.lock_reset_outlined,
+            size: 40,
+            color: AppColors.primary,
+          ),
+        ),
         const SizedBox(height: 32),
         Text(
-          'Security Recovery',
-          style: AppTextStyles.headlineMedium.copyWith(
-            fontWeight: FontWeight.w800,
-            fontSize: 30,
-            fontFamily: 'Manrope',
-            letterSpacing: -0.5,
-          ),
+          'Forgot Password?',
+          style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textOnSurface),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
-          'Enter your registered phone number to receive a reset code.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-            fontFamily: 'Inter',
-          ),
+          'Enter your registered phone or email\nto receive a reset code',
           textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnSurfaceVariant),
         ),
-        const SizedBox(height: 48),
+        const SizedBox(height: 40),
         _buildInputField(
-          label: 'Phone Number',
-          controller: _contactCtrl,
-          hint: '+91 00000 00000',
-          keyboardType: TextInputType.phone,
+          controller: _contactController,
+          label: 'Phone / Email',
+          hint: '+91 98765 43210 or email@example.com',
+          keyboardType: TextInputType.emailAddress,
+          prefixIcon: Icons.phone_outlined,
         ),
-        const SizedBox(height: 48),
-        _buildPrimaryButton(
-          label: 'SEND RESET CODE',
-          isLoading: isLoading,
-          onPressed: _sendOtp,
-          icon: Symbols.send_rounded,
-        ),
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              _errorMessage!,
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+            ),
+          ),
+        const Spacer(),
+        _buildPrimaryButton('SEND OTP', _sendOtp),
+        const SizedBox(height: 24),
       ],
     );
   }
 
-  Widget _buildStep2(bool isLoading) {
+  Widget _buildOtpStep() {
     final defaultPinTheme = PinTheme(
-      width: 56,
+      width: 48,
       height: 56,
-      textStyle: AppTextStyles.headlineMedium.copyWith(
-        color: AppColors.primary,
-        fontWeight: FontWeight.bold,
-        fontFamily: 'Manrope',
-      ),
+      textStyle: AppTextStyles.titleLarge.copyWith(color: AppColors.primary),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
       ),
     );
 
-    final focusedPinTheme = defaultPinTheme.copyDecorationWith(
-      color: AppColors.surfaceContainerHighest,
-      border: Border.all(color: AppColors.primary, width: 2),
-    );
-
     return Column(
       children: [
-        const SizedBox(height: 60),
-        _buildIconHeader(Symbols.verified_user_rounded),
+        const Spacer(),
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.shield_outlined,
+            size: 40,
+            color: AppColors.primary,
+          ),
+        ),
         const SizedBox(height: 32),
         Text(
-          'Verify Identity',
-          style: AppTextStyles.headlineMedium.copyWith(
-            fontWeight: FontWeight.w800,
-            fontSize: 30,
-            fontFamily: 'Manrope',
-            letterSpacing: -0.5,
-          ),
+          'Enter Code',
+          style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textOnSurface),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
-          'Enter the 6-digit code sent to\n${_contactCtrl.text}',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-            fontFamily: 'Inter',
-          ),
+          'Enter the 6-digit code sent to\n${_contactController.text}',
           textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnSurfaceVariant),
         ),
-        const SizedBox(height: 48),
+        const SizedBox(height: 40),
         Pinput(
-          controller: _otpCtrl,
-          focusNode: _pinFocusNode,
+          controller: _otpController,
           length: 6,
           defaultPinTheme: defaultPinTheme,
-          focusedPinTheme: focusedPinTheme,
-          separatorBuilder: (index) => const SizedBox(width: 8),
-          hapticFeedbackType: HapticFeedbackType.lightImpact,
-          onCompleted: _verifyOtp,
+          onCompleted: (pin) {
+            if (pin.length == 6 && !_isLoading) {
+              _verifyOtp();
+            }
+          },
+          keyboardType: TextInputType.number,
         ),
-        const SizedBox(height: 48),
-        _buildPrimaryButton(
-          label: 'VERIFY CODE',
-          isLoading: isLoading,
-          onPressed: () => _verifyOtp(_otpCtrl.text),
-          icon: Symbols.check_circle_rounded,
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              _errorMessage!,
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+            ),
+          ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.timer_outlined, size: 18, color: AppColors.secondary),
+            const SizedBox(width: 8),
+            Text(
+              '${_countdown ~/ 60}:${(_countdown % 60).toString().padLeft(2, '0')}',
+              style: AppTextStyles.labelLarge.copyWith(color: AppColors.secondary),
+            ),
+          ],
         ),
-        const SizedBox(height: 32),
-        _buildResendSection(),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: _canResend && !_isLoading ? _sendOtp : null,
+          child: Text(
+            'Resend OTP',
+            style: AppTextStyles.labelMedium.copyWith(
+              color: _canResend ? AppColors.primary : AppColors.textSecondary,
+            ),
+          ),
+        ),
+        const Spacer(),
+        _buildPrimaryButton('VERIFY', _verifyOtp),
+        const SizedBox(height: 24),
       ],
     );
   }
 
-  Widget _buildStep3(bool isLoading) {
+  Widget _buildNewPasswordStep() {
     return Column(
       children: [
-        const SizedBox(height: 60),
-        _buildIconHeader(Symbols.lock_reset_rounded),
+        const Spacer(),
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.password_outlined,
+            size: 40,
+            color: AppColors.success,
+          ),
+        ),
         const SizedBox(height: 32),
         Text(
-          'New Password',
-          style: AppTextStyles.headlineMedium.copyWith(
-            fontWeight: FontWeight.w800,
-            fontSize: 30,
-            fontFamily: 'Manrope',
-            letterSpacing: -0.5,
-          ),
+          'Set New Password',
+          style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textOnSurface),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
-          'Create a strong password to protect your terminal access.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-            fontFamily: 'Inter',
-          ),
+          'Create a strong password for your account',
           textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnSurfaceVariant),
         ),
-        const SizedBox(height: 48),
+        const SizedBox(height: 40),
         _buildInputField(
+          controller: _newPasswordController,
           label: 'New Password',
-          controller: _passwordCtrl,
           hint: '••••••••',
-          isPassword: true,
-          isObscured: _obscurePassword,
-          onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+          obscureText: true,
+          prefixIcon: Icons.lock_outline,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         _buildInputField(
+          controller: _confirmPasswordController,
           label: 'Confirm Password',
-          controller: _confirmCtrl,
           hint: '••••••••',
-          isPassword: true,
-          isObscured: _obscureConfirm,
-          onToggleVisibility: () => setState(() => _obscureConfirm = !_obscureConfirm),
+          obscureText: true,
+          prefixIcon: Icons.lock_outline,
         ),
-        const SizedBox(height: 48),
-        _buildPrimaryButton(
-          label: 'UPDATE PASSWORD',
-          isLoading: isLoading,
-          onPressed: _resetPassword,
-          icon: Symbols.published_with_changes_rounded,
-        ),
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              _errorMessage!,
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+            ),
+          ),
+        const Spacer(),
+        _buildPrimaryButton('RESET PASSWORD', _resetPassword),
+        const SizedBox(height: 24),
       ],
-    );
-  }
-
-  Widget _buildIconHeader(IconData icon) {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(
-        icon,
-        color: AppColors.primary,
-        size: 48,
-        fill: 1,
-      ),
     );
   }
 
   Widget _buildInputField({
-    required String label,
     required TextEditingController controller,
+    required String label,
     required String hint,
-    bool isPassword = false,
-    bool isObscured = false,
-    VoidCallback? onToggleVisibility,
-    TextInputType? keyboardType,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    IconData? prefixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label.toUpperCase(),
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.5,
-              fontSize: 11,
-            ),
-          ),
+        Text(
+          label.toUpperCase(),
+          style: AppTextStyles.labelExtraSmall.copyWith(color: AppColors.textOnSurfaceVariant),
         ),
+        const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: isPassword && isObscured,
           keyboardType: keyboardType,
-          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface),
+          obscureText: obscureText,
+          style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: AppColors.outlineVariant.withOpacity(0.5)),
-            filled: true,
-            fillColor: AppColors.surfaceContainerHigh,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            suffixIcon: isPassword 
-              ? IconButton(
-                  icon: Icon(isObscured ? Symbols.visibility_rounded : Symbols.visibility_off_rounded, size: 20, color: AppColors.outlineVariant),
-                  onPressed: onToggleVisibility,
-                )
-              : null,
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.textSecondary) : null,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPrimaryButton({
-    required String label,
-    required VoidCallback onPressed,
-    required IconData icon,
-    bool isLoading = false,
-  }) {
-    return Container(
+  Widget _buildPrimaryButton(String text, VoidCallback onPressed) {
+    return SizedBox(
       width: double.infinity,
-      height: 64,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.tertiaryContainer.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      height: 56,
       child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
+        onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.onTertiaryContainer,
-          foregroundColor: AppColors.onTertiary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
+          backgroundColor: AppColors.primaryContainer,
+          foregroundColor: AppColors.surfaceTint,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        child: isLoading
-          ? const CircularProgressIndicator(color: AppColors.onTertiary)
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'Manrope',
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Icon(icon, size: 20),
-              ],
-            ),
-      ),
-    );
-  }
-
-  Widget _buildResendSection() {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(9999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Symbols.timer_rounded, color: AppColors.secondary, size: 18, fill: 1),
-              const SizedBox(width: 8),
-              Text(
-                '00:30',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Manrope',
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextButton(
-          onPressed: null,
-          child: Text(
-            'Resend OTP',
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Inter',
-              fontSize: 14,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Text(
-        'SENTINEL SECURE NODE V4.2.0',
-        style: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.onSurfaceVariant.withOpacity(0.3),
-          letterSpacing: 3,
-          fontWeight: FontWeight.bold,
-        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.surfaceTint),
+              )
+            : Text(text, style: AppTextStyles.buttonLarge),
       ),
     );
   }

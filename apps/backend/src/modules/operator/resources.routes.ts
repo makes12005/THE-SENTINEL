@@ -63,6 +63,10 @@ async function listAgencyMembers(agencyId: string, role?: 'conductor' | 'driver'
     upcoming_trip_id: string | null;
     upcoming_trip_date: string | null;
     upcoming_trip_status: string | null;
+    upcoming_route_name: string | null;
+    upcoming_from_city: string | null;
+    upcoming_to_city: string | null;
+    upcoming_scheduled_time: string | null;
   }>(sql`
     select
       u.id,
@@ -77,15 +81,19 @@ async function listAgencyMembers(agencyId: string, role?: 'conductor' | 'driver'
       u.created_at::text as created_at,
       upcoming.id as upcoming_trip_id,
       upcoming.scheduled_date::text as upcoming_trip_date,
-      upcoming.status as upcoming_trip_status
+      upcoming.status as upcoming_trip_status,
+      upcoming.route_name as upcoming_route_name,
+      upcoming.from_city as upcoming_from_city,
+      upcoming.to_city as upcoming_to_city,
+      upcoming.scheduled_time as upcoming_scheduled_time
     from users u
     left join users creator on creator.id = u.added_by
     left join trips t
       on (t.conductor_id = u.id or t.driver_id = u.id)
-    -- Find a trip within the next 12 hours for this member
     left join lateral (
-      select t2.id, t2.scheduled_date, t2.status
+      select t2.id, t2.scheduled_date, t2.status, t2.scheduled_time, r.name as route_name, r.from_city, r.to_city
       from trips t2
+      join routes r on r.id = t2.route_id
       where (t2.conductor_id = u.id or t2.driver_id = u.id)
         and t2.status in ('scheduled', 'active')
         and (
@@ -101,21 +109,35 @@ async function listAgencyMembers(agencyId: string, role?: 'conductor' | 'driver'
     where u.agency_id = ${agencyId}
       and u.role in ('conductor', 'driver')
       ${role ? sql`and u.role = ${role}` : sql``}
-    group by u.id, creator.name, upcoming.id, upcoming.scheduled_date, upcoming.status
+    group by u.id, creator.name, upcoming.id, upcoming.scheduled_date, upcoming.status, upcoming.route_name, upcoming.from_city, upcoming.to_city, upcoming.scheduled_time
     order by u.role asc, u.created_at desc
   `);
 
-  return rows.map((row) => ({
-    ...row,
-    trips_count: Number(row.trips_count ?? 0),
-    upcoming_trip: row.upcoming_trip_id
-      ? {
-          id: row.upcoming_trip_id,
-          scheduled_date: row.upcoming_trip_date,
-          status: row.upcoming_trip_status,
-        }
-      : null,
-  }));
+  return rows.map((row) => {
+    let hoursUntilTrip: number | null = null;
+    if (row.upcoming_trip_date) {
+      const tripDate = new Date(row.upcoming_trip_date + (row.upcoming_scheduled_time ? 'T' + row.upcoming_scheduled_time : ''));
+      const now = new Date();
+      hoursUntilTrip = Math.round((tripDate.getTime() - now.getTime()) / (1000 * 60 * 60) * 10) / 10;
+    }
+
+    return {
+      ...row,
+      trips_count: Number(row.trips_count ?? 0),
+      upcoming_trip: row.upcoming_trip_id
+        ? {
+            id: row.upcoming_trip_id,
+            route_name: row.upcoming_route_name,
+            from_city: row.upcoming_from_city,
+            to_city: row.upcoming_to_city,
+            scheduled_date: row.upcoming_trip_date,
+            scheduled_time: row.upcoming_scheduled_time,
+            status: row.upcoming_trip_status,
+            hours_until_trip: hoursUntilTrip,
+          }
+        : null,
+    };
+  });
 }
 
 async function createAgencyMember(agencyId: string, creatorId: string, body: unknown) {

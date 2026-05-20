@@ -147,23 +147,21 @@ export default function OperatorRoutesPage() {
     onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to delete route'),
   });
 
+  const duplicateRouteMut = useMutation({
+    mutationFn: ({ id, newName }: { id: string; newName: string }) =>
+      post(`/api/routes/${id}/duplicate`, { new_name: newName }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routes'] });
+      toast.success('Route duplicated');
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.error?.message ?? 'Unable to duplicate route'),
+  });
+
   const saveRoute = useMutation({
     mutationFn: async () => {
       if (!fromPlace || !toPlace) {
         throw new Error('Select both start and destination cities.');
       }
-
-      const created = await post<{ id: string }>('/api/routes', {
-        name: routeName.trim() || `${fromPlace.name} to ${toPlace.name}`,
-        from_city: fromPlace.name,
-        to_city: toPlace.name,
-        is_published: publishRoute,
-        source: stops.some((stop) => stop.source === 'popular')
-          ? 'popular'
-          : stops.some((stop) => stop.source === 'library')
-          ? 'library'
-          : 'scratch',
-      });
 
       const fullStops = [
         { name: fromPlace.name, lat: fromPlace.lat, lng: fromPlace.lng, sequence: 1 },
@@ -176,15 +174,24 @@ export default function OperatorRoutesPage() {
         { name: toPlace.name, lat: toPlace.lat, lng: toPlace.lng, sequence: orderedStops.length + 2 },
       ];
 
-      for (const stop of fullStops) {
-        await post(`/api/routes/${created.id}/stops`, {
+      const created = await post<{ id: string; stops: any[] }>('/api/routes/bulk', {
+        name: routeName.trim() || `${fromPlace.name} to ${toPlace.name}`,
+        from_city: fromPlace.name,
+        to_city: toPlace.name,
+        is_published: publishRoute,
+        source: stops.some((stop) => stop.source === 'popular')
+          ? 'popular'
+          : stops.some((stop) => stop.source === 'library')
+          ? 'library'
+          : 'scratch',
+        stops: fullStops.map((stop) => ({
           name: stop.name,
-          latitude: stop.lat,
-          longitude: stop.lng,
-          sequence_number: stop.sequence,
+          lat: stop.lat,
+          lng: stop.lng,
+          sequence: stop.sequence,
           trigger_radius_km: 10,
-        });
-      }
+        })),
+      });
 
       if (publishRoute) {
         await post('/api/popular-routes', {
@@ -199,6 +206,8 @@ export default function OperatorRoutesPage() {
           })),
         });
       }
+
+      return created;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['routes'] });
@@ -413,6 +422,18 @@ export default function OperatorRoutesPage() {
                       >
                         View
                       </Link>
+                      <button
+                        onClick={() => {
+                          const newName = prompt('Enter name for duplicated route:', `${r.name} (Copy)`);
+                          if (newName?.trim()) {
+                            duplicateRouteMut.mutate({ id: r.id, newName: newName.trim() });
+                          }
+                        }}
+                        disabled={duplicateRouteMut.isPending}
+                        className="rounded-full bg-[#e5edf5] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#102132] hover:bg-[#0f9ae8] hover:text-white transition disabled:opacity-60"
+                      >
+                        Duplicate
+                      </button>
                       <button
                         onClick={() => {
                           if (confirm(`Delete route "${r.name}"? This cannot be undone.`)) deleteRouteMut.mutate(r.id);

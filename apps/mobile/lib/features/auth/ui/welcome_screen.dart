@@ -1,10 +1,10 @@
+import 'package:bus_alert/core/theme/app_colors.dart';
+import 'package:bus_alert/core/theme/app_text_styles.dart';
+import 'package:bus_alert/features/auth/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../provider/auth_provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
@@ -15,229 +15,145 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _loginContactCtrl = TextEditingController();
-  final _loginPasswordCtrl = TextEditingController();
-  final _signupNameCtrl = TextEditingController();
-  final _signupContactCtrl = TextEditingController();
-  final _signupPasswordCtrl = TextEditingController();
+  final _contactController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {});
-      }
-    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _loginContactCtrl.dispose();
-    _loginPasswordCtrl.dispose();
-    _signupNameCtrl.dispose();
-    _signupContactCtrl.dispose();
-    _signupPasswordCtrl.dispose();
+    _contactController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_contactController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    
+    final success = await ref.read(authProvider.notifier).login(
+      contact: _contactController.text.trim(),
+      password: _passwordController.text,
+    );
+    
+    setState(() => _isLoading = false);
+    
+    if (success) {
+      final user = ref.read(authProvider).user;
+      if (user?.isConductor ?? false) {
+        context.go('/conductor');
+      } else if (user?.isDriver ?? false) {
+        context.go('/driver');
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      final googleSignIn = GoogleSignIn();
+      final account = await googleSignIn.signIn();
+      if (account != null) {
+        _showError('Google Sign In requires backend integration');
+      }
+    } catch (e) {
+      _showError('Google Sign In failed');
+    }
+  }
+
+  void _handleSendOtp() {
+    if (_contactController.text.isEmpty) {
+      _showError('Please enter phone or email');
+      return;
+    }
+    context.push('/otp', extra: {'contact': _contactController.text.trim(), 'isLoginFlow': true});
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState.isLoading;
+    final authState = ref.watch(authProvider);
+    
+    if (authState.hasError && authState.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showError(authState.errorMessage!);
+        ref.read(authProvider.notifier).resetError();
+      });
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Noise-like Gradient Background (Matching .noise-bg)
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.0,
-                  colors: [
-                    Color(0x0DFA3CBF2), // rgba(163, 203, 242, 0.05)
-                    AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 48),
+              Text(
+                'Welcome',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.displaySmall.copyWith(
+                  color: AppColors.textOnSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Access your transit control terminal.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textOnSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: AppColors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicatorPadding: const EdgeInsets.all(4),
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textOnSurfaceVariant,
+                  labelStyle: AppTextStyles.labelExtraSmall,
+                  dividerColor: Colors.transparent,
+                  tabs: const [
+                    Tab(text: 'LOGIN'),
+                    Tab(text: 'SIGN UP'),
                   ],
                 ),
               ),
-            ),
-          ),
-          
-          // Visual Polish Orbs (Matching fixed top-[-10%] and bottom-[-5%])
-          Positioned(
-            top: -MediaQuery.of(context).size.height * 0.1,
-            right: -MediaQuery.of(context).size.width * 0.1,
-            child: Container(
-              width: 256,
-              height: 256,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.1),
-              ),
-              child: const SizedBox(),
-            ),
-          ),
-          Positioned(
-            bottom: -MediaQuery.of(context).size.height * 0.05,
-            left: -MediaQuery.of(context).size.width * 0.1,
-            child: Container(
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.secondary.withOpacity(0.05),
-              ),
-              child: const SizedBox(),
-            ),
-          ),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 64),
-                  
-                  // 1. Top: Welcome Header
-                  Column(
-                    children: [
-                      Text(
-                        'Welcome',
-                        style: AppTextStyles.headlineLarge.copyWith(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1.0,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Access your transit control terminal.',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  
-                  // 2. Login / Sign Up toggle
-                  Container(
-                    height: 56,
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildToggleItem(0, 'LOGIN'),
-                        _buildToggleItem(1, 'SIGN UP'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  
-                  // 3. Continue with Google
-                  _buildGoogleButton(),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Divider
-                  Row(
-                    children: [
-                      Expanded(child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'OR',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.outlineVariant,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 3,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Tab Content (Auth Form)
-                  _tabController.index == 0 
-                    ? _buildLoginTab(isLoading)
-                    : _buildSignupTab(isLoading),
-                  
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleItem(int index, String label) {
-    final isActive = _tabController.index == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _tabController.index = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.surfaceContainerHighest : Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoogleButton() {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {}, // TODO: Google Sign In
-          borderRadius: BorderRadius.circular(12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.network(
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuCEhMhAS14snMCqgSGt_2gerPVe3WBk6jPpGQ2U9vHPct7gwHzK7f6o22qb-biLlAuFbq77_Xdr2vmPtZYDdltLqcPEFBp1W3_9PN348-b_NrkLDeRjOSR0IAuzz-0GrED78PzxpDZwZ4cJSy0fw_ICSU8Pj4Tm0rVXiYXGCbckBjxTYGq8el4rT5ljYPFDa7d5cPZ95U7Dwzu3Sr_iIFybmdxJOh8h7B9TOmXzmSmcAbXlH1D-Q70SZyd5ZwHXn-lkE3K8U4AKylZG',
-                height: 20,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Continue with Google',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
+              const SizedBox(height: 24),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildLoginTab(),
+                    _buildSignupTab(),
+                  ],
                 ),
               ),
             ],
@@ -247,172 +163,204 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTicker
     );
   }
 
-  Widget _buildLoginTab(bool isLoading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInputField(
-          label: 'Phone Number',
-          controller: _loginContactCtrl,
-          hint: '+1 (555) 000-0000',
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 24),
-        _buildInputField(
-          label: 'Password',
-          controller: _loginPasswordCtrl,
-          hint: '••••••••',
-          isPassword: true,
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () => context.push('/forgot-password'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              'Forgot Password?'.toUpperCase(),
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.onSurfaceVariant.withOpacity(0.6),
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildPrimaryButton(
-          label: 'LOGIN',
-          isLoading: isLoading,
-          onPressed: () async {
-            final success = await ref.read(authControllerProvider.notifier)
-                .login(_loginContactCtrl.text, _loginPasswordCtrl.text);
-            if (success && mounted) {
-              context.go('/conductor');
-            } else if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: AppColors.errorContainer,
-                  content: Text('Login failed', style: TextStyle(color: AppColors.onErrorContainer)),
+  Widget _buildLoginTab() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          _buildGoogleButton(),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Or',
+                  style: AppTextStyles.labelExtraSmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              );
-            }
-          },
-        ),
-        const SizedBox(height: 24),
-        Center(
-          child: TextButton(
-            onPressed: () => context.push('/otp', extra: {'contact': _loginContactCtrl.text}),
-            child: Text(
-              'LOGIN WITH OTP',
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.2,
+              ),
+              Expanded(child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+            controller: _contactController,
+            label: 'Phone / Email',
+            hint: '+91 98765 43210 or email@example.com',
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _passwordController,
+            label: 'Password',
+            hint: '••••••••',
+            obscureText: _obscurePassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                color: AppColors.textSecondary,
+              ),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => context.push('/forgot-password'),
+              child: Text(
+                'Forgot Password?',
+                style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
               ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          _buildPrimaryButton(
+            text: 'LOGIN',
+            isLoading: _isLoading,
+            onPressed: _handleLogin,
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: _handleSendOtp,
+            child: Text(
+              'Login with OTP',
+              style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
-  Widget _buildSignupTab(bool isLoading) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInputField(
-          label: 'Full Name',
-          controller: _signupNameCtrl,
-          hint: 'Enter your name',
-        ),
-        const SizedBox(height: 24),
-        _buildInputField(
-          label: 'Phone Number',
-          controller: _signupContactCtrl,
-          hint: '+1 (555) 000-0000',
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 24),
-        _buildInputField(
-          label: 'Password',
-          controller: _signupPasswordCtrl,
-          hint: '••••••••',
-          isPassword: true,
-        ),
-        const SizedBox(height: 32),
-        _buildPrimaryButton(
-          label: 'SIGN UP',
-          isLoading: isLoading,
-          onPressed: () async {
-            final success = await ref.read(authControllerProvider.notifier)
-                .sendOtp(_signupContactCtrl.text);
-            if (success && mounted) {
+  Widget _buildSignupTab() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          _buildGoogleButton(),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Or',
+                  style: AppTextStyles.labelExtraSmall.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+              Expanded(child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildTextField(
+            controller: _nameController,
+            label: 'Full Name',
+            hint: 'Enter your full name',
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _contactController,
+            label: 'Phone / Email',
+            hint: '+91 98765 43210 or email@example.com',
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _passwordController,
+            label: 'Password',
+            hint: '••••••••',
+            obscureText: _obscurePassword,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                color: AppColors.textSecondary,
+              ),
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildPrimaryButton(
+            text: 'SIGN UP',
+            isLoading: _isLoading,
+            onPressed: () {
+              if (_nameController.text.isEmpty || 
+                  _contactController.text.isEmpty || 
+                  _passwordController.text.isEmpty) {
+                _showError('Please fill in all fields');
+                return;
+              }
               context.push('/otp', extra: {
-                'contact': _signupContactCtrl.text,
-                'isSignup': true,
+                'contact': _contactController.text.trim(),
+                'name': _nameController.text.trim(),
+                'password': _passwordController.text,
+                'isLoginFlow': false,
               });
-            } else if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: AppColors.errorContainer,
-                  content: Text('Failed to send OTP', style: TextStyle(color: AppColors.onErrorContainer)),
-                ),
-              );
-            }
-          },
-        ),
-      ],
+            },
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 
-  Widget _buildInputField({
-    required String label,
+  Widget _buildGoogleButton() {
+    return OutlinedButton(
+      onPressed: _handleGoogleSignIn,
+      style: OutlinedButton.styleFrom(
+        backgroundColor: AppColors.surfaceContainerHigh,
+        side: BorderSide.none,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.network(
+            'https://www.google.com/favicon.ico',
+            width: 20,
+            height: 20,
+            errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Continue with Google',
+            style: AppTextStyles.labelLarge.copyWith(color: AppColors.textOnSurface),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
     required TextEditingController controller,
+    required String label,
     required String hint,
-    bool isPassword = false,
-    TextInputType? keyboardType,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    Widget? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            label.toUpperCase(),
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.onSurfaceVariant,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.5,
-              fontSize: 11,
-            ),
-          ),
+        Text(
+          label.toUpperCase(),
+          style: AppTextStyles.labelExtraSmall.copyWith(color: AppColors.textOnSurfaceVariant),
         ),
+        const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: isPassword && _obscurePassword,
           keyboardType: keyboardType,
-          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w500, color: AppColors.onSurface),
+          obscureText: obscureText,
+          style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textOnSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: AppColors.outlineVariant.withOpacity(0.5)),
-            filled: true,
-            fillColor: AppColors.surfaceContainerHigh,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            suffixIcon: isPassword 
-              ? IconButton(
-                  icon: Icon(_obscurePassword ? Symbols.visibility_rounded : Symbols.visibility_off_rounded, size: 20, color: AppColors.outlineVariant),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                )
-              : null,
+            suffixIcon: suffixIcon,
           ),
         ),
       ],
@@ -420,48 +368,28 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTicker
   }
 
   Widget _buildPrimaryButton({
-    required String label,
+    required String text,
     required VoidCallback onPressed,
     bool isLoading = false,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      height: 68,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryContainer,
-          foregroundColor: AppColors.onPrimaryContainer,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
+          foregroundColor: AppColors.surfaceTint,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: isLoading
-          ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.onPrimaryContainer),
-            )
-          : Text(
-              label,
-              style: AppTextStyles.headlineSmall.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.5,
-                color: AppColors.onPrimaryContainer,
-              ),
-            ),
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.surfaceTint),
+              )
+            : Text(text, style: AppTextStyles.buttonLarge),
       ),
     );
   }
 }
-

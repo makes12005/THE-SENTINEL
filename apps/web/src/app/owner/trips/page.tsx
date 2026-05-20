@@ -38,6 +38,7 @@ function tripRowsFromApi(rows: TripApi[]): TripRow[] {
       alerts !== undefined
         ? `Alerts pending ${alerts.pending} · sent ${alerts.sent} · failed ${alerts.failed} · ${t.passenger_count} pax`
         : undefined;
+    const isExpired = t.status === 'expired' || (t.status === 'scheduled' && new Date(t.scheduled_date) < new Date());
     return {
       id: t.id,
       status: t.status,
@@ -47,6 +48,7 @@ function tripRowsFromApi(rows: TripApi[]): TripRow[] {
       conductor: t.conductor_name ? { name: t.conductor_name } : {},
       passenger_count: t.passenger_count,
       alert_summary: summary,
+      isExpired,
     };
   });
 }

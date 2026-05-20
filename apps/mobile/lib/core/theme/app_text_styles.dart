@@ -1,68 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'app_colors.dart';
 
 class AppTextStyles {
-  // Headlines (Manrope)
-  static TextStyle headlineLarge = GoogleFonts.manrope(
-    fontSize: 40,
+  static TextStyle get displayLarge => GoogleFonts.manrope(
+    fontSize: 57,
     fontWeight: FontWeight.w800,
-    color: AppColors.onSurface,
-    letterSpacing: -1.0,
+    letterSpacing: -0.25,
+    color: Colors.white,
   );
 
-  static TextStyle headlineMedium = GoogleFonts.manrope(
+  static TextStyle get displayMedium => GoogleFonts.manrope(
+    fontSize: 45,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static TextStyle get displaySmall => GoogleFonts.manrope(
+    fontSize: 36,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static TextStyle get headlineLarge => GoogleFonts.manrope(
     fontSize: 32,
     fontWeight: FontWeight.w800,
-    color: AppColors.onSurface,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
+    color: Colors.white,
   );
 
-  static TextStyle headlineSmall = GoogleFonts.manrope(
+  static TextStyle get headlineMedium => GoogleFonts.manrope(
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static TextStyle get headlineSmall => GoogleFonts.manrope(
     fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: AppColors.onSurface,
-    letterSpacing: -0.25,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0,
+    color: Colors.white,
   );
 
-  // Body (Inter)
-  static TextStyle bodyLarge = GoogleFonts.inter(
+  static TextStyle get titleLarge => GoogleFonts.manrope(
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0,
+    color: Colors.white,
+  );
+
+  static TextStyle get titleMedium => GoogleFonts.manrope(
     fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: AppColors.onSurface,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.15,
+    color: Colors.white,
   );
 
-  static TextStyle bodyMedium = GoogleFonts.inter(
+  static TextStyle get titleSmall => GoogleFonts.manrope(
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    color: AppColors.onSurfaceVariant,
+    letterSpacing: 0.1,
+    color: Colors.white,
   );
 
-  static TextStyle bodySmall = GoogleFonts.inter(
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: AppColors.onSurfaceVariant,
-  );
-
-  // Labels (Inter)
-  static TextStyle labelLarge = GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    color: AppColors.onSurface,
-    letterSpacing: 1.2,
-  );
-
-  static TextStyle labelMedium = GoogleFonts.inter(
-    fontSize: 12,
-    fontWeight: FontWeight.w700,
-    color: AppColors.onSurfaceVariant,
+  static TextStyle get bodyLarge => GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
     letterSpacing: 0.5,
+    color: Colors.white,
   );
 
-  static TextStyle labelSmall = GoogleFonts.inter(
+  static TextStyle get bodyMedium => GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.25,
+    color: Colors.white,
+  );
+
+  static TextStyle get bodySmall => GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.4,
+    color: Colors.white,
+  );
+
+  static TextStyle get labelLarge => GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.1,
+    color: Colors.white,
+  );
+
+  static TextStyle get labelMedium => GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.5,
+    color: Colors.white,
+  );
+
+  static TextStyle get labelSmall => GoogleFonts.inter(
     fontSize: 11,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.5,
+    color: Colors.white,
+  );
+
+  static TextStyle get labelExtraSmall => GoogleFonts.inter(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.0,
+    color: Colors.white,
+  );
+
+  static TextStyle get button => GoogleFonts.manrope(
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.5,
+    color: Colors.white,
+  );
+
+  static TextStyle get buttonLarge => GoogleFonts.manrope(
+    fontSize: 16,
     fontWeight: FontWeight.w800,
-    color: AppColors.onSurfaceVariant,
-    letterSpacing: 1.5, // tracking-widest
+    letterSpacing: 1.5,
+    color: Colors.white,
+  );
+
+  static TextStyle get caption => GoogleFonts.inter(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.4,
+    color: const Color(0xFF8E8E93),
   );
 }

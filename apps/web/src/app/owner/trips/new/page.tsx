@@ -24,6 +24,16 @@ interface Staff {
   id: string;
   name: string;
   role: 'conductor' | 'driver';
+  upcoming_trip?: {
+    id: string;
+    route_name: string | null;
+    from_city: string | null;
+    to_city: string | null;
+    scheduled_date: string | null;
+    scheduled_time: string | null;
+    status: string | null;
+    hours_until_trip: number | null;
+  } | null;
 }
 
 interface Operator {
@@ -376,6 +386,18 @@ export default function CreateTripPage() {
                     </select>
                     <span className="material-symbols-outlined absolute right-8 top-1/2 -translate-y-1/2 text-[#475569] pointer-events-none">badge</span>
                   </div>
+                  {selectedConductor?.upcoming_trip && (
+                    <div className="mt-3 ml-4 flex items-start gap-3 bg-[#FF7A00]/10 border border-[#FF7A00]/30 rounded-xl px-4 py-3">
+                      <span className="material-symbols-outlined text-[#FF7A00] text-[18px] mt-0.5">warning</span>
+                      <p className="text-[11px] text-[#FFB978] font-medium">
+                        <span className="font-bold">{selectedConductor.name}</span> has a trip:{' '}
+                        {selectedConductor.upcoming_trip.from_city} → {selectedConductor.upcoming_trip.to_city}
+                        {selectedConductor.upcoming_trip.scheduled_time && (
+                          <> starting at {selectedConductor.upcoming_trip.scheduled_time.slice(0, 5)}</>
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -395,6 +417,18 @@ export default function CreateTripPage() {
                     </select>
                     <span className="material-symbols-outlined absolute right-8 top-1/2 -translate-y-1/2 text-[#475569] pointer-events-none">steering_wheel</span>
                   </div>
+                  {selectedDriver?.upcoming_trip && (
+                    <div className="mt-3 ml-4 flex items-start gap-3 bg-[#FF7A00]/10 border border-[#FF7A00]/30 rounded-xl px-4 py-3">
+                      <span className="material-symbols-outlined text-[#FF7A00] text-[18px] mt-0.5">warning</span>
+                      <p className="text-[11px] text-[#FFB978] font-medium">
+                        <span className="font-bold">{selectedDriver.name}</span> has a trip:{' '}
+                        {selectedDriver.upcoming_trip.from_city} → {selectedDriver.upcoming_trip.to_city}
+                        {selectedDriver.upcoming_trip.scheduled_time && (
+                          <> starting at {selectedDriver.upcoming_trip.scheduled_time.slice(0, 5)}</>
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

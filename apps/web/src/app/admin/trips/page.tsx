@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { get } from '@/lib/api';
 import { 
   Bus, MapPin, Clock, Calendar, Users, 
   Search, Filter, ChevronRight, Loader2,
-  CheckCircle2, Zap, Timer
+  CheckCircle2, Zap, Timer, AlertTriangle
 } from 'lucide-react';
 interface GlobalTrip {
   id: string;
-  status: 'scheduled' | 'active' | 'completed';
+  status: 'scheduled' | 'active' | 'completed' | 'expired';
   scheduled_date: string;
   started_at: string | null;
   completed_at: string | null;
@@ -22,6 +23,7 @@ interface GlobalTrip {
 }
 
 export default function AdminGlobalTripsPage() {
+  const router = useRouter();
   const [trips, setTrips] = useState<GlobalTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -62,6 +64,7 @@ export default function AdminGlobalTripsPage() {
     switch (status) {
       case 'active': return '#22C55E';
       case 'scheduled': return '#6C63FF';
+      case 'expired': return '#EF4444';
       case 'completed': return 'var(--color-on-surface-muted)';
       default: return '#fff';
     }
@@ -71,9 +74,14 @@ export default function AdminGlobalTripsPage() {
     switch (status) {
       case 'active': return <Zap size={14} />;
       case 'scheduled': return <Calendar size={14} />;
+      case 'expired': return <AlertTriangle size={14} />;
       case 'completed': return <CheckCircle2 size={14} />;
       default: return null;
     }
+  };
+
+  const isTripExpired = (trip: GlobalTrip) => {
+    return trip.status === 'expired' || (trip.status === 'scheduled' && new Date(trip.scheduled_date) < new Date());
   };
 
   return (
@@ -157,30 +165,33 @@ export default function AdminGlobalTripsPage() {
               <p style={{ color: 'var(--color-on-surface-muted)', fontSize: 13, marginTop: 8 }}>Try adjusting your filters or search query.</p>
             </div>
           ) : (
-            filtered.map(trip => (
-              <div 
-                key={trip.id}
-                style={{
-                  background: '#1E293B',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 12,
-                  padding: '20px 24px',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 200px 180px 180px 40px',
-                  alignItems: 'center',
-                  gap: 24,
-                  transition: 'transform 0.2s, border-color 0.2s',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(108, 99, 255, 0.4)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
+            filtered.map(trip => {
+              const isExpired = isTripExpired(trip);
+              return (
+                <div 
+                  key={trip.id}
+                  onClick={() => router.push(`/admin/trips/${trip.id}`)}
+                  style={{
+                    background: isExpired ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, #1E293B 100%)' : '#1E293B',
+                    border: isExpired ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid var(--color-border)',
+                    borderRadius: 12,
+                    padding: '20px 24px',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 200px 180px 180px 40px',
+                    alignItems: 'center',
+                    gap: 24,
+                    transition: 'transform 0.2s, border-color 0.2s',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = isExpired ? 'rgba(239, 68, 68, 0.4)' : 'rgba(108, 99, 255, 0.4)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = isExpired ? 'rgba(239, 68, 68, 0.2)' : 'var(--color-border)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
                 {/* Trip Route */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ 
@@ -222,9 +233,12 @@ export default function AdminGlobalTripsPage() {
                 {/* Timing */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--color-on-surface-muted)', letterSpacing: '0.05em', marginBottom: 4 }}>SCHEDULE</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#fff' }}>
-                    <Calendar size={12} color="var(--color-on-surface-muted)" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: isExpired ? '#EF4444' : '#fff' }}>
+                    <Calendar size={12} color={isExpired ? '#EF4444' : 'var(--color-on-surface-muted)'} />
                     {new Date(trip.scheduled_date).toLocaleDateString()}
+                    {isExpired && trip.status === 'scheduled' && (
+                      <span style={{ fontSize: 9, fontWeight: 800, color: '#EF4444', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 6px', borderRadius: 4, marginLeft: 4 }}>OVERDUE</span>
+                    )}
                   </div>
                   {trip.started_at && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#22C55E', marginTop: 4 }}>
@@ -239,7 +253,7 @@ export default function AdminGlobalTripsPage() {
                   <ChevronRight size={20} color="var(--color-on-surface-muted)" />
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
       )}

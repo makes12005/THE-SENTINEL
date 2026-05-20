@@ -294,8 +294,9 @@ export default async function tripsRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ success: false, error: { code: 'TRIP_NOT_FOUND', message: 'Trip not found' } });
       }
 
-      if (req.user.role === UserRole.OPERATOR && trip.owned_by_operator_id !== req.user.id) {
-        return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Only the trip owner can reassign this trip' } });
+      // Only owner and admin can reassign trips (operators cannot reassign)
+      if (req.user.role === UserRole.OPERATOR) {
+        return reply.status(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Only agency owners can reassign trips' } });
       }
 
       const [targetOperator] = await db

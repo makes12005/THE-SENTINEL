@@ -8,7 +8,7 @@
 import { db } from '../../db';
 import { routes, stops, trips, users } from '../../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
-import { CreateRouteRequest, CreateStopRequest } from '../../lib/shared-types';
+import { CreateRouteRequest, CreateStopRequest, CreateRouteWithStopsRequest } from '../../lib/shared-types';
 
 // ── toEWKT helper (PostGIS expects POINT(lng lat)) ───────────────────────────
 function toEWKT(lat: number, lng: number): string {
@@ -55,6 +55,94 @@ export async function createRoute(
     .returning();
 
   return route;
+}
+
+export async function createRouteWithStops(
+  agencyId: string,
+  payload: CreateRouteWithStopsRequest,
+  createdBy?: string
+) {
+  const name = payload.name;
+  const fromCity = payload.from_city;
+  const toCity = payload.to_city;
+
+  const [existing] = await db
+    .select({ id: routes.id })
+    .from(routes)
+    .where(and(eq(routes.agency_id, agencyId), eq(routes.name, name), eq(routes.is_active, true)))
+    .limit(1);
+
+  if (existing) {
+    throw Object.assign(
+      new Error(`Route ${name} already exists in your agency`),
+      { statusCode: 409, code: 'ROUTE_ALREADY_EXISTS' }
+    );
+  }
+
+  const [route] = await db
+    .insert(routes)
+    .values({
+      agency_id: agencyId,
+      name,
+      from_city: fromCity,
+      to_city: toCity,
+      is_active: true,
+      is_published: payload.is_published ?? false,
+      published_at: payload.is_published ? new Date() : null,
+      source: payload.source ?? 'scratch',
+      created_by: createdBy ?? null,
+      created_at: new Date(),
+    })
+    .returning();
+
+  const routeId = route.id;
+  const stopsToInsert = payload.stops.map((stop, index) => ({
+    route_id: routeId,
+    name: stop.name,
+    sequence_number: stop.sequence ?? index + 1,
+    coordinates: toEWKT(stop.lat, stop.lng),
+    trigger_radius_km: String(stop.trigger_radius_km ?? 10),
+  }));
+
+  if (stopsToInsert.length > 0) {
+    await db.insert(stops).values(stopsToInsert);
+  }
+
+  const routeWithStops = await getRoute(routeId, agencyId);
+  return routeWithStops;
+}
+
+export async function duplicateRoute(
+  routeId: string,
+  agencyId: string,
+  newName: string,
+  createdBy?: string
+) {
+  const original = await getRoute(routeId, agencyId);
+  if (!original) {
+    throw Object.assign(new Error('Route not found'), { statusCode: 404 });
+  }
+
+  const stopsInput = (original.stops ?? []).map((stop: any, index: number) => ({
+    name: stop.name,
+    lat: stop.latitude ?? stop.lat,
+    lng: stop.longitude ?? stop.lng,
+    sequence: index + 1,
+    trigger_radius_km: stop.trigger_radius_km ? Number(stop.trigger_radius_km) : 10,
+  }));
+
+  return createRouteWithStops(
+    agencyId,
+    {
+      name: newName,
+      from_city: original.from_city,
+      to_city: original.to_city,
+      is_published: false,
+      source: 'scratch',
+      stops: stopsInput,
+    },
+    createdBy
+  );
 }
 
 // ── List Routes with stop count ───────────────────────────────────────────────

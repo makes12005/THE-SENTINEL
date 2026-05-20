@@ -1,12 +1,13 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'next/navigation';
-import { get } from '@/lib/api';
+import { useParams, useRouter } from 'next/navigation';
+import { get, del } from '@/lib/api';
 import { StatusBadge, TableSkeleton } from '@/components/ui';
 import Link from 'next/link';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface Passenger {
   id: string;
@@ -38,6 +39,38 @@ function maskPhone(phone: string) {
   return `${phone.slice(0, 3)}XXXXX${phone.slice(-5)}`;
 }
 
+function DeleteModal({ tripId, onConfirm, onClose, isDeleting }: { tripId: string; onConfirm: () => void; onClose: () => void; isDeleting: boolean }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-xl border border-[#42474e]/40 bg-[#181c20] shadow-2xl">
+        <div className="px-8 py-6 border-b border-[#42474e]/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#93000a]/20 flex items-center justify-center">
+              <Trash2 size={20} color="#ffb4ab" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-[#ffb4ab]" style={{ fontFamily: 'Manrope, sans-serif' }}>DELETE TRIP</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#8c9198] mt-1">This action cannot be undone</p>
+            </div>
+          </div>
+        </div>
+        <div className="px-8 py-6">
+          <div className="p-4 rounded-lg bg-[#93000a]/10 border border-[#93000a]/30">
+            <p className="text-xs text-[#ffb4ab]">All passenger data and alert history will be permanently removed.</p>
+          </div>
+        </div>
+        <div className="flex gap-3 px-8 pb-7">
+          <button onClick={onClose} disabled={isDeleting} className="flex-1 h-12 rounded-lg bg-[#1c2024] border border-[#42474e]/50 text-[10px] font-bold uppercase tracking-[0.15em] text-[#c2c7ce] hover:bg-[#262a2f] transition-colors disabled:opacity-50">Cancel</button>
+          <button onClick={onConfirm} disabled={isDeleting} className="flex-1 h-12 rounded-lg bg-[#ffb4ab] text-[#690005] text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#ffdad6] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {isDeleting ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+            {isDeleting ? 'Deleting...' : 'Delete Trip'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResendModal({ tripId, onClose }: { tripId: string; onClose: () => void }) {
   const mutation = useMutation({
     mutationFn: async () => ({ queued: 0, tripId }),
@@ -61,8 +94,7 @@ function ResendModal({ tripId, onClose }: { tripId: string; onClose: () => void 
         </div>
         <div className="flex gap-3 px-8 pb-7">
           <button onClick={onClose} className="flex-1 h-12 rounded-lg bg-[#1c2024] border border-[#42474e]/50 text-[10px] font-bold uppercase tracking-[0.15em] text-[#c2c7ce] hover:bg-[#262a2f] transition-colors">Cancel</button>
-          <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-            className="flex-1 h-12 rounded-lg bg-[#ffb4ab] text-[#690005] text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#ffdad6] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="flex-1 h-12 rounded-lg bg-[#ffb4ab] text-[#690005] text-[10px] font-bold uppercase tracking-[0.15em] hover:bg-[#ffdad6] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             <span className="material-symbols-outlined text-[16px]">notifications_active</span>
             {mutation.isPending ? 'Sending...' : 'Confirm Resend'}
           </button>
@@ -74,7 +106,10 @@ function ResendModal({ tripId, onClose }: { tripId: string; onClose: () => void 
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const qc = useQueryClient();
   const [showResend, setShowResend] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: trip, isLoading: tripLoading } = useQuery<TripDetail>({
     queryKey: ['trip', id],
@@ -88,11 +123,27 @@ export default function TripDetailPage() {
     refetchInterval: 30_000,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => del(`/api/trips/${id}`),
+    onSuccess: () => {
+      toast.success('Trip deleted successfully');
+      qc.invalidateQueries({ queryKey: ['trips'] });
+      router.push('/operator/trips');
+    },
+    onError: (e: any) => {
+      const msg = e?.response?.data?.error?.message ?? e?.message ?? 'Failed to delete trip';
+      toast.error(msg);
+    },
+  });
+
   const alertSent = passengers?.filter((p) => p.alert_status === 'sent').length ?? 0;
   const alertFailed = passengers?.filter((p) => p.alert_status === 'failed').length ?? 0;
   const alertPending = passengers?.filter((p) => p.alert_status === 'pending').length ?? 0;
   const total = passengers?.length ?? 0;
   const deliveryPct = total ? Math.round((alertSent / total) * 100) : 0;
+
+  const canDelete = trip?.status === 'scheduled' || trip?.status === 'expired';
+  const isExpired = trip?.status === 'expired' || (trip?.status === 'scheduled' && new Date(trip.scheduled_date) < new Date());
 
   return (
     <div className="bg-[#101418] min-h-screen text-[#e0e3e8] pb-12">
@@ -120,14 +171,31 @@ export default function TripDetailPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          {canDelete && (
+            <button onClick={() => setShowDeleteModal(true)} className="h-10 px-4 border border-[#93000a]/30 bg-[#93000a]/10 text-[#ffb4ab] text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-2 rounded-lg hover:bg-[#93000a]/20 transition-colors">
+              <Trash2 size={14} /> Delete
+            </button>
+          )}
           {trip && <StatusBadge status={trip.status} />}
-          <button onClick={() => toast('Bulk resend is not available yet. Use trip logs for review.')}
-            className="h-10 px-5 border border-[#ffb4ab]/30 bg-[#ffb4ab]/10 text-[#ffb4ab] text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-2 rounded-lg hover:bg-[#ffb4ab]/20 transition-colors">
+          <button onClick={() => toast('Bulk resend is not available yet. Use trip logs for review.')} className="h-10 px-5 border border-[#ffb4ab]/30 bg-[#ffb4ab]/10 text-[#ffb4ab] text-[10px] font-bold uppercase tracking-[0.15em] flex items-center gap-2 rounded-lg hover:bg-[#ffb4ab]/20 transition-colors">
             <span className="material-symbols-outlined text-[16px]">send</span>
             Resend Alerts
           </button>
         </div>
       </header>
+
+      {/* Expired Warning */}
+      {isExpired && trip?.status !== 'completed' && (
+        <div className="mx-8 mt-6 p-4 rounded-xl bg-gradient-to-r from-[#93000a]/20 to-[#93000a]/5 border border-[#93000a]/30 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[#93000a]/20 flex items-center justify-center">
+            <AlertTriangle size={20} color="#ffb4ab" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-[#ffb4ab]">Trip Schedule Passed</p>
+            <p className="text-xs text-[#8c9198] mt-1">This trip was scheduled for {trip?.scheduled_date} but has not started.</p>
+          </div>
+        </div>
+      )}
 
       <div className="px-8 pt-8 max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -141,16 +209,16 @@ export default function TripDetailPage() {
                   { label: 'Route', value: trip.route?.name, icon: 'route', color: 'text-[#a3cbf2]', glow: 'bg-[#a3cbf2]/5' },
                   { label: 'Conductor', value: trip.conductor?.name, icon: 'person', color: 'text-[#c4c0ff]', glow: 'bg-[#c4c0ff]/5' },
                   { label: 'Bus Number', value: trip.bus_number || '—', icon: 'directions_bus', color: 'text-[#ffb68b]', glow: 'bg-[#ffb68b]/5' },
-                  { label: 'Date', value: trip.scheduled_date, icon: 'calendar_month', color: 'text-[#8c9198]', glow: 'bg-[#8c9198]/5' },
+                  { label: 'Date', value: trip.scheduled_date, icon: 'calendar_month', color: isExpired ? 'text-[#ffb4ab]' : 'text-[#8c9198]', glow: isExpired ? 'bg-[#93000a]/5' : 'bg-[#8c9198]/5' },
                 ].map((card) => (
-                  <div key={card.label} className="bg-[#181c20] rounded-xl p-5 border border-[#42474e]/20 flex items-center gap-4 relative overflow-hidden group hover:border-[#42474e]/40 transition-all">
+                  <div key={card.label} className={`bg-[#181c20] rounded-xl p-5 border ${isExpired && card.label === 'Date' ? 'border-[#93000a]/30' : 'border-[#42474e]/20'} flex items-center gap-4 relative overflow-hidden group hover:border-[#42474e]/40 transition-all`}>
                     <div className={`absolute top-0 right-0 w-20 h-20 ${card.glow} rounded-full blur-2xl -mr-6 -mt-6 group-hover:scale-110 transition-transform`} />
                     <div className="w-10 h-10 rounded-lg bg-[#1c2024] flex items-center justify-center flex-shrink-0 relative z-10">
                       <span className={`material-symbols-outlined text-[20px] ${card.color}`}>{card.icon}</span>
                     </div>
                     <div className="relative z-10">
                       <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#8c9198]">{card.label}</p>
-                      <p className="font-bold text-[#e0e3e8] text-sm mt-0.5">{card.value ?? '—'}</p>
+                      <p className={`font-bold text-sm mt-0.5 ${card.color}`}>{card.value ?? '—'}</p>
                     </div>
                   </div>
                 ))}
@@ -167,8 +235,7 @@ export default function TripDetailPage() {
                   </h2>
                 </div>
                 {alertFailed > 0 && (
-                  <button onClick={() => setShowResend(true)}
-                    className="flex items-center gap-1.5 text-[#ffb4ab] text-[10px] font-bold uppercase tracking-[0.12em] hover:text-[#ffdad6]">
+                  <button onClick={() => setShowResend(true)} className="flex items-center gap-1.5 text-[#ffb4ab] text-[10px] font-bold uppercase tracking-[0.12em] hover:text-[#ffdad6]">
                     <span className="material-symbols-outlined text-[14px]">error</span>
                     {alertFailed} Failed
                   </button>
@@ -236,28 +303,16 @@ export default function TripDetailPage() {
                   <div className="relative w-20 h-20 flex-shrink-0">
                     <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
                       <circle cx="40" cy="40" r="32" fill="none" stroke="#1c2024" strokeWidth="8" />
-                      <circle cx="40" cy="40" r="32" fill="none" stroke="#4ade80" strokeWidth="8"
-                        strokeDasharray={`${2 * Math.PI * 32}`}
-                        strokeDashoffset={`${2 * Math.PI * 32 * (1 - deliveryPct / 100)}`}
-                        strokeLinecap="round" className="transition-all duration-700" />
+                      <circle cx="40" cy="40" r="32" fill="none" stroke="#4ade80" strokeWidth="8" strokeDasharray={`${2 * Math.PI * 32}`} strokeDashoffset={`${2 * Math.PI * 32 * (1 - deliveryPct / 100)}`} strokeLinecap="round" className="transition-all duration-700" />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="font-mono text-lg font-bold text-[#4ade80]">{deliveryPct}%</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-400" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c9198]">Sent: <span className="text-green-400">{alertSent}</span></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#ffb68b]" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c9198]">Pending: <span className="text-[#ffb68b]">{alertPending}</span></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#ffb4ab]" />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c9198]">Failed: <span className="text-[#ffb4ab]">{alertFailed}</span></span>
-                    </div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-400" /><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c9198]">Sent: <span className="text-green-400">{alertSent}</span></span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#ffb68b]" /><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c9198]">Pending: <span className="text-[#ffb68b]">{alertPending}</span></span></div>
+                    <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#ffb4ab]" /><span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8c9198]">Failed: <span className="text-[#ffb4ab]">{alertFailed}</span></span></div>
                   </div>
                 </div>
 
@@ -278,8 +333,7 @@ export default function TripDetailPage() {
                 Quick Actions
               </p>
               <div className="flex flex-col gap-3">
-                <button onClick={() => setShowResend(true)}
-                  className="w-full h-12 bg-[#a3cbf2] text-[#003352] font-bold uppercase tracking-widest text-[10px] rounded-lg flex items-center justify-center gap-2 hover:bg-[#cee5ff] transition-colors shadow-xl">
+                <button onClick={() => setShowResend(true)} className="w-full h-12 bg-[#a3cbf2] text-[#003352] font-bold uppercase tracking-widest text-[10px] rounded-lg flex items-center justify-center gap-2 hover:bg-[#cee5ff] transition-colors shadow-xl">
                   <span className="material-symbols-outlined text-[16px]">notifications_active</span>
                   Resend Alerts
                 </button>
@@ -287,8 +341,7 @@ export default function TripDetailPage() {
                   <span className="material-symbols-outlined text-[16px]">download</span>
                   Export Manifest
                 </button>
-                <Link href={`/operator/logs?trip=${id}`}
-                  className="w-full h-12 border border-[#42474e]/50 text-[#c2c7ce] font-bold uppercase tracking-widest text-[10px] rounded-lg flex items-center justify-center gap-2 hover:bg-[#262a2f] transition-colors">
+                <Link href={`/operator/logs?trip=${id}`} className="w-full h-12 border border-[#42474e]/50 text-[#c2c7ce] font-bold uppercase tracking-widest text-[10px] rounded-lg flex items-center justify-center gap-2 hover:bg-[#262a2f] transition-colors">
                   <span className="material-symbols-outlined text-[16px]">history</span>
                   View Logs
                 </Link>
@@ -326,6 +379,7 @@ export default function TripDetailPage() {
       </div>
 
       {showResend && <ResendModal tripId={id} onClose={() => setShowResend(false)} />}
+      {showDeleteModal && <DeleteModal tripId={id} onConfirm={() => deleteMutation.mutate()} onClose={() => setShowDeleteModal(false)} isDeleting={deleteMutation.isPending} />}
     </div>
   );
 }

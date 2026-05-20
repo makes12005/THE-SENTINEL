@@ -1,89 +1,190 @@
+import 'package:bus_alert/features/auth/provider/auth_provider.dart';
+import 'package:bus_alert/features/auth/ui/forgot_password_screen.dart';
+import 'package:bus_alert/features/auth/ui/invite_code_screen.dart';
+import 'package:bus_alert/features/auth/ui/login_screen.dart';
+import 'package:bus_alert/features/auth/ui/otp_screen.dart';
+import 'package:bus_alert/features/auth/ui/signup_screen.dart';
+import 'package:bus_alert/features/auth/ui/welcome_screen.dart';
+import 'package:bus_alert/features/conductor/ui/active_trip/active_trip_shell.dart';
+import 'package:bus_alert/features/conductor/ui/boarding_checklist_screen.dart';
+import 'package:bus_alert/features/conductor/ui/conductor_dashboard.dart';
+import 'package:bus_alert/features/conductor/ui/trip_detail_screen.dart';
+import 'package:bus_alert/features/driver/ui/driver_dashboard.dart';
+import 'package:bus_alert/features/driver/ui/driver_trip_overview.dart';
+import 'package:bus_alert/features/gps/ui/capture_location_screen.dart';
+import 'package:bus_alert/features/profile/ui/profile_screen.dart';
+import 'package:bus_alert/features/route/ui/route_creation_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../storage/secure_storage.dart';
-
-import '../../features/auth/ui/welcome_screen.dart';
-import '../../features/auth/ui/login_screen.dart';
-import '../../features/auth/ui/signup_screen.dart';
-import '../../features/auth/ui/otp_screen.dart';
-import '../../features/auth/ui/profile_setup_screen.dart';
-import '../../features/auth/ui/forgot_password_screen.dart';
-
-import '../../features/conductor/ui/conductor_dashboard.dart';
-import '../../features/conductor/ui/trip_detail_screen.dart';
-import '../../features/conductor/ui/boarding_checklist_screen.dart';
-import '../../features/conductor/ui/active_trip/active_trip_shell.dart';
-import '../../features/conductor/ui/call_failure_screen.dart';
-
-import '../../features/driver/ui/driver_dashboard.dart';
-import '../../features/driver/ui/driver_trip_overview.dart';
-import '../../features/driver/ui/takeover_alert_screen.dart';
-
-import '../../features/profile/ui/profile_screen.dart';
-import '../../features/location/ui/capture_location_screen.dart';
-
-class AppRouter {
-  static final router = GoRouter(
+final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authProvider);
+  
+  return GoRouter(
     initialLocation: '/welcome',
-    redirect: (context, state) async {
-      final token = await SecureStorage.getToken();
-      final role = await SecureStorage.getUserRole();
-      final isAuthRoute = state.matchedLocation.startsWith('/welcome') || 
-                          state.matchedLocation.startsWith('/login') || 
-                          state.matchedLocation.startsWith('/signup') || 
-                          state.matchedLocation.startsWith('/otp') || 
-                          state.matchedLocation.startsWith('/invite-code') || 
-                          state.matchedLocation.startsWith('/forgot-password');
-
-      if (token == null && !isAuthRoute) return '/welcome';
+    debugLogDiagnostics: true,
+    refreshListenable: _GoRouterRefreshNotifier(ref),
+    redirect: (context, state) {
+      final auth = ref.read(authProvider);
+      final isAuthenticated = auth.isAuthenticated;
+      final user = auth.user;
+      final isNewUser = auth.isNewUser;
+      final tempToken = auth.tempToken;
       
-      if (token != null && isAuthRoute) {
-        if (role == 'conductor') return '/conductor';
-        if (role == 'driver') return '/driver';
+      final isAuthRoute = state.matchedLocation.startsWith('/login') ||
+          state.matchedLocation.startsWith('/signup') ||
+          state.matchedLocation.startsWith('/otp') ||
+          state.matchedLocation.startsWith('/invite-code') ||
+          state.matchedLocation.startsWith('/forgot-password') ||
+          state.matchedLocation == '/welcome';
+      
+      if (isNewUser && tempToken != null && !state.matchedLocation.startsWith('/signup')) {
+        return '/signup';
+      }
+      
+      if (isAuthenticated) {
+        if (isAuthRoute) {
+          if (user?.isConductor ?? false) {
+            return '/conductor';
+          } else if (user?.isDriver ?? false) {
+            return '/driver';
+          }
+        }
+        
+        if (state.matchedLocation.startsWith('/conductor') && user?.isConductor != true) {
+          return '/driver';
+        }
+        
+        if (state.matchedLocation.startsWith('/driver') && user?.isDriver != true) {
+          return '/conductor';
+        }
+        
+        return null;
+      }
+      
+      if (!isAuthenticated && !isAuthRoute) {
         return '/welcome';
       }
+      
       return null;
     },
     routes: [
-      GoRoute(path: '/welcome', builder: (context, state) => const WelcomeScreen()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
       GoRoute(
-        path: '/otp', 
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-          return OtpScreen(
-            contact: extra['contact'] ?? '',
-            isSignup: extra['isSignup'] ?? false,
-          );
-        }
+        path: '/welcome',
+        name: 'welcome',
+        builder: (context, state) => const WelcomeScreen(),
       ),
-      GoRoute(path: '/invite-code', builder: (context, state) => const ProfileSetupScreen()),
-      GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
-      
-      GoRoute(path: '/conductor', builder: (context, state) => const ConductorDashboard()),
-      GoRoute(path: '/conductor/trip/:id', builder: (context, state) => TripDetailScreen(tripId: state.pathParameters['id']!)),
-      GoRoute(path: '/conductor/boarding/:id', builder: (context, state) => BoardingChecklistScreen(tripId: state.pathParameters['id']!)),
-      GoRoute(path: '/conductor/active/:id', builder: (context, state) => ActiveTripShell(tripId: state.pathParameters['id']!)),
       GoRoute(
-        path: '/conductor/call-failure',
+        path: '/login',
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/signup',
+        name: 'signup',
+        builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/otp',
+        name: 'otp',
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
-          return CallFailureScreen(
-            tripId: extra['tripId'] ?? '',
-            passengerId: extra['passengerId'] ?? '',
-            passengerSeat: extra['passengerSeat'] ?? 'Seat 12',
-            upcomingStop: extra['upcomingStop'] ?? 'Una',
+          final extra = state.extra as Map<String, dynamic>?;
+          return OtpScreen(
+            contact: extra?['contact'] ?? '',
+            isLoginFlow: extra?['isLoginFlow'] ?? false,
           );
         },
       ),
+      GoRoute(
+        path: '/invite-code',
+        name: 'invite-code',
+        builder: (context, state) => const InviteCodeScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
       
-      GoRoute(path: '/driver', builder: (context, state) => const DriverDashboard()),
-      GoRoute(path: '/driver/trip/:id', builder: (context, state) => DriverTripOverview(tripId: state.pathParameters['id']!)),
-      GoRoute(path: '/driver/takeover/:id', builder: (context, state) => TakeoverAlertScreen(tripId: state.pathParameters['id']!)),
+      GoRoute(
+        path: '/conductor',
+        name: 'conductor-dashboard',
+        builder: (context, state) => const ConductorDashboard(),
+      ),
+      GoRoute(
+        path: '/conductor/trip/:id',
+        name: 'conductor-trip-detail',
+        builder: (context, state) {
+          final tripId = state.pathParameters['id']!;
+          return TripDetailScreen(tripId: tripId);
+        },
+      ),
+      GoRoute(
+        path: '/conductor/boarding/:id',
+        name: 'conductor-boarding',
+        builder: (context, state) {
+          final tripId = state.pathParameters['id']!;
+          return BoardingChecklistScreen(tripId: tripId);
+        },
+      ),
+      GoRoute(
+        path: '/conductor/active/:id',
+        name: 'conductor-active-trip',
+        builder: (context, state) {
+          final tripId = state.pathParameters['id']!;
+          return ActiveTripShell(tripId: tripId);
+        },
+      ),
       
-      GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
-      GoRoute(path: '/capture-location', builder: (context, state) => const CaptureLocationScreen()),
+      GoRoute(
+        path: '/driver',
+        name: 'driver-dashboard',
+        builder: (context, state) => const DriverDashboard(),
+      ),
+      GoRoute(
+        path: '/driver/trip/:id',
+        name: 'driver-trip-overview',
+        builder: (context, state) {
+          final tripId = state.pathParameters['id']!;
+          return DriverTripOverview(tripId: tripId);
+        },
+      ),
+      
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/capture-location',
+        name: 'capture-location',
+        builder: (context, state) => const CaptureLocationScreen(),
+      ),
+      GoRoute(
+        path: '/create-route',
+        name: 'create-route',
+        builder: (context, state) => const RouteCreationScreen(),
+      ),
     ],
+    errorBuilder: (context, state) => Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: Center(
+        child: Text(
+          'Page not found',
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    ),
   );
+});
+
+class _GoRouterRefreshNotifier extends ChangeNotifier {
+  _GoRouterRefreshNotifier(this.ref) {
+    ref.listen<AuthState>(authProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+  
+  final Ref ref;
 }

@@ -1,54 +1,48 @@
+import 'package:bus_alert/core/network/api_client.dart';
+import 'package:bus_alert/core/network/endpoints.dart';
+import 'package:bus_alert/core/storage/secure_storage.dart';
 import 'package:dio/dio.dart';
-import '../storage/secure_storage.dart';
-import '../router/app_router.dart';
 
 class TokenInterceptor extends Interceptor {
-  final Dio dio;
-
-  TokenInterceptor(this.dio);
-
+  final SecureStorage _storage = SecureStorage();
+  
   @override
-  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await SecureStorage.getToken();
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    final token = await _storage.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
-    return handler.next(options);
+    handler.next(options);
   }
-
+  
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      final refreshToken = await SecureStorage.getRefreshToken();
+      final refreshToken = await _storage.getRefreshToken();
       if (refreshToken != null) {
         try {
-          final response = await dio.post('/api/auth/refresh', data: {
-            'refresh_token': refreshToken,
-          });
+          final response = await Dio().post(
+            '${ApiClient().dio.options.baseUrl}${Endpoints.refresh}',
+            data: {'refreshToken': refreshToken},
+          );
           
-          if (response.statusCode == 200) {
-            final newToken = response.data['data']['access_token'];
-            final newRefresh = response.data['data']['refresh_token'];
+          if (response.statusCode == 200 && response.data['success'] == true) {
+            final newAccessToken = response.data['data']['access_token'] ?? response.data['data']['accessToken'];
+            final newRefreshToken = response.data['data']['refresh_token'] ?? response.data['data']['refreshToken'];
             
-            await SecureStorage.saveToken(newToken);
-            if (newRefresh != null) await SecureStorage.saveRefreshToken(newRefresh);
+            await _storage.saveAccessToken(newAccessToken);
+            await _storage.saveRefreshToken(newRefreshToken);
             
-            final opts = err.requestOptions;
-            opts.headers['Authorization'] = 'Bearer $newToken';
+            err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
             
-            final retryResponse = await dio.fetch(opts);
+            final retryResponse = await Dio().fetch(err.requestOptions);
             return handler.resolve(retryResponse);
           }
         } catch (e) {
-          await SecureStorage.clearAll();
-          AppRouter.router.go('/welcome');
-          return handler.next(err);
+          await _storage.clearAll();
         }
-      } else {
-        await SecureStorage.clearAll();
-        AppRouter.router.go('/welcome');
       }
     }
-    return handler.next(err);
+    handler.next(err);
   }
 }

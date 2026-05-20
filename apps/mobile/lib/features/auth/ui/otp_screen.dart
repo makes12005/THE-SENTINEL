@@ -1,313 +1,263 @@
+import 'dart:async';
+import 'package:bus_alert/core/theme/app_colors.dart';
+import 'package:bus_alert/core/theme/app_text_styles.dart';
+import 'package:bus_alert/features/auth/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../provider/auth_provider.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   final String contact;
-  final bool isSignup;
-  
-  const OtpScreen({super.key, required this.contact, this.isSignup = false});
+  final bool isLoginFlow;
+  final String? name;
+  final String? password;
+
+  const OtpScreen({
+    super.key,
+    required this.contact,
+    this.isLoginFlow = false,
+    this.name,
+    this.password,
+  });
 
   @override
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
 class _OtpScreenState extends ConsumerState<OtpScreen> {
-  final pinController = TextEditingController();
-  final focusNode = FocusNode();
+  final _otpController = TextEditingController();
+  bool _isLoading = false;
+  int _countdown = 30;
+  Timer? _timer;
+  bool _canResend = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _sendOtp();
+    _startTimer();
+  }
 
   @override
   void dispose() {
-    pinController.dispose();
-    focusNode.dispose();
+    _timer?.cancel();
+    _otpController.dispose();
     super.dispose();
+  }
+
+  Future<void> _sendOtp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    await ref.read(authProvider.notifier).sendOtp(contact: widget.contact);
+    
+    setState(() {
+      _isLoading = false;
+      _canResend = false;
+      _countdown = 30;
+    });
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() => _countdown--);
+      } else {
+        setState(() => _canResend = true);
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _verifyOtp() async {
+    if (_otpController.text.length != 6) {
+      setState(() => _errorMessage = 'Please enter 6-digit OTP');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final success = await ref.read(authProvider.notifier).verifyOtp(otp: _otpController.text);
+
+    setState(() => _isLoading = false);
+
+    if (success) {
+      final user = ref.read(authProvider).user;
+      if (user?.isConductor ?? false) {
+        context.go('/conductor');
+      } else if (user?.isDriver ?? false) {
+        context.go('/driver');
+      }
+    } else {
+      final authState = ref.read(authProvider);
+      if (authState.needsSignup) {
+        context.go('/signup');
+      }
+    }
+  }
+
+  String get _formattedCountdown {
+    final minutes = _countdown ~/ 60;
+    final seconds = _countdown % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState.isLoading;
-
     final defaultPinTheme = PinTheme(
       width: 56,
-      height: 56,
-      textStyle: AppTextStyles.headlineMedium.copyWith(
-        color: AppColors.primary,
-        fontWeight: FontWeight.bold,
-        fontFamily: 'Manrope',
-      ),
+      height: 64,
+      textStyle: AppTextStyles.headlineSmall.copyWith(color: AppColors.primary),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
     );
 
-    final focusedPinTheme = defaultPinTheme.copyDecorationWith(
-      color: AppColors.surfaceContainerHighest,
-      border: Border.all(color: AppColors.primary, width: 2),
+    final focusedPinTheme = defaultPinTheme.copyWith(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary, width: 2),
+      ),
     );
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Gradient (matching noise-bg in 2.html)
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.background,
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.0,
-                  colors: [
-                    Color(0x0DFA3CBF2), // Primary with 5% opacity
-                    AppColors.background,
-                  ],
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () {
+            ref.read(authProvider.notifier).reset();
+            context.pop();
+          },
+        ),
+        title: Text(
+          'Verify OTP',
+          style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 32),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.shield_outlined,
+                  size: 40,
+                  color: AppColors.primary,
                 ),
               ),
-            ),
-          ),
-
-          // Contextual Visual (from 2.html)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 256,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    AppColors.primaryContainer.withOpacity(0.2),
-                    Colors.transparent,
-                  ],
-                ),
+              const SizedBox(height: 32),
+              Text(
+                'Enter Code',
+                style: AppTextStyles.headlineLarge.copyWith(color: AppColors.textOnSurface),
               ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Top App Bar
-                Container(
-                  height: 64,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF181C20), // Exact color from 2.html header
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.pop(),
-                        icon: const Icon(Symbols.arrow_back_rounded, color: AppColors.primary),
-                        style: IconButton.styleFrom(
-                          hoverColor: AppColors.surfaceContainerHigh,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Verify OTP',
-                        style: AppTextStyles.labelLarge.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Manrope',
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
+              const SizedBox(height: 8),
+              Text(
+                'Enter the 6-digit code sent to\n${widget.contact}',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnSurfaceVariant),
+              ),
+              const SizedBox(height: 40),
+              Pinput(
+                controller: _otpController,
+                length: 6,
+                defaultPinTheme: defaultPinTheme,
+                focusedPinTheme: focusedPinTheme,
+                onCompleted: (pin) {
+                  if (pin.length == 6 && !_isLoading) {
+                    _verifyOtp();
+                  }
+                },
+                keyboardType: TextInputType.number,
+              ),
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    _errorMessage!,
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
                   ),
                 ),
-
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 60),
-                        
-                        // Header Icon
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(12), // rounded-xl from 2.html
-                          ),
-                          child: const Icon(
-                            Symbols.shield_lock_rounded,
-                            color: AppColors.primary,
-                            size: 48, // text-5xl from 2.html
-                            fill: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        Text(
-                          'Enter Code',
-                          style: AppTextStyles.headlineMedium.copyWith(
-                            fontWeight: FontWeight.w800, // font-extrabold
-                            fontSize: 30, // text-3xl
-                            fontFamily: 'Manrope',
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Enter the 6-digit code sent to your phone.',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'Inter',
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 48),
-
-                        // OTP Grid
-                        Pinput(
-                          controller: pinController,
-                          focusNode: focusNode,
-                          length: 6,
-                          defaultPinTheme: defaultPinTheme,
-                          focusedPinTheme: focusedPinTheme,
-                          separatorBuilder: (index) => const SizedBox(width: 8),
-                          hapticFeedbackType: HapticFeedbackType.lightImpact,
-                          onCompleted: (pin) => _verifyOtp(pin),
-                        ),
-                        const SizedBox(height: 48),
-
-                        // Primary Action
-                        SizedBox(
-                          width: double.infinity,
-                          height: 64, // h-16
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : () => _verifyOtp(pinController.text),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.onTertiaryContainer, // bg-on-tertiary-container
-                              foregroundColor: AppColors.onTertiary, // text-on-tertiary
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // rounded-xl
-                              elevation: 8,
-                              shadowColor: AppColors.tertiaryContainer.withOpacity(0.2),
-                            ),
-                            child: isLoading 
-                              ? const CircularProgressIndicator(color: AppColors.onTertiary) 
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'VERIFY', 
-                                      style: AppTextStyles.labelLarge.copyWith(
-                                        fontWeight: FontWeight.w800, // font-extrabold
-                                        fontFamily: 'Manrope',
-                                        letterSpacing: 2, // tracking-widest
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Icon(Symbols.chevron_right_rounded),
-                                  ],
-                                ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Secondary Actions & Timer
-                        Column(
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _verifyOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.onTertiaryContainer,
+                    foregroundColor: AppColors.tertiary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.tertiary),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(9999), // rounded-full
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Symbols.timer_rounded, color: AppColors.secondary, size: 18, fill: 1),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '00:30',
-                                    style: AppTextStyles.labelLarge.copyWith(
-                                      color: AppColors.secondary,
-                                      fontWeight: FontWeight.w800,
-                                      fontFamily: 'Manrope',
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextButton(
-                              onPressed: null, // TODO: Implement resend
-                              child: Text(
-                                'Resend OTP',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: AppColors.onSurfaceVariant,
-                                  fontWeight: FontWeight.bold, // font-bold
-                                  fontFamily: 'Inter',
-                                  fontSize: 14,
-                                  letterSpacing: 1,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                            ),
+                            Text('VERIFY', style: AppTextStyles.buttonLarge),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward, size: 20),
                           ],
                         ),
-                      ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.timer_outlined, size: 18, color: AppColors.secondary),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formattedCountdown,
+                      style: AppTextStyles.titleMedium.copyWith(color: AppColors.secondary),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _canResend && !_isLoading ? _sendOtp : null,
+                child: Text(
+                  'Resend OTP',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: _canResend ? AppColors.primary : AppColors.textSecondary,
                   ),
                 ),
-                
-                // Footer (as in 2.html)
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Text(
-                    'SENTINEL SECURE NODE V4.2.0',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.onSurfaceVariant.withOpacity(0.3),
-                      letterSpacing: 3,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
-
-  Future<void> _verifyOtp(String pin) async {
-    if (pin.length < 6) return;
-    
-    final success = await ref.read(authControllerProvider.notifier).verifyOtp(widget.contact, pin);
-    if (!mounted) return;
-    
-    if (success) {
-      if (widget.isSignup) {
-        context.go('/profile-setup');
-      } else {
-        context.go('/conductor');
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.errorContainer,
-          content: Text('Invalid OTP', style: TextStyle(color: AppColors.onErrorContainer)),
-        ),
-      );
-      pinController.clear();
-      focusNode.requestFocus();
-    }
-  }
 }
-
